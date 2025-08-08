@@ -1,15 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import SpaceConfig from './SpaceConfig';
 import IdResConfig from './IdResConfig';
 import './UnifySpaceConfig.css';
 
+
 const UnifySpaceConfig = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('space');
+  const idResConfigRef = useRef();
 
   if (!isOpen) return null;
 
+  const handleSaveIdResConfig = () => {
+    if (idResConfigRef.current && idResConfigRef.current.saveConfig) {
+      idResConfigRef.current.saveConfig();
+    }
+  };
+
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
+      handleSaveIdResConfig();
       onClose();
     }
   };
@@ -20,7 +29,7 @@ const UnifySpaceConfig = ({ isOpen, onClose }) => {
         <div className="unify-space-config__header">
           <h2 className="unify-space-config__title">Unify Space Configuration</h2>
           <button
-            onClick={onClose}
+            onClick={() => { handleSaveIdResConfig(); onClose(); }}
             className="unify-space-config__close"
             aria-label="Close"
           >
@@ -51,7 +60,7 @@ const UnifySpaceConfig = ({ isOpen, onClose }) => {
           )}
           {activeTab === 'idres' && (
             <div className="unify-space-config__card">
-              <IdResConfig />
+              <IdResConfig ref={idResConfigRef} />
             </div>
           )}
         </div>

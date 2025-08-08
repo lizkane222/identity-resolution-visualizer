@@ -3,6 +3,24 @@
  * Based on Segment's official API documentation
  */
 
+import { uuidv4 } from './uuid';
+
+// Get or generate a persistent userId for this browser
+function getOrPersistUserId() {
+  let userId = null;
+  try {
+    userId = localStorage.getItem('eventBuilderUserId');
+    if (!userId) {
+      userId = uuidv4();
+      localStorage.setItem('eventBuilderUserId', userId);
+    }
+  } catch (e) {
+    // Fallback if localStorage is unavailable
+    userId = uuidv4();
+  }
+  return userId;
+}
+
 // Helper function to generate dynamic user identification
 const getUserId = (currentUser) => {
   // Get toggle states from currentUser (if available)
@@ -20,7 +38,7 @@ const getUserId = (currentUser) => {
   
   // Fallback logic: only provide default if both toggles are enabled but no values
   if (toggles.userId && toggles.anonymousId) {
-    return { userId: "user123" }; // Default fallback
+    return { userId: getOrPersistUserId() };
   }
   
   // If no toggles are enabled or no data available, return empty object
@@ -62,40 +80,53 @@ export const CORE_EVENTS = {
   track: {
     name: "Track",
     description: "The Track call is how you record any actions your users perform, along with any properties that describe the action.",
-    payload: (currentUser) => ({
-      "type": "track",
-      ...getUserId(currentUser),
-      "event": "Product Purchased",
-      "properties": {
-        "product_id": "prod-123",
-        "name": "Premium Headphones",
-        "category": "Electronics",
-        "price": 199.99,
-        "currency": "USD",
-        "quantity": 1,
-        "discount": 10.00
-      },
-      "context": {
-        "ip": "192.168.1.1",
-        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-      },
-      "timestamp": new Date().toISOString()
-    })
+    payload: (currentUser) => {
+      const ids = getUserId(currentUser);
+      const payload = {
+        userId: ids.userId || undefined,
+        anonymousId: ids.anonymousId || undefined,
+        type: "track",
+        event: "Product Purchased",
+        properties: {
+          product_id: "prod-123",
+          name: "Premium Headphones",
+          category: "Electronics",
+          price: 199.99,
+          currency: "USD",
+          quantity: 1,
+          discount: 10.00
+        },
+        context: {
+          ip: "192.168.1.1",
+          userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        },
+        timestamp: new Date().toISOString()
+      };
+      // Remove undefined fields
+      Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+      return payload;
+    }
   },
 
   identify: {
     name: "Identify",
     description: "The Identify call lets you tie a user to their actions and record traits about them. It includes a unique User ID and any optional traits you know about the user.",
-    payload: (currentUser) => ({
-      "type": "identify",
-      ...getUserId(currentUser),
-      "traits": getUserTraits(currentUser),
-      "context": {
-        "ip": "192.168.1.1",
-        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-      },
-      "timestamp": new Date().toISOString()
-    })
+    payload: (currentUser) => {
+      const ids = getUserId(currentUser);
+      const payload = {
+        userId: ids.userId || undefined,
+        anonymousId: ids.anonymousId || undefined,
+        type: "identify",
+        traits: getUserTraits(currentUser),
+        context: {
+          ip: "192.168.1.1",
+          userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        },
+        timestamp: new Date().toISOString()
+      };
+      Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+      return payload;
+    }
   },
   
   page: {
@@ -212,28 +243,26 @@ export const PRODUCT_EVENTS = {
   "Product Viewed": {
     name: "Product Viewed",
     description: "User viewed a product page or product details",
-    payload: (currentUser) => ({
-      "type": "track",
-      ...getUserId(currentUser),
-      "event": "Product Viewed",
-      "properties": {
-        "product_id": "prod-123",
-        "sku": "SKU-12345",
-        "name": "Premium Headphones",
-        "category": "Electronics",
-        "brand": "AudioTech",
-        "variant": "Black",
-        "price": 199.99,
-        "currency": "USD",
-        "quantity": 1,
-        "coupon": "SUMMER25",
-        "position": 1,
-        "value": 199.99,
-        "url": "https://example.com/products/premium-headphones",
-        "image_url": "https://example.com/images/premium-headphones.jpg"
-      },
-      "timestamp": new Date().toISOString()
-    })
+    payload: (currentUser) => {
+      const ids = getUserId(currentUser);
+      const payload = {
+        userId: ids.userId || undefined,
+        anonymousId: ids.anonymousId || undefined,
+        type: "page",
+        name: "Home Page",
+        properties: {
+          url: "https://example.com/home",
+          referrer: "https://google.com/"
+        },
+        context: {
+          ip: "192.168.1.1",
+          userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        },
+        timestamp: new Date().toISOString()
+      };
+      Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+      return payload;
+    }
   },
 
   "Product Added": {

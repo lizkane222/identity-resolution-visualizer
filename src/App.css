@@ -121,6 +121,11 @@ body {
 .app__profile-lookup-section {
   margin-bottom: 24px;
   animation: slideDown 0.3s ease-out;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes slideDown {

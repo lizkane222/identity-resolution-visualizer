@@ -3,7 +3,36 @@ import { simulateEvents } from '../../utils/eventSimulator';
 import { sendAppEventsToSegment, getStoredWriteKey } from '../../utils/segmentAPI';
 import './EventList.css';
 
-const EventList = ({ events, onRemoveEvent, onClearEvents, highlightedEventIndices = [] }) => {
+const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highlightedEventIndices = [] }) => {
+  // Editing state
+  const [editingEventId, setEditingEventId] = useState(null);
+  const [editingValue, setEditingValue] = useState('');
+  // Event ordering state
+  const [orderBy, setOrderBy] = useState('timestamp');
+  const [customOrderField, setCustomOrderField] = useState('');
+  const [orderEnabled, setOrderEnabled] = useState(false);
+
+  // Sort events by selected field
+  const sortedEvents = orderEnabled
+    ? [...events].sort((a, b) => {
+        try {
+          const aObj = JSON.parse(a.rawData);
+          const bObj = JSON.parse(b.rawData);
+          if (orderBy === 'timestamp') {
+            return new Date(aObj.timestamp || 0) - new Date(bObj.timestamp || 0);
+          } else if (orderBy === 'custom' && customOrderField) {
+            if (aObj[customOrderField] === undefined) return 1;
+            if (bObj[customOrderField] === undefined) return -1;
+            if (aObj[customOrderField] < bObj[customOrderField]) return -1;
+            if (aObj[customOrderField] > bObj[customOrderField]) return 1;
+            return 0;
+          }
+          return 0;
+        } catch {
+          return 0;
+        }
+      })
+    : events;
   const [isRunning, setIsRunning] = useState(false);
   const [timeoutMs, setTimeoutMs] = useState(1000);
   const [currentEventIndex, setCurrentEventIndex] = useState(-1);
@@ -341,18 +370,43 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, highlightedEventIndic
 
       {/* Events list - scrollable */}
       <div className="event-list__events event-list__events--scrollable">
-        {events.length === 0 ? (
+        {sortedEvents.length === 0 ? (
           <div className="event-list__empty-state">
             <p className="event-list__empty-message">No events added yet.</p>
             <p className="event-list__empty-subtitle">Use the Event Builder above to create and save events.</p>
           </div>
         ) : (
-          events.map((event, index) => {
+          sortedEvents.map((event, index) => {
             const isExpanded = expandedEvents.has(event.id);
             const isHighlighted = highlightedEvents.has(event.id);
             const isUserHighlighted = highlightedEventIndices.includes(index);
             const eventType = getEventType(event.rawData);
-            
+            const isEditing = editingEventId === event.id;
+
+            const handleEditClick = (e) => {
+              e.stopPropagation();
+              setEditingEventId(event.id);
+              setEditingValue(formatEventForDisplay(event.rawData));
+            };
+
+            const handleEditSave = () => {
+              try {
+                const parsed = JSON.parse(editingValue);
+                if (typeof onEditEvent === 'function') {
+                  onEditEvent(event.id, parsed);
+                }
+                setEditingEventId(null);
+                setEditingValue('');
+              } catch {
+                alert('Invalid JSON. Please fix errors before saving.');
+              }
+            };
+
+            const handleEditCancel = () => {
+              setEditingEventId(null);
+              setEditingValue('');
+            };
+
             return (
               <div
                 key={event.id}
@@ -402,11 +456,92 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, highlightedEventIndic
                     </button>
                   </div>
                 </div>
-                
+
                 {isExpanded && (
                   <div className="event-list__event-content">
-                    <pre className="event-list__event-json">
-                      {formatEventForDisplay(event.rawData)}
+                    <pre
+                      className="event-list__event-json"
+                      contentEditable
+                      suppressContentEditableWarning
+                      spellCheck={false}
+                      ref={el => {
+                        if (!el) return;
+                        if (editingEventId !== event.id) return;
+                        if (document.activeElement !== el) return;
+                        // Restore selection if needed
+                        if (window._jsonCursorAbs !== undefined) {
+                          const absOffset = window._jsonCursorAbs;
+                          const sel = window.getSelection();
+                          if (sel && el.firstChild && el.firstChild.nodeType === Node.TEXT_NODE) {
+                            const range = document.createRange();
+                            range.setStart(el.firstChild, Math.min(absOffset, el.firstChild.textContent.length));
+                            range.collapse(true);
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                          }
+                        }
+                      }}
+                      onFocus={e => {
+                        setEditingEventId(event.id);
+                        setEditingValue(formatEventForDisplay(event.rawData));
+                        // Move cursor to end
+                        setTimeout(() => {
+                          const el = e.currentTarget;
+                          if (!el) return;
+                          const sel = window.getSelection();
+                          if (el.childNodes.length > 0 && sel) {
+                            const range = document.createRange();
+                            range.setStart(el.childNodes[0], el.textContent.length);
+                            range.collapse(true);
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                          }
+                        }, 0);
+                      }}
+                      onInput={e => {
+                        if (editingEventId === event.id) {
+                          // Save absolute cursor position
+                          const sel = window.getSelection();
+                          let absOffset = 0;
+                          if (sel && sel.anchorNode && e.currentTarget.contains(sel.anchorNode)) {
+                            // Only works for single text node (JSON string)
+                            absOffset = sel.anchorOffset;
+                          }
+                          window._jsonCursorAbs = absOffset;
+                          setEditingValue(e.currentTarget.textContent);
+                          // Restore cursor position after state update
+                          setTimeout(() => {
+                            const el = e.currentTarget;
+                            if (!el) return;
+                            const absOffset = window._jsonCursorAbs;
+                            const sel = window.getSelection();
+                            if (el.firstChild && el.firstChild.nodeType === Node.TEXT_NODE && sel) {
+                              const range = document.createRange();
+                              range.setStart(el.firstChild, Math.min(absOffset, el.firstChild.textContent.length));
+                              range.collapse(true);
+                              sel.removeAllRanges();
+                              sel.addRange(range);
+                            }
+                          }, 0);
+                        }
+                      }}
+                      onBlur={e => {
+                        if (editingEventId === event.id) {
+                          try {
+                            const parsed = JSON.parse(e.currentTarget.textContent);
+                            if (typeof onEditEvent === 'function') {
+                              onEditEvent(event.id, parsed);
+                            }
+                          } catch {
+                            // Optionally show error or revert
+                          }
+                          setEditingEventId(null);
+                          setEditingValue('');
+                        }
+                      }}
+                      style={{ outline: editingEventId === event.id ? '2px solid #2563eb' : 'none', minHeight: 120, cursor: 'text' }}
+                    >
+                      {editingEventId === event.id ? editingValue : formatEventForDisplay(event.rawData)}
                     </pre>
                   </div>
                 )}
@@ -514,6 +649,39 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, highlightedEventIndic
 
       {/* Simulation controls - sticky footer */}
       <div className="event-list__controls event-list__controls--footer">
+        <div className="event-list__order-group">
+          <label htmlFor="order-enabled-checkbox" className="event-list__order-label" style={{marginRight: 4}}>
+            Order Events By:
+          </label>
+          <input
+            type="checkbox"
+            id="order-enabled-checkbox"
+            checked={orderEnabled}
+            onChange={e => setOrderEnabled(e.target.checked)}
+            className="event-list__order-toggle"
+            style={{marginRight: 8}}
+          />
+          <select
+            id="order-by-select"
+            value={orderBy}
+            onChange={e => setOrderBy(e.target.value)}
+            className="event-list__order-select"
+            disabled={!orderEnabled}
+          >
+            <option value="timestamp">timestamp</option>
+            <option value="custom">Custom Field</option>
+          </select>
+          {orderBy === 'custom' && (
+            <input
+              type="text"
+              placeholder="Enter field name"
+              value={customOrderField}
+              onChange={e => setCustomOrderField(e.target.value)}
+              className="event-list__order-input"
+              disabled={!orderEnabled}
+            />
+          )}
+        </div>
         <div className="event-list__timeout-group">
           <label htmlFor="timeout-input" className="event-list__timeout-label">
             Timeout (ms):

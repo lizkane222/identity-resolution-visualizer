@@ -7,6 +7,7 @@ import UniqueUsersList from './components/UniqueUsersList/UniqueUsersList.jsx';
 import UnifySpaceConfig from './components/UnifySpaceConfig/UnifySpaceConfig.jsx';
 import SourceConfig from './components/SourceConfig/SourceConfig.jsx';
 import ProfileLookup from './components/ProfileLookup/ProfileLookup.jsx';
+import { useEffect, useMemo } from 'react';
 import './App.css';
 
 
@@ -21,6 +22,108 @@ function App() {
   const [showSourceConfig, setShowSourceConfig] = useState(false);
   const [showProfileLookup, setShowProfileLookup] = useState(false);
   const [highlightedEventIndices, setHighlightedEventIndices] = useState([]);
+
+  // Load enabled identifiers from ID Resolution Config (localStorage)
+  const enabledIdentifiers = useMemo(() => {
+    try {
+      const saved = localStorage.getItem('idres_config_identifiers');
+      if (saved) {
+        return JSON.parse(saved).filter(id => id.enabled);
+      }
+    } catch {}
+    // fallback to defaults if not found
+    return [
+      { id: 'user_id', name: 'User ID', enabled: true, isCustom: false },
+      { id: 'email', name: 'Email', enabled: true, isCustom: false },
+      { id: 'phone', name: 'Phone', enabled: true, isCustom: false },
+      { id: 'android.id', name: 'Android ID', enabled: true, isCustom: false },
+      { id: 'android.idfa', name: 'Android IDFA', enabled: true, isCustom: false },
+      { id: 'android.push_token', name: 'Android Push Token', enabled: true, isCustom: false },
+      { id: 'anonymous_id', name: 'Anonymous ID', enabled: true, isCustom: false },
+      { id: 'ga_client_id', name: 'GA Client ID', enabled: true, isCustom: false },
+      { id: 'ios.id', name: 'iOS ID', enabled: true, isCustom: false },
+      { id: 'ios.idfa', name: 'iOS IDFA', enabled: true, isCustom: false },
+      { id: 'ios.push_token', name: 'iOS Push Token', enabled: true, isCustom: false },
+    ];
+  }, []);
+
+  // Helper to normalize identifier: lowercase, snake_case, preserve dots
+  const normalizeIdentifier = (str) => {
+    return str
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_.]/g, '');
+  };
+
+  // Extract identifier values from events and unique users
+  const identifierOptions = useMemo(() => {
+    const found = new Set();
+    // Helper to add if value exists
+    const add = (field, value) => {
+      if (value && typeof value === 'string' && value.trim()) {
+        found.add(`${field}:${value.trim()}`);
+      }
+    };
+    // Map of id to possible event field names
+    const idFieldMap = {
+      user_id: ['userId', 'user_id', 'userID'],
+      anonymous_id: ['anonymousId', 'anonymous_id'],
+      email: ['email'],
+      phone: ['phone'],
+      'android.id': ['context.device.id'],
+      'android.idfa': ['context.device.advertisingId'],
+      'android.push_token': ['context.device.token'],
+      'ga_client_id': ['context.integrations.Google Analytics.clientId'],
+      'ios.id': ['context.device.id'],
+      'ios.idfa': ['context.device.advertisingId'],
+      'ios.push_token': ['context.device.token'],
+    };
+    // For each event
+    events.forEach(event => {
+      try {
+        const parsed = JSON.parse(event.rawData);
+        enabledIdentifiers.forEach(identifier => {
+          const id = normalizeIdentifier(identifier.id);
+          // Try direct field
+          if (idFieldMap[id]) {
+            for (const path of idFieldMap[id]) {
+              const parts = path.split('.');
+              let val = parsed;
+              for (const part of parts) {
+                if (val && typeof val === 'object' && part in val) {
+                  val = val[part];
+                } else {
+                  val = undefined;
+                  break;
+                }
+              }
+              if (val && typeof val === 'string') {
+                add(id, val);
+              }
+            }
+          }
+          // Also check traits and properties for email/phone/custom
+          if (id === 'email' || id === 'phone' || identifier.isCustom) {
+            if (parsed.traits && parsed.traits[id]) add(id, parsed.traits[id]);
+            if (parsed.properties && parsed.properties[id]) add(id, parsed.properties[id]);
+            // context.traits
+            if (parsed.context && parsed.context.traits && parsed.context.traits[id]) add(id, parsed.context.traits[id]);
+            // context.externalIds
+            if (parsed.context && Array.isArray(parsed.context.externalIds)) {
+              parsed.context.externalIds.forEach(ext => {
+                if (ext.type === id && ext.id) add(id, ext.id);
+              });
+            }
+          }
+        });
+      } catch {}
+    });
+    // Also scan unique users
+    // (UniqueUsersList builds users from events, so this is mostly redundant, but we can add for completeness)
+    // ...
+    return Array.from(found).sort();
+  }, [events, enabledIdentifiers]);
 
   // Handle saving a new event from EventBuilder
   const handleSaveEvent = (eventData) => {
@@ -88,6 +191,15 @@ function App() {
     setUserUpdateTrigger(prev => prev + 1);
   }, []);
 
+  // Handle editing an event in the EventList
+  const handleEditEvent = (eventId, newPayload) => {
+    setEvents(prevEvents => prevEvents.map(event =>
+      event.id === eventId
+        ? { ...event, rawData: JSON.stringify(newPayload), formattedData: JSON.stringify(newPayload, null, 2) }
+        : event
+    ));
+  };
+
   return (
     <div className="app">
       {/* Left Sidebar - Event List */}
@@ -97,6 +209,7 @@ function App() {
           onRemoveEvent={handleRemoveEvent}
           onClearEvents={handleClearEvents}
           highlightedEventIndices={highlightedEventIndices}
+          onEditEvent={handleEditEvent}
         />
       </aside>
 
@@ -140,7 +253,11 @@ function App() {
         {/* Profile Lookup Section (Collapsible) */}
         {showProfileLookup && (
           <section className="app__profile-lookup-section">
-            <ProfileLookup />
+            <ProfileLookup 
+              identifierOptions={identifierOptions}
+              events={events}
+              onHighlightEvents={handleHighlightEvents}
+            />
           </section>
         )}
 

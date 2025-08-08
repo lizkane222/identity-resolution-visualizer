@@ -233,6 +233,41 @@
   border-top: 1px solid #f3f4f6;
 }
 
+.current-user__buttons {
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+}
+
+.current-user__random-user-button {
+  width: 100%;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: #3b82f6;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+}
+
+.current-user__random-user-button:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+}
+
+.current-user__random-user-button:active {
+  background-color: #1d4ed8;
+  transform: translateY(0);
+}
+
+.current-user__random-user-button:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
 .current-user__update-button {
   width: 100%;
   font-size: 13px;
@@ -386,6 +421,14 @@
   .current-user__add-custom:hover {
     background-color: #1e1b4b;
     border-color: #6366f1;
+  }
+  
+  .current-user__random-user-button {
+    background-color: #3b82f6;
+  }
+  
+  .current-user__random-user-button:hover {
+    background-color: #2563eb;
   }
   
   .current-user__update-button {

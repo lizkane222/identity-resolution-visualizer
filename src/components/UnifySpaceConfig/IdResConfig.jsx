@@ -1,22 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import './IdResConfig.css';
 
-const IdResConfig = () => {
-  const [identifiers, setIdentifiers] = useState([
-    { id: 'user_id', name: 'User ID', enabled: true },
-    { id: 'email', name: 'Email', enabled: true },
-    { id: 'phone', name: 'Phone', enabled: true },
-    { id: 'android.id', name: 'Android ID', enabled: true },
-    { id: 'android.idfa', name: 'Android IDFA', enabled: true },
-    { id: 'android.push_token', name: 'Android Push Token', enabled: true },
-    { id: 'anonymous_id', name: 'Anonymous ID', enabled: true },
-    { id: 'ga_client_id', name: 'GA Client ID', enabled: true },
-    { id: 'ios.id', name: 'iOS ID', enabled: true },
-    { id: 'ios.idfa', name: 'iOS IDFA', enabled: true },
-    { id: 'ios.push_token', name: 'iOS Push Token', enabled: true },
-  ]);
-  
-  const [customIdentifiers, setCustomIdentifiers] = useState([]);
+const IdResConfig = forwardRef((props, ref) => {
+  const [identifiers, setIdentifiers] = useState(() => {
+    const saved = localStorage.getItem('idres_config_identifiers');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {}
+    }
+    return [
+    { id: 'user_id', name: 'User ID', enabled: true, isCustom: false },
+    { id: 'email', name: 'Email', enabled: true, isCustom: false },
+    { id: 'phone', name: 'Phone', enabled: true, isCustom: false },
+    { id: 'android.id', name: 'Android ID', enabled: true, isCustom: false },
+    { id: 'android.idfa', name: 'Android IDFA', enabled: true, isCustom: false },
+    { id: 'android.push_token', name: 'Android Push Token', enabled: true, isCustom: false },
+    { id: 'anonymous_id', name: 'Anonymous ID', enabled: true, isCustom: false },
+    { id: 'ga_client_id', name: 'GA Client ID', enabled: true, isCustom: false },
+    { id: 'ios.id', name: 'iOS ID', enabled: true, isCustom: false },
+    { id: 'ios.idfa', name: 'iOS IDFA', enabled: true, isCustom: false },
+    { id: 'ios.push_token', name: 'iOS Push Token', enabled: true, isCustom: false },
+    ];
+  });
+  // Expose saveConfig method to parent
+  useImperativeHandle(ref, () => ({
+    saveConfig: () => {
+      localStorage.setItem('idres_config_identifiers', JSON.stringify(identifiers));
+    }
+  }), [identifiers]);
   const [newCustomId, setNewCustomId] = useState('');
   const [draggedItem, setDraggedItem] = useState(null);
   const [expandedIdentifier, setExpandedIdentifier] = useState(null);
@@ -64,8 +76,8 @@ const IdResConfig = () => {
     ]
   };
 
-  const handleDragStart = (e, index, isCustom = false) => {
-    setDraggedItem({ index, isCustom });
+  const handleDragStart = (e, index) => {
+    setDraggedItem({ index });
     e.dataTransfer.effectAllowed = 'move';
   };
 
@@ -74,63 +86,50 @@ const IdResConfig = () => {
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDrop = (e, targetIndex, isCustomTarget = false) => {
+  const handleDrop = (e, targetIndex) => {
     e.preventDefault();
-    
     if (!draggedItem) return;
-
-    const { index: sourceIndex, isCustom: isCustomSource } = draggedItem;
-
-    // Handle different combinations of source and target
-    if (isCustomSource && isCustomTarget) {
-      // Custom to custom
-      const newCustomIdentifiers = [...customIdentifiers];
-      const [movedItem] = newCustomIdentifiers.splice(sourceIndex, 1);
-      newCustomIdentifiers.splice(targetIndex, 0, movedItem);
-      setCustomIdentifiers(newCustomIdentifiers);
-    } else if (!isCustomSource && !isCustomTarget) {
-      // Standard to standard
-      const newIdentifiers = [...identifiers];
-      const [movedItem] = newIdentifiers.splice(sourceIndex, 1);
-      newIdentifiers.splice(targetIndex, 0, movedItem);
-      setIdentifiers(newIdentifiers);
-    }
-
+    const { index: sourceIndex } = draggedItem;
+    if (sourceIndex === targetIndex) return;
+    const newIdentifiers = [...identifiers];
+    const [movedItem] = newIdentifiers.splice(sourceIndex, 1);
+    newIdentifiers.splice(targetIndex, 0, movedItem);
+    setIdentifiers(newIdentifiers);
     setDraggedItem(null);
   };
 
-  const toggleIdentifier = (index, isCustom = false) => {
-    if (isCustom) {
-      setCustomIdentifiers(prev => 
-        prev.map((item, i) => 
-          i === index ? { ...item, enabled: !item.enabled } : item
-        )
-      );
-    } else {
-      setIdentifiers(prev => 
-        prev.map((item, i) => 
-          i === index ? { ...item, enabled: !item.enabled } : item
-        )
-      );
-    }
+  const toggleIdentifier = (index) => {
+    setIdentifiers(prev =>
+      prev.map((item, i) =>
+        i === index ? { ...item, enabled: !item.enabled } : item
+      )
+    );
+  };
+
+  // Helper to normalize identifier: lowercase, snake_case, preserve dots
+  const normalizeIdentifier = (str) => {
+    return str
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_.]/g, '');
   };
 
   const addCustomIdentifier = () => {
     if (!newCustomId.trim()) return;
-    
+    const norm = normalizeIdentifier(newCustomId);
     const customId = {
-      id: `custom_${newCustomId.toLowerCase().replace(/\s+/g, '_')}`,
+      id: norm,
       name: newCustomId,
       enabled: true,
       isCustom: true
     };
-    
-    setCustomIdentifiers(prev => [...prev, customId]);
+    setIdentifiers(prev => [...prev, customId]);
     setNewCustomId('');
   };
 
-  const removeCustomIdentifier = (index) => {
-    setCustomIdentifiers(prev => prev.filter((_, i) => i !== index));
+  const removeIdentifier = (index) => {
+    setIdentifiers(prev => prev.filter((_, i) => i !== index));
   };
 
   const toggleExpanded = (identifierId) => {
@@ -138,12 +137,18 @@ const IdResConfig = () => {
   };
 
   const getCustomIdentifierLocations = () => [
-    'Same locations as email and phone:',
     'Identify/Group traits: { "traits": { "custom_field": "value" } }',
     'Track/Page/Screen properties: { "properties": { "custom_field": "value" } }',
     'Context externalIds: { "context": { "externalIds": [{ "type": "custom_field", "id": "value" }] } }',
     'Context traits: { "context": { "traits": { "custom_field": "value" } } }'
   ];
+
+  // Optionally, save on unmount (in case modal is closed by other means)
+  useEffect(() => {
+    return () => {
+      localStorage.setItem('idres_config_identifiers', JSON.stringify(identifiers));
+    };
+  }, [identifiers]);
 
   return (
     <div className="idres-config">
@@ -154,13 +159,13 @@ const IdResConfig = () => {
           Drag and drop to reorder identifiers by priority.
         </p>
 
+
         <div className="idres-config__identifiers">
-          <h4 className="idres-config__subsection-title">Standard Identifiers</h4>
           <div className="idres-config__identifier-list">
             {identifiers.map((identifier, index) => (
               <div
                 key={identifier.id}
-                className={`idres-config__identifier ${!identifier.enabled ? 'idres-config__identifier--disabled' : ''}`}
+                className={`idres-config__identifier idres-config__identifier--${identifier.isCustom ? 'custom' : 'standard'} ${!identifier.enabled ? 'idres-config__identifier--disabled' : ''}`}
                 draggable
                 onDragStart={(e) => handleDragStart(e, index)}
                 onDragOver={handleDragOver}
@@ -171,19 +176,20 @@ const IdResConfig = () => {
                     <span className="idres-config__drag-handle">⋮⋮</span>
                     <span className="idres-config__identifier-priority">{index + 1}</span>
                   </div>
-                  
                   <div className="idres-config__identifier-info">
-                    <span className="idres-config__identifier-name">{identifier.name}</span>
-                    <code className="idres-config__identifier-id">{identifier.id}</code>
+                    <span className="idres-config__identifier-name" style={{ flex: 1, textAlign: 'left' }}>{normalizeIdentifier(identifier.id)}</span>
+                    <span className="idres-config__identifier-flag-wrapper">
+                      {!identifier.isCustom && <span className="idres-config__default-badge">DEFAULT</span>}
+                      {identifier.isCustom && <span className="idres-config__custom-badge">CUSTOM</span>}
+                    </span>
                   </div>
-
                   <div className="idres-config__identifier-actions">
                     <button
                       onClick={() => toggleExpanded(identifier.id)}
                       className="idres-config__expand-button"
                       title="View payload locations"
                     >
-                      {expandedIdentifier === identifier.id ? '▼' : '▶'}
+                      <span role="img" aria-label="View payload locations">📍</span>
                     </button>
                     <button
                       onClick={() => toggleIdentifier(index)}
@@ -192,18 +198,33 @@ const IdResConfig = () => {
                     >
                       {identifier.enabled ? '✓' : '✗'}
                     </button>
+                    <button
+                      onClick={() => removeIdentifier(index)}
+                      className="idres-config__remove-button"
+                      title="Remove identifier"
+                    >
+                      🗑
+                    </button>
                   </div>
                 </div>
-
                 {expandedIdentifier === identifier.id && (
                   <div className="idres-config__identifier-details">
                     <h5 className="idres-config__details-title">Event Payload Locations:</h5>
                     <ul className="idres-config__locations-list">
-                      {identifierLocations[identifier.id]?.map((location, i) => (
-                        <li key={i} className="idres-config__location-item">
-                          <code>{location}</code>
-                        </li>
-                      ))}
+                      {(identifier.isCustom ? getCustomIdentifierLocations() : identifierLocations[identifier.id])?.map((location, i) => {
+                        let label = '', code = location;
+                        const colonIdx = location.indexOf(':');
+                        if (colonIdx !== -1) {
+                          label = location.slice(0, colonIdx + 1);
+                          code = location.slice(colonIdx + 1).trim();
+                        }
+                        return (
+                          <li key={i} className="idres-config__location-item" style={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                            {label && <span style={{ fontWeight: 'bold', minWidth: 0, fontSize: '11px', marginRight: 4 }}>{label}</span>}
+                            <span style={{ background: '#f3f4f6', borderRadius: '4px', padding: '1px 4px', fontFamily: 'monospace', fontSize: '11px', display: 'inline-block' }}>{code}</span>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 )}
@@ -211,74 +232,6 @@ const IdResConfig = () => {
             ))}
           </div>
         </div>
-
-        {customIdentifiers.length > 0 && (
-          <div className="idres-config__identifiers">
-            <h4 className="idres-config__subsection-title">Custom Identifiers</h4>
-            <div className="idres-config__identifier-list">
-              {customIdentifiers.map((identifier, index) => (
-                <div
-                  key={identifier.id}
-                  className={`idres-config__identifier ${!identifier.enabled ? 'idres-config__identifier--disabled' : ''} idres-config__identifier--custom`}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, index, true)}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, index, true)}
-                >
-                  <div className="idres-config__identifier-header">
-                    <div className="idres-config__identifier-drag">
-                      <span className="idres-config__drag-handle">⋮⋮</span>
-                      <span className="idres-config__identifier-priority">{identifiers.length + index + 1}</span>
-                    </div>
-                    
-                    <div className="idres-config__identifier-info">
-                      <span className="idres-config__identifier-name">{identifier.name}</span>
-                      <code className="idres-config__identifier-id">{identifier.id}</code>
-                      <span className="idres-config__custom-badge">CUSTOM</span>
-                    </div>
-
-                    <div className="idres-config__identifier-actions">
-                      <button
-                        onClick={() => toggleExpanded(identifier.id)}
-                        className="idres-config__expand-button"
-                        title="View payload locations"
-                      >
-                        {expandedIdentifier === identifier.id ? '▼' : '▶'}
-                      </button>
-                      <button
-                        onClick={() => toggleIdentifier(index, true)}
-                        className={`idres-config__toggle-button ${identifier.enabled ? 'idres-config__toggle-button--enabled' : 'idres-config__toggle-button--disabled'}`}
-                        title={identifier.enabled ? 'Disable' : 'Enable'}
-                      >
-                        {identifier.enabled ? '✓' : '✗'}
-                      </button>
-                      <button
-                        onClick={() => removeCustomIdentifier(index)}
-                        className="idres-config__remove-button"
-                        title="Remove custom identifier"
-                      >
-                        🗑
-                      </button>
-                    </div>
-                  </div>
-
-                  {expandedIdentifier === identifier.id && (
-                    <div className="idres-config__identifier-details">
-                      <h5 className="idres-config__details-title">Event Payload Locations:</h5>
-                      <ul className="idres-config__locations-list">
-                        {getCustomIdentifierLocations().map((location, i) => (
-                          <li key={i} className="idres-config__location-item">
-                            <code>{location}</code>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         <div className="idres-config__add-custom">
           <h4 className="idres-config__subsection-title">Add Custom Identifier</h4>
@@ -306,6 +259,6 @@ const IdResConfig = () => {
       </div>
     </div>
   );
-};
+});
 
 export default IdResConfig;

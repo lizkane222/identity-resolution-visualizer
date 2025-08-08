@@ -9,6 +9,7 @@
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.2s ease-in-out;
   height: auto;
+  width: 100%;
 }
 
 .event-builder:hover {
@@ -144,6 +145,8 @@
 
 
 /* Preview Section */
+
+.event-builder__input-group,
 .event-builder__preview-group {
   flex: 1;
   min-width: 0;
@@ -334,9 +337,9 @@
 /* Event Info Section in Actions */
 .event-builder__event-info {
   background-color: #f0f9ff;
-  border: 1px solid #0ea5e9;
+  /* border: 1px solid #0ea5e9; */
   border-radius: 6px;
-  padding: 12px 16px;
+  padding: 2px 16px;
 }
 
 .event-builder__event-name {
@@ -511,7 +514,7 @@
   
   .event-builder__tip {
     background-color: #451a03;
-    border-color: #d97706;
+    border-color: #d5964d;
   }
   
   .event-builder__tip-text {

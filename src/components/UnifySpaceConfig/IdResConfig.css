@@ -72,6 +72,23 @@
   background: #faf5ff;
 }
 
+.idres-config__identifier--standard {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.idres-config__default-badge {
+  background: #2563eb;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 4px;
+}
+
 .idres-config__identifier--custom:hover {
   border-color: #9333ea;
 }
@@ -121,6 +138,24 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
+  height: 100%;
+  position: relative;
+}
+
+.idres-config__identifier-flag-wrapper {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+.idres-config__custom-badge,
+.idres-config__default-badge {
+  display: flex;
+  align-items: center;
+  height: 20px;
 }
 
 .idres-config__identifier-name {

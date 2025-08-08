@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { formatAsJSON, validateJSON } from '../../utils/jsonUtils';
 
 import { getStoredSourceConfig } from '../../utils/segmentAPI';
-import { parseCSV } from '../../utils/csvUtils';
+import { parseCSV } from '../../utils/parseCSV';
 
 import './EventBuilder.css';
 
@@ -41,6 +41,28 @@ function cleanCSVRowToSegmentEvent(row) {
   delete cleaned.userid;
   delete cleaned.anonymousid;
   return cleaned;
+}
+
+// Utility to ensure userId and anonymousId are always first in payload
+function reorderPayloadFields(payload) {
+  const orderedPayload = {};
+  
+  // Add userId and anonymousId first if they exist
+  if ('userId' in payload) {
+    orderedPayload.userId = payload.userId;
+  }
+  if ('anonymousId' in payload) {
+    orderedPayload.anonymousId = payload.anonymousId;
+  }
+  
+  // Add all other fields
+  Object.keys(payload).forEach(key => {
+    if (key !== 'userId' && key !== 'anonymousId') {
+      orderedPayload[key] = payload[key];
+    }
+  });
+  
+  return orderedPayload;
 }
 
 
@@ -129,7 +151,9 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
         }
       }
       
-      const formattedPayload = JSON.stringify(payload, null, 2);
+      // Reorder payload to ensure userId and anonymousId are first
+      const reorderedPayload = reorderPayloadFields(payload);
+      const formattedPayload = JSON.stringify(reorderedPayload, null, 2);
       setRawText(formattedPayload);
       
       // Send event info to parent component
@@ -216,7 +240,9 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
           }
         }
         
-        const formattedPayload = JSON.stringify(updatedPayload, null, 2);
+        // Reorder payload to ensure userId and anonymousId are first
+        const reorderedPayload = reorderPayloadFields(updatedPayload);
+        const formattedPayload = JSON.stringify(reorderedPayload, null, 2);
         setRawText(formattedPayload);
         setIsValid(true);
         setErrorMessage('');
@@ -325,11 +351,14 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
       const csvText = evt.target.result;
       const rows = parseCSV(csvText);
       rows.forEach((row) => {
-        const cleaned = cleanCSVRowToSegmentEvent(row);
-        const rawData = JSON.stringify(cleaned);
+        // Remove messageId if present (camelCase or any variant)
+        delete row.messageId;
+        delete row.messageid;
+        // row is now camelCase and context/properties/traits are objects
+        const rawData = JSON.stringify(row);
         const eventData = {
           id: Date.now() + Math.random(),
-          timestamp: cleaned.timestamp || new Date().toISOString(),
+          timestamp: row.timestamp || new Date().toISOString(),
           rawData,
           formattedData: formatAsJSON(rawData),
           writeKey: selectedSource?.settings?.writeKey || null,

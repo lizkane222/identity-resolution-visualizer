@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { loadRandomUserData } from '../../utils/userLoader.js';
 import './CurrentUser.css';
 
 // UUID generation utility
+
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     var r = Math.random() * 16 | 0;
@@ -9,6 +11,20 @@ const generateUUID = () => {
     return v.toString(16);
   });
 };
+
+function getOrPersistUserId() {
+  let userId = null;
+  try {
+    userId = localStorage.getItem('eventBuilderUserId');
+    if (!userId) {
+      userId = generateUUID();
+      localStorage.setItem('eventBuilderUserId', userId);
+    }
+  } catch (e) {
+    userId = generateUUID();
+  }
+  return userId;
+}
 
 const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
   const [userFields, setUserFields] = useState({
@@ -184,41 +200,51 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
     }
   };
 
+  const handleLoadRandomUser = () => {
+    const { userFields: randomUserFields, customFields: randomCustomFields } = loadRandomUserData();
+    
+    // Generate new anonymousId for this random user
+    const newAnonymousId = generateUUID();
+    
+    // Update userFields state with new userId and anonymousId
+    setUserFields(prev => ({
+      ...prev,
+      ...randomUserFields,
+      // Always update both userId and anonymousId when loading random user
+      userId: fieldToggles.userId ? randomUserFields.userId : '',
+      anonymousId: fieldToggles.anonymousId ? newAnonymousId : ''
+    }));
+    
+    // Update customFields state
+    setCustomFields(randomCustomFields);
+  };
+
   const handleToggleField = (fieldName) => {
     setFieldToggles(prev => {
       const newToggles = { ...prev, [fieldName]: !prev[fieldName] };
-      
-      // If toggling ON userId, generate UUID if not present
+      // If toggling ON userId, get or persist UUID if not present
       if (fieldName === 'userId' && newToggles[fieldName]) {
         const currentUserId = userFields.userId;
         if (!currentUserId || currentUserId.trim() === '') {
-          // Generate a new UUID for userId
-          const newUserId = generateUUID();
-          
+          const newUserId = getOrPersistUserId();
           setUserFields(prevFields => {
             const updatedFields = {
               ...prevFields,
               userId: newUserId
             };
-            
-            // Trigger update to parent components with the new data
             if (onUserUpdate) {
               const allFields = { ...updatedFields, ...customFields };
               const filteredFields = { ...allFields };
               if (!newToggles.userId) filteredFields.userId = '';
               if (!newToggles.anonymousId) filteredFields.anonymousId = '';
-              
               const userData = {
                 ...filteredFields,
                 _toggles: newToggles
               };
-              
               setTimeout(() => onUserUpdate(userData), 0);
             }
-            
             return updatedFields;
           });
-          
           return newToggles;
         }
       }
@@ -415,13 +441,22 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
         
         {/* Update button */}
         <div className="current-user__update-section">
-          <button
-            onClick={handleUpdate}
-            className="current-user__update-button"
-            title="Update EventBuilder with current user data"
-          >
-            Update
-          </button>
+          <div className="current-user__buttons">
+            <button
+              onClick={handleLoadRandomUser}
+              className="current-user__random-user-button"
+              title="Load random user data from users.json"
+            >
+              Load Random User
+            </button>
+            <button
+              onClick={handleUpdate}
+              className="current-user__update-button"
+              title="Update EventBuilder with current user data"
+            >
+              Update
+            </button>
+          </div>
         </div>
       </div>
     </div>
