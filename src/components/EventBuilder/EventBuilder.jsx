@@ -351,14 +351,15 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
       const csvText = evt.target.result;
       const rows = parseCSV(csvText);
       rows.forEach((row) => {
-        // Remove messageId if present (camelCase or any variant)
+        // Remove messageId if present (Segment generates this)
         delete row.messageId;
         delete row.messageid;
-        // row is now camelCase and context/properties/traits are objects
+        
+        // Only use fields that were actually present in the CSV
+        // Don't add timestamp if it wasn't in the original data
         const rawData = JSON.stringify(row);
         const eventData = {
           id: Date.now() + Math.random(),
-          timestamp: row.timestamp || new Date().toISOString(),
           rawData,
           formattedData: formatAsJSON(rawData),
           writeKey: selectedSource?.settings?.writeKey || null,

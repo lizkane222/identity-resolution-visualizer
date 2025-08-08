@@ -19,7 +19,9 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
           const aObj = JSON.parse(a.rawData);
           const bObj = JSON.parse(b.rawData);
           if (orderBy === 'timestamp') {
-            return new Date(aObj.timestamp || 0) - new Date(bObj.timestamp || 0);
+            // Extract timestamp from rawData with fallbacks
+            const getTimestamp = (obj) => obj.timestamp || obj.originalTimestamp || obj.receivedAt || obj.sentAt || new Date(0).toISOString();
+            return new Date(getTimestamp(aObj)) - new Date(getTimestamp(bObj));
           } else if (orderBy === 'custom' && customOrderField) {
             if (aObj[customOrderField] === undefined) return 1;
             if (bObj[customOrderField] === undefined) return -1;
@@ -442,7 +444,17 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
                       {isExpanded ? '▼' : '▶'}
                     </div>
                     <span className="event-list__event-timestamp">
-                      {new Date(event.timestamp).toLocaleTimeString()}
+                      {(() => {
+                        try {
+                          // For CSV uploaded events, timestamp is in rawData
+                          const parsedData = JSON.parse(event.rawData);
+                          const timestamp = parsedData.timestamp || parsedData.originalTimestamp || parsedData.receivedAt || event.timestamp;
+                          return timestamp ? new Date(timestamp).toLocaleTimeString() : 'No timestamp';
+                        } catch (e) {
+                          // Fallback for built-in events that have timestamp directly
+                          return event.timestamp ? new Date(event.timestamp).toLocaleTimeString() : 'No timestamp';
+                        }
+                      })()}
                     </span>
                     <button
                       onClick={(e) => {
