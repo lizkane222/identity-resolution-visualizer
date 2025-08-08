@@ -96,7 +96,6 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.app__config-button--active,
 .app__lookup-button--active {
   background: #dbeafe;
   border-color: #3b82f6;
@@ -145,8 +144,8 @@ body {
 
 .app__user-container {
   flex: 0 0 auto;
-  min-width: 420px;
-  max-width: 480px;
+  min-width: 350px;
+  max-width: 400px;
 }
 
 .app__unique-users-container {
@@ -319,11 +318,6 @@ body {
   .app__user-section {
     flex-direction: column;
     gap: 16px;
-  }
-  
-  .app__user-container {
-    min-width: 100%;
-    max-width: 100%;
   }
   
   .app__unique-users-container {

@@ -1,5 +1,6 @@
 /* EventBuilder.css - Minimalistic Enterprise Styling */
 
+
 .event-builder {
   background: #ffffff;
   border: 1px solid #e5e7eb;
@@ -7,6 +8,7 @@
   padding: 16px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.2s ease-in-out;
+  height: auto;
 }
 
 .event-builder:hover {
@@ -126,12 +128,20 @@
   align-items: flex-start;
 }
 
-/* Input Section */
-.event-builder__input-group {
-  position: relative;
+.event-builder__event-info-display {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0 4px;
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   flex: 1;
   min-width: 0;
 }
+
 
 /* Preview Section */
 .event-builder__preview-group {

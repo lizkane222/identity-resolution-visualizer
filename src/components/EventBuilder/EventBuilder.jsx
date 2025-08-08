@@ -1,7 +1,49 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { formatAsJSON, validateJSON } from '../../utils/jsonUtils';
+
 import { getStoredSourceConfig } from '../../utils/segmentAPI';
+import { parseCSV } from '../../utils/csvUtils';
+
 import './EventBuilder.css';
+
+
+
+// Utility to clean up CSV row keys/values and convert to Segment event spec
+function cleanCSVRowToSegmentEvent(row) {
+  const cleaned = {};
+  for (let key in row) {
+    // Remove extra quotes from keys and values
+    let cleanKey = key.replace(/^"+|"+$/g, '').replace(/^'+|'+$/g, '').replace(/\\"/g, '');
+    let value = row[key];
+    if (typeof value === 'string') {
+      value = value.replace(/^"+|"+$/g, '').replace(/^'+|'+$/g, '');
+      // Replace equals before curly brace with colon (for malformed JSON)
+      value = value.replace(/=\s*([\{\[])/g, ':$1');
+      // Remove unnecessary backslashes except in URLs
+      if (!/^https?:\/\//.test(value)) {
+        value = value.replace(/\\(?!["\/bnrt])/g, '');
+      }
+      // Try to parse JSON-like values
+      try {
+        if ((value.startsWith('{') && value.endsWith('}')) || (value.startsWith('[') && value.endsWith(']'))) {
+          value = JSON.parse(value);
+        }
+      } catch {}
+    }
+    cleaned[cleanKey.toLowerCase()] = value;
+  }
+  // Remove messageId if present
+  delete cleaned['messageid'];
+  // Map to Segment spec: userId, anonymousId, event, properties, type, etc.
+  if (cleaned.userid) cleaned.userId = cleaned.userid;
+  if (cleaned.anonymousid) cleaned.anonymousId = cleaned.anonymousid;
+  // Remove lowercased keys after mapping
+  delete cleaned.userid;
+  delete cleaned.anonymousid;
+  return cleaned;
+}
+
+
 
 const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, userUpdateTrigger }) => {
   const [rawText, setRawText] = useState('');
@@ -19,13 +61,18 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
   useEffect(() => {
     const sources = getStoredSourceConfig();
     // Filter sources that are enabled and have a writeKey configured
-    const sourcesWithWriteKeys = sources.filter(source => 
-      source.enabled && 
-      source.settings && 
-      source.settings.writeKey && 
-      source.settings.writeKey.trim() !== ''
+    const sourcesWithWriteKeys = sources.filter(
+      source =>
+        source.enabled &&
+        source.settings &&
+        source.settings.writeKey &&
+        source.settings.writeKey.trim() !== ''
     );
     setConfiguredSources(sourcesWithWriteKeys);
+    // Auto-select if only one source is available
+    if (sourcesWithWriteKeys.length === 1) {
+      setSelectedSource(sourcesWithWriteKeys[0]);
+    }
   }, []);
 
   // Handle source selection
@@ -268,6 +315,35 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
   // Format display text for the textarea
   const displayText = rawText ? formatAsJSON(rawText) : '';
 
+  // Handle CSV upload
+  const fileInputRef = useRef();
+  const handleCSVUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const csvText = evt.target.result;
+      const rows = parseCSV(csvText);
+      rows.forEach((row) => {
+        const cleaned = cleanCSVRowToSegmentEvent(row);
+        const rawData = JSON.stringify(cleaned);
+        const eventData = {
+          id: Date.now() + Math.random(),
+          timestamp: cleaned.timestamp || new Date().toISOString(),
+          rawData,
+          formattedData: formatAsJSON(rawData),
+          writeKey: selectedSource?.settings?.writeKey || null,
+          sourceName: selectedSource?.name || null,
+          sourceType: selectedSource?.type || null
+        };
+        onSave(eventData);
+      });
+      // Reset file input so same file can be uploaded again if needed
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div className="event-builder">
       <div className="event-builder__header">
@@ -284,7 +360,7 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
                 onClick={() => handleSourceSelect(source)}
                 title={`WriteKey: ${source.settings.writeKey}`}
               >
-                {source.name}
+                {source.type}
               </button>
             ))}
             {selectedSource && (
@@ -350,7 +426,7 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
         </div>
 
         {/* Action buttons */}
-        <div className="event-builder__actions">
+  <div className="event-builder__actions" style={{ position: 'relative' }}>
           <div className="event-builder__buttons-group">
             <button
               onClick={handleCopy}
@@ -369,6 +445,24 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
             >
               Save Event
             </button>
+
+            {/* Upload CSV Button */}
+            <div style={{ position: 'absolute', right: 0, bottom: 0 }}>
+              <input
+                type="file"
+                accept=".csv"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleCSVUpload}
+              />
+              <button
+                className="event-builder__button event-builder__button--upload"
+                onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                style={{ minWidth: 110 }}
+              >
+                Upload CSV
+              </button>
+            </div>
           </div>
 
           {/* Event Info Display */}
