@@ -1,0 +1,303 @@
+/* SegmentConfig.css - Configuration Modal Styling */
+
+.segment-config-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.segment-config-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.segment-config__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px 0 24px;
+  border-bottom: 1px solid #f3f4f6;
+  margin-bottom: 24px;
+}
+
+.segment-config__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+.segment-config__close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: color 0.2s ease-in-out;
+}
+
+.segment-config__close-button:hover {
+  color: #374151;
+}
+
+.segment-config__form {
+  padding: 0 24px 24px 24px;
+}
+
+.segment-config__field {
+  margin-bottom: 24px;
+}
+
+.segment-config__label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.segment-config__input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #374151;
+  background-color: #ffffff;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  box-sizing: border-box;
+}
+
+.segment-config__input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.segment-config__help {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 4px 0 0 0;
+  line-height: 1.4;
+}
+
+.segment-config__error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.segment-config__success {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.segment-config__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.segment-config__button {
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border: none;
+}
+
+.segment-config__button--cancel {
+  background-color: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.segment-config__button--cancel:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.segment-config__button--save {
+  background-color: #3b82f6;
+  color: #ffffff;
+}
+
+.segment-config__button--save:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+
+.segment-config__button--save:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.segment-config__info {
+  border-top: 1px solid #f3f4f6;
+  padding: 24px;
+  background-color: #f8fafc;
+  border-radius: 0 0 12px 12px;
+}
+
+.segment-config__info-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 12px 0;
+}
+
+.segment-config__endpoints {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.segment-config__endpoints li {
+  font-size: 13px;
+  color: #6b7280;
+  padding: 4px 0;
+}
+
+.segment-config__endpoints li:before {
+  content: "•";
+  color: #3b82f6;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .segment-config-modal {
+    background: #1f2937;
+    border: 1px solid #374151;
+  }
+  
+  .segment-config__header {
+    border-bottom-color: #374151;
+  }
+  
+  .segment-config__title {
+    color: #f9fafb;
+  }
+  
+  .segment-config__close-button {
+    color: #9ca3af;
+  }
+  
+  .segment-config__close-button:hover {
+    color: #d1d5db;
+  }
+  
+  .segment-config__label {
+    color: #d1d5db;
+  }
+  
+  .segment-config__input {
+    background-color: #111827;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+  
+  .segment-config__input:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+  }
+  
+  .segment-config__help {
+    color: #9ca3af;
+  }
+  
+  .segment-config__button--cancel {
+    background-color: #1f2937;
+    color: #d1d5db;
+    border-color: #374151;
+  }
+  
+  .segment-config__button--cancel:hover {
+    background-color: #111827;
+    border-color: #4b5563;
+  }
+  
+  .segment-config__button--save:disabled {
+    background-color: #6b7280;
+  }
+  
+  .segment-config__info {
+    background-color: #111827;
+    border-top-color: #374151;
+  }
+  
+  .segment-config__info-title {
+    color: #d1d5db;
+  }
+  
+  .segment-config__endpoints li {
+    color: #9ca3af;
+  }
+  
+  .segment-config__endpoints li:before {
+    color: #60a5fa;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+  .segment-config-modal {
+    margin: 16px;
+    width: calc(100% - 32px);
+  }
+  
+  .segment-config__header {
+    padding: 20px 20px 0 20px;
+  }
+  
+  .segment-config__form {
+    padding: 0 20px 20px 20px;
+  }
+  
+  .segment-config__info {
+    padding: 20px;
+  }
+  
+  .segment-config__endpoints {
+    grid-template-columns: 1fr;
+  }
+  
+  .segment-config__actions {
+    flex-direction: column;
+  }
+  
+  .segment-config__button {
+    width: 100%;
+  }
+}

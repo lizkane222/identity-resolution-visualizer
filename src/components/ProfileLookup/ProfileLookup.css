@@ -1,0 +1,234 @@
+.profile-lookup {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+}
+
+.profile-lookup__header {
+  margin-bottom: 1.5rem;
+}
+
+.profile-lookup__title {
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.profile-lookup__subtitle {
+  color: #6c757d;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.profile-lookup__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.profile-lookup__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.profile-lookup__label {
+  color: #495057;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.profile-lookup__input,
+.profile-lookup__select {
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: white;
+  transition: border-color 0.2s ease;
+}
+
+.profile-lookup__input:focus,
+.profile-lookup__select:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.profile-lookup__help {
+  color: #6c757d;
+  font-size: 0.8rem;
+  margin: 0;
+  font-style: italic;
+}
+
+.profile-lookup__params {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.profile-lookup__params-title {
+  color: #495057;
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.profile-lookup__param {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.profile-lookup__param:last-child {
+  margin-bottom: 0;
+}
+
+.profile-lookup__param label {
+  color: #495057;
+  font-weight: 500;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-lookup__param input[type="checkbox"] {
+  margin: 0;
+}
+
+.profile-lookup__param-input,
+.profile-lookup__param-select {
+  padding: 0.4rem;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+  font-size: 0.85rem;
+  background: white;
+}
+
+.profile-lookup__param-input:focus,
+.profile-lookup__param-select:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 1px rgba(0, 123, 255, 0.25);
+}
+
+.profile-lookup__button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.profile-lookup__button:hover:not(:disabled) {
+  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+.profile-lookup__button:active {
+  transform: translateY(0);
+}
+
+.profile-lookup__button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.profile-lookup__error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.profile-lookup__results {
+  margin-top: 1.5rem;
+  border-top: 1px solid #dee2e6;
+  padding-top: 1.5rem;
+}
+
+.profile-lookup__results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.profile-lookup__results-header h4 {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.profile-lookup__pagination-info {
+  background: #e7f3ff;
+  color: #004085;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.profile-lookup__results-json {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  padding: 1rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+  white-space: pre;
+  color: #495057;
+  margin: 0;
+}
+
+.profile-lookup--not-configured {
+  text-align: center;
+  padding: 2rem;
+}
+
+.profile-lookup__not-configured {
+  color: #6c757d;
+}
+
+.profile-lookup__not-configured p {
+  margin: 0.5rem 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .profile-lookup {
+    padding: 1rem;
+    margin: 0.5rem 0;
+  }
+  
+  .profile-lookup__params {
+    padding: 0.75rem;
+  }
+  
+  .profile-lookup__results-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+}

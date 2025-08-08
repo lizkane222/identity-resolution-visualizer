@@ -1,0 +1,398 @@
+/* CurrentUser.css - Minimalistic Enterprise Styling */
+
+.current-user {
+  height: auto;
+  min-height: 200px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease-in-out;
+}
+
+.current-user:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Header */
+.current-user__header {
+  padding: 12px 16px 8px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  flex-shrink: 0;
+  background-color: #f8fafc;
+}
+
+.current-user__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+/* Content */
+.current-user__content {
+  padding: 16px;
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+/* Custom section spans full width */
+.current-user__custom-section {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+
+/* Custom fields grid */
+.current-user__custom-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Individual Fields */
+.current-user__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.current-user__label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Toggle Controls */
+.current-user__toggle {
+  font-size: 10px;
+  width: 18px;
+  height: 18px;
+  border: 1px solid;
+  border-radius: 3px;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  padding: 0;
+  margin-left: 4px;
+}
+
+.current-user__toggle--enabled {
+  border-color: #059669;
+  color: #059669;
+}
+
+.current-user__toggle--enabled:hover {
+  background-color: #059669;
+  color: white;
+}
+
+.current-user__toggle--disabled {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.current-user__toggle--disabled:hover {
+  background-color: #dc2626;
+  color: white;
+}
+
+.current-user__value {
+  font-size: 12px;
+  color: #111827;
+  padding: 6px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  word-break: break-all;
+  line-height: 1.3;
+}
+
+.current-user__value:hover {
+  border-color: #d1d5db;
+  background-color: #f9fafb;
+}
+
+.current-user__value--empty {
+  color: #9ca3af;
+  font-style: italic;
+  font-size: 11px;
+}
+
+.current-user__value--empty:hover {
+  color: #6b7280;
+}
+
+.current-user__value--disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+  font-style: italic;
+  border-color: #e5e7eb;
+}
+
+.current-user__value--disabled:hover {
+  background-color: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
+/* Input Field */
+.current-user__input {
+  font-size: 12px;
+  color: #111827;
+  padding: 6px 8px;
+  border: 1px solid #3b82f6;
+  border-radius: 4px;
+  background-color: #ffffff;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+  min-height: 24px;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.current-user__input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.current-user__input::placeholder {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Custom Field Controls */
+.current-user__custom-section {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.current-user__add-custom {
+  font-size: 11px;
+  color: #6366f1;
+  background: none;
+  border: 1px dashed #c7d2fe;
+  border-radius: 4px;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  width: 100%;
+  font-weight: 500;
+}
+
+.current-user__add-custom:hover {
+  background-color: #f0f9ff;
+  border-color: #93c5fd;
+  color: #4f46e5;
+}
+
+.current-user__remove-custom {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
+  line-height: 1;
+  transition: color 0.2s ease-in-out;
+}
+
+  .current-user__remove-custom:hover {
+    color: #b91c1c;
+  }
+
+/* Update Section */
+.current-user__update-section {
+  grid-column: 1 / -1;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.current-user__update-button {
+  width: 100%;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: #059669;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+}
+
+.current-user__update-button:hover {
+  background-color: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(5, 150, 105, 0.2);
+}
+
+.current-user__update-button:active {
+  background-color: #065f46;
+  transform: translateY(0);
+}
+
+.current-user__update-button:focus {
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
+}/* Scrollbar for content */
+.current-user__content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.current-user__content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.current-user__content::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 2px;
+}
+
+.current-user__content::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+  /* Width now controlled by App.css flex container */
+}
+
+@media (max-width: 1200px) {
+  /* Width now controlled by App.css flex container */
+  
+  .current-user__content {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+  
+  .current-user__custom-fields {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  /* Width now controlled by App.css flex container */
+  
+  .current-user__content {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .current-user__custom-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .current-user {
+    background: #1f2937;
+    border-color: #374151;
+  }
+  
+  .current-user__header {
+    background-color: #111827;
+    border-bottom-color: #374151;
+  }
+  
+  .current-user__title {
+    color: #f9fafb;
+  }
+  
+  .current-user__label {
+    color: #9ca3af;
+  }
+  
+  .current-user__value {
+    background-color: #111827;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+  
+  .current-user__value:hover {
+    background-color: #1f2937;
+    border-color: #4b5563;
+  }
+  
+  .current-user__value--empty {
+    color: #6b7280;
+  }
+  
+  .current-user__value--disabled {
+    background-color: #1f2937;
+    color: #6b7280;
+    border-color: #374151;
+  }
+
+  .current-user__value--disabled:hover {
+    background-color: #1f2937;
+    border-color: #374151;
+  }
+
+  .current-user__toggle--enabled {
+    border-color: #10b981;
+    color: #10b981;
+  }
+
+  .current-user__toggle--enabled:hover {
+    background-color: #10b981;
+  }
+
+  .current-user__toggle--disabled {
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+
+  .current-user__toggle--disabled:hover {
+    background-color: #ef4444;
+  }
+  
+  .current-user__input {
+    background-color: #1f2937;
+    border-color: #3b82f6;
+    color: #f9fafb;
+  }
+  
+  .current-user__add-custom {
+    color: #818cf8;
+    border-color: #4338ca;
+  }
+  
+  .current-user__add-custom:hover {
+    background-color: #1e1b4b;
+    border-color: #6366f1;
+  }
+  
+  .current-user__update-button {
+    background-color: #059669;
+  }
+  
+  .current-user__update-button:hover {
+    background-color: #047857;
+  }
+}

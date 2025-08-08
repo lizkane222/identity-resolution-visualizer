@@ -1,0 +1,419 @@
+.space-config {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.space-config__section {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.space-config__section-title {
+  color: #111827;
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.space-config__section-description {
+  color: #6b7280;
+  margin: 0 0 24px 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.space-config__form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.space-config__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.space-config__label {
+  color: #374151;
+  font-weight: 500;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.space-config__label--checkbox {
+  cursor: pointer;
+  gap: 8px;
+}
+
+.space-config__checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.space-config__required {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.space-config__input {
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.space-config__input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.space-config__help {
+  color: #6b7280;
+  font-size: 12px;
+  margin: 0;
+  font-style: italic;
+}
+
+.space-config__save-button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  align-self: flex-start;
+}
+
+.space-config__save-button:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+}
+
+.space-config__save-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.space-config__message {
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 8px;
+}
+
+.space-config__message--success {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.space-config__message--error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.space-config__endpoints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.space-config__endpoint-button {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.space-config__endpoint-button:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.space-config__endpoint-button--active {
+  background: #dbeafe;
+  color: #1e40af;
+  border-color: #3b82f6;
+}
+
+.space-config__selected-endpoint {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.space-config__endpoint-title {
+  color: #1e293b;
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.space-config__endpoint-path {
+  margin-bottom: 20px;
+}
+
+.space-config__endpoint-path code {
+  background: #f1f5f9;
+  color: #475569;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  border: 1px solid #cbd5e1;
+}
+
+.space-config__params {
+  margin-top: 16px;
+}
+
+.space-config__params-title {
+  color: #374151;
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.space-config__param-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.space-config__param-button {
+  background: white;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.space-config__param-button:hover {
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+.space-config__param-button--active {
+  background: #f0fdf4;
+  color: #166534;
+  border-color: #22c55e;
+}
+
+.space-config__selected-params {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.space-config__selected-params-title {
+  color: #374151;
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.space-config__selected-params-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.space-config__selected-param {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.space-config__remove-param {
+  background: none;
+  border: none;
+  color: #166534;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  transition: background 0.2s ease;
+}
+
+.space-config__remove-param:hover {
+  background: #dcfce7;
+}
+
+.space-config__params-help {
+  color: #6b7280;
+  font-size: 12px;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .space-config {
+    gap: 24px;
+  }
+  
+  .space-config__section {
+    padding: 16px;
+  }
+  
+  .space-config__endpoints {
+    gap: 6px;
+  }
+  
+  .space-config__endpoint-button {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  .space-config__selected-endpoint {
+    padding: 16px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .space-config__section {
+    background: #1f2937;
+    border-color: #374151;
+  }
+  
+  .space-config__section-title {
+    color: #f9fafb;
+  }
+  
+  .space-config__section-description {
+    color: #9ca3af;
+  }
+  
+  .space-config__label {
+    color: #d1d5db;
+  }
+  
+  .space-config__input {
+    background: #111827;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .space-config__input:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+  }
+  
+  .space-config__help {
+    color: #9ca3af;
+  }
+  
+  .space-config__save-button {
+    background: #3b82f6;
+  }
+  
+  .space-config__save-button:hover:not(:disabled) {
+    background: #2563eb;
+  }
+  
+  .space-config__endpoint-button {
+    background: #374151;
+    color: #d1d5db;
+    border-color: #4b5563;
+  }
+  
+  .space-config__endpoint-button:hover {
+    background: #4b5563;
+    border-color: #6b7280;
+  }
+  
+  .space-config__endpoint-button--active {
+    background: #1e3a8a;
+    color: #dbeafe;
+    border-color: #3b82f6;
+  }
+  
+  .space-config__selected-endpoint {
+    background: #111827;
+    border-color: #374151;
+  }
+  
+  .space-config__endpoint-title {
+    color: #f9fafb;
+  }
+  
+  .space-config__endpoint-path code {
+    background: #1f2937;
+    color: #d1d5db;
+    border-color: #4b5563;
+  }
+  
+  .space-config__params-title {
+    color: #d1d5db;
+  }
+  
+  .space-config__param-button {
+    background: #1f2937;
+    color: #9ca3af;
+    border-color: #4b5563;
+  }
+  
+  .space-config__param-button:hover {
+    color: #d1d5db;
+    border-color: #6b7280;
+  }
+  
+  .space-config__selected-params {
+    background: #1f2937;
+    border-color: #374151;
+  }
+  
+  .space-config__selected-params-title {
+    color: #d1d5db;
+  }
+  
+  .space-config__params-help {
+    color: #9ca3af;
+  }
+}
