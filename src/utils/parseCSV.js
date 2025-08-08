@@ -63,7 +63,7 @@ export function parseCSV(text) {
     header: true,
     skipEmptyLines: true,
     dynamicTyping: false,
-    transformHeader: h => h.trim().toUpperCase(),
+    // transformHeader: h => h.trim().toUpperCase(),
   });
 
   if (errors.length) {
