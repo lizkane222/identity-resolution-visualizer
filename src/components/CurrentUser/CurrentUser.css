@@ -36,10 +36,98 @@
 .current-user__content {
   padding: 16px;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* Section styling */
+.current-user__identifiers-section,
+.current-user__traits-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.current-user__section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+.current-user__section-description {
+  font-size: 12px;
+  color: #6b7280;
+  margin: -4px 0 8px 0;
+  font-style: italic;
+}
+
+.current-user__fields-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 12px;
   align-items: start;
+}
+
+/* Special styling for primary identifiers row */
+.current-user__primary-identifiers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Location row for city, state, zipcode */
+.current-user__location-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 8px;
+  grid-column: 1 / -1;
+  margin-bottom: 12px;
+}
+
+/* Name row for firstName and lastName */
+.current-user__name-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  grid-column: 1 / -1;
+  margin-bottom: 12px;
+}
+
+/* Address row for streetAddress, city, state, zipcode */
+.current-user__address-row {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr 1fr;
+  gap: 8px;
+  grid-column: 1 / -1;
+  margin-bottom: 12px;
+  min-width: 0; /* Allow grid items to shrink below their content size */
+}
+
+.current-user__address-row .current-user__field {
+  min-width: 0; /* Allow field containers to shrink */
+}
+
+.current-user__address-row .current-user__input,
+.current-user__address-row .current-user__value {
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  width: 100%;
+}
+
+.current-user__other-identifiers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  align-items: stretch;
+  justify-items: stretch;
 }
 
 /* Custom section spans full width */
@@ -77,6 +165,12 @@
   gap: 8px;
 }
 
+.current-user__label-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 /* Toggle Controls */
 .current-user__toggle {
   font-size: 10px;
@@ -92,7 +186,7 @@
   justify-content: center;
   font-weight: bold;
   padding: 0;
-  margin-left: 4px;
+  flex-shrink: 0;
 }
 
 .current-user__toggle--enabled {
@@ -183,9 +277,73 @@
   font-style: italic;
 }
 
+/* Primary identifier inputs (userId, anonymousId) - smaller text, no wrapping */
+.current-user__primary-identifiers .current-user__input,
+.current-user__primary-identifiers .current-user__value {
+  font-size: 10px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 6px 6px;
+}
+
+.current-user__primary-identifiers .current-user__value {
+  word-break: normal;
+  line-height: 1.2;
+}
+
+/* Email field - consistent with other identifier fields */
+.current-user__field[data-field="email"] .current-user__input,
+.current-user__field[data-field="email"] .current-user__value {
+  font-size: 10px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 6px 6px;
+  word-break: normal;
+  line-height: 1.2;
+  min-width: 0;
+  min-height: 24px;
+}
+
+
+
+
+
+
+/* Phone field - compact styling */
+.current-user__field[data-field="phone"] .current-user__input,
+.current-user__field[data-field="phone"] .current-user__value {
+  font-size: 10px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 120px;
+}
+
+
+
+/* Other identifier fields - compact styling with consistent height */
+.current-user__other-identifiers .current-user__input,
+.current-user__other-identifiers .current-user__value {
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  min-height: 24px;
+  padding: 6px 6px;
+  line-height: 1.2;
+}
+
 /* Custom Field Controls */
 .current-user__custom-section {
   margin-top: 4px;
+  margin-bottom: 4px;
   padding-top: 8px;
   border-top: 1px solid #f3f4f6;
 }
@@ -213,22 +371,51 @@
   background: none;
   border: none;
   color: #dc2626;
-  font-size: 14px;
+  font-size: 12px;
   cursor: pointer;
   padding: 0;
-  margin-left: 4px;
   line-height: 1;
   transition: color 0.2s ease-in-out;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
 }
 
   .current-user__remove-custom:hover {
     color: #b91c1c;
+    background-color: #fee2e2;
   }
+
+/* Clear Field Button */
+.current-user__clear-field {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s ease-in-out;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+}
+
+.current-user__clear-field:hover {
+  color: #b91c1c;
+  background-color: #fee2e2;
+}
 
 /* Update Section */
 .current-user__update-section {
   grid-column: 1 / -1;
-  margin-top: 12px;
+  margin-top: 8px;
   padding-top: 12px;
   border-top: 1px solid #f3f4f6;
 }
@@ -236,7 +423,7 @@
 .current-user__buttons {
   display: flex;
   gap: 8px;
-  flex-direction: column;
+  flex-direction: row;
 }
 
 .current-user__random-user-button {
@@ -321,25 +508,79 @@
 @media (max-width: 1200px) {
   /* Width now controlled by App.css flex container */
   
-  .current-user__content {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  .current-user__fields-grid {
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  }
+  
+  .current-user__other-identifiers {
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    align-items: stretch;
+    justify-items: stretch;
   }
   
   .current-user__custom-fields {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  }
+  
+  .current-user__location-row {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+  }
+  
+  .current-user__name-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  
+  .current-user__address-row {
+    grid-template-columns: 1.8fr 1.5fr 1fr 1fr;
+    gap: 6px;
+  }
+  
+  .current-user__address-row .current-user__input,
+  .current-user__address-row .current-user__value {
+    font-size: 10px;
   }
 }
 
 @media (max-width: 768px) {
   /* Width now controlled by App.css flex container */
   
-  .current-user__content {
+  .current-user__fields-grid {
     grid-template-columns: 1fr;
     gap: 10px;
   }
   
+  .current-user__other-identifiers {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    align-items: stretch;
+    justify-items: stretch;
+  }
+  
   .current-user__custom-fields {
     grid-template-columns: 1fr;
+  }
+  
+  .current-user__location-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .current-user__name-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .current-user__address-row {
+    grid-template-columns: 1.5fr 1.2fr 0.8fr 0.8fr;
+    gap: 4px;
+  }
+  
+  .current-user__address-row .current-user__input,
+  .current-user__address-row .current-user__value {
+    font-size: 9px;
+    padding: 4px 6px;
   }
 }
 
@@ -413,6 +654,20 @@
     color: #f9fafb;
   }
   
+  /* Primary identifier dark mode styling */
+  .current-user__primary-identifiers .current-user__input,
+  .current-user__primary-identifiers .current-user__value {
+    background-color: #1f2937;
+    color: #d1d5db;
+  }
+  
+  /* Email field dark mode styling */
+  .current-user__field[data-field="email"] .current-user__input,
+  .current-user__field[data-field="email"] .current-user__value {
+    background-color: #1f2937;
+    color: #d1d5db;
+  }
+  
   .current-user__add-custom {
     color: #818cf8;
     border-color: #4338ca;
@@ -421,6 +676,15 @@
   .current-user__add-custom:hover {
     background-color: #1e1b4b;
     border-color: #6366f1;
+  }
+  
+  .current-user__clear-field {
+    color: #ef4444;
+  }
+  
+  .current-user__clear-field:hover {
+    color: #dc2626;
+    background-color: #1f2937;
   }
   
   .current-user__random-user-button {

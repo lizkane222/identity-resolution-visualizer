@@ -1,4 +1,5 @@
 import usersData from './users.json';
+import { getIdentifierFields } from './idResolutionConfig.js';
 
 /**
  * Get a random user from the users.json file
@@ -78,13 +79,17 @@ export const loadRandomUserData = () => {
   
   const formatted = formatUserForCurrentUser(userData);
   
-  // Split into core fields and custom fields
-  const coreFields = ['userId', 'anonymousId', 'email', 'firstName', 'lastName'];
+  // Get configured identifier fields from ID Resolution Config
+  const configuredIdentifiers = getIdentifierFields();
+  
+  // Core fields always include these base identifiers and traits
+  const alwaysCoreFields = ['userId', 'anonymousId', 'email', 'firstName', 'lastName'];
   const userFields = {};
   const customFields = {};
   
   Object.entries(formatted).forEach(([key, value]) => {
-    if (coreFields.includes(key)) {
+    // If it's always a core field OR configured as an identifier, add to userFields
+    if (alwaysCoreFields.includes(key) || configuredIdentifiers.has(key)) {
       userFields[key] = value;
     } else if (value) { // Only include non-empty custom fields
       customFields[key] = value;

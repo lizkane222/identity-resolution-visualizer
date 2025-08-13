@@ -3,7 +3,7 @@ const cors = require('cors');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const app = express();
 const PORT = 8888;
@@ -11,6 +11,19 @@ const PORT = 8888;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Request logging middleware
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/profiles')) {
+    console.log(`🌐 [SERVER] Incoming ${req.method} request: ${req.path}`);
+    console.log(`🕐 Request Time: ${new Date().toISOString()}`);
+    console.log(`📋 Query Params:`, req.query);
+    if (Object.keys(req.body).length > 0) {
+      console.log(`📄 Request Body:`, req.body);
+    }
+  }
+  next();
+});
 
 // Base URL for Segment Profile API
 const getBaseUrl = (spaceId) => `https://profiles.segment.com/v1/spaces/${spaceId}`;
@@ -51,6 +64,13 @@ app.get('/api/config', (req, res) => {
 app.post('/api/config', (req, res) => {
   const { spaceId, accessToken } = req.body;
   
+  console.log('Received config update request:', {
+    spaceId: spaceId ? `${spaceId.substring(0, 10)}...` : 'undefined',
+    accessToken: accessToken ? `${accessToken.substring(0, 10)}...` : 'undefined',
+    hasSpaceId: !!spaceId,
+    hasAccessToken: !!accessToken
+  });
+  
   if (!spaceId || !accessToken) {
     return res.status(400).json({
       error: { message: 'Both spaceId and accessToken are required' }
@@ -89,6 +109,7 @@ app.post('/api/config', (req, res) => {
     process.env.SEGMENT_SPACE_ID = spaceId;
     process.env.SEGMENT_ACCESS_TOKEN = accessToken;
     
+    console.log('Configuration saved successfully to .env file');
     res.json({ success: true, message: 'Configuration updated successfully' });
   } catch (error) {
     console.error('Error writing .env file:', error);
@@ -194,7 +215,13 @@ app.get('/api/profiles/:identifier/traits', async (req, res) => {
   const { identifier } = req.params;
   const { class: className, include, limit = 10, verbose } = req.query;
   
+  console.group(`🔍 [SERVER TRAITS] Request for: ${identifier}`);
+  console.log(`🕐 Request Time: ${new Date().toISOString()}`);
+  console.log(`📋 Query Params:`, { className, include, limit, verbose });
+  
   if (!process.env.SEGMENT_SPACE_ID || !process.env.SEGMENT_ACCESS_TOKEN) {
+    console.error(`❌ [SERVER TRAITS] Missing Segment configuration`);
+    console.groupEnd();
     return res.status(400).json({
       error: { message: 'Segment configuration not set. Please configure Space ID and Access Token.' }
     });
@@ -202,7 +229,11 @@ app.get('/api/profiles/:identifier/traits', async (req, res) => {
 
   try {
     const baseUrl = getBaseUrl(process.env.SEGMENT_SPACE_ID);
-    const url = `${baseUrl}/collections/users/profiles/${identifier}/traits`;
+    // Properly encode the identifier for the Segment API URL
+    const encodedIdentifier = encodeURIComponent(identifier);
+    const url = `${baseUrl}/collections/users/profiles/${encodedIdentifier}/traits`;
+    
+    console.log(`📡 [SERVER TRAITS] Calling Segment API: ${url}`);
     
     const params = {};
     if (className) params.class = className;
@@ -215,8 +246,18 @@ app.get('/api/profiles/:identifier/traits', async (req, res) => {
       params
     });
     
+    console.log(`📥 [SERVER TRAITS] Response received for: ${identifier}`);
+    console.log(`📊 Status: ${response.status}`);
+    console.log(`🕐 Response Time: ${new Date().toISOString()}`);
+    console.log(`📋 Data Summary: ${response.data.data ? (typeof response.data.data === 'object' ? `${Object.keys(response.data.data).length} traits` : 'Non-object data') : 'No traits data'}`);
+    console.log(`� Full Response:`, JSON.stringify(response.data, null, 2));
+    console.groupEnd();
+    
     res.json(response.data);
   } catch (error) {
+    console.error(`❌ [SERVER TRAITS] Request failed for: ${identifier}`);
+    console.error(`📋 Error Details:`, error.message);
+    console.groupEnd();
     handleApiError(error, res);
   }
 });
@@ -226,7 +267,13 @@ app.get('/api/profiles/:identifier/external_ids', async (req, res) => {
   const { identifier } = req.params;
   const { include, limit = 25, verbose } = req.query;
   
+  console.group(`🔍 [SERVER EXTERNAL_IDS] Request for: ${identifier}`);
+  console.log(`🕐 Request Time: ${new Date().toISOString()}`);
+  console.log(`📋 Query Params:`, { include, limit, verbose });
+  
   if (!process.env.SEGMENT_SPACE_ID || !process.env.SEGMENT_ACCESS_TOKEN) {
+    console.error(`❌ [SERVER EXTERNAL_IDS] Missing Segment configuration`);
+    console.groupEnd();
     return res.status(400).json({
       error: { message: 'Segment configuration not set. Please configure Space ID and Access Token.' }
     });
@@ -234,7 +281,11 @@ app.get('/api/profiles/:identifier/external_ids', async (req, res) => {
 
   try {
     const baseUrl = getBaseUrl(process.env.SEGMENT_SPACE_ID);
-    const url = `${baseUrl}/collections/users/profiles/${identifier}/external_ids`;
+    // Properly encode the identifier for the Segment API URL
+    const encodedIdentifier = encodeURIComponent(identifier);
+    const url = `${baseUrl}/collections/users/profiles/${encodedIdentifier}/external_ids`;
+    
+    console.log(`📡 [SERVER EXTERNAL_IDS] Calling Segment API: ${url}`);
     
     const params = {};
     if (include) params.include = include;
@@ -246,8 +297,18 @@ app.get('/api/profiles/:identifier/external_ids', async (req, res) => {
       params
     });
     
+    console.log(`📥 [SERVER EXTERNAL_IDS] Response received for: ${identifier}`);
+    console.log(`📊 Status: ${response.status}`);
+    console.log(`🕐 Response Time: ${new Date().toISOString()}`);
+    console.log(`📋 Data Summary: ${Array.isArray(response.data.data) ? `${response.data.data.length} external IDs` : 'Non-array data'}`);
+    console.log(`� Full Response:`, JSON.stringify(response.data, null, 2));
+    console.groupEnd();
+    
     res.json(response.data);
   } catch (error) {
+    console.error(`❌ [SERVER EXTERNAL_IDS] Request failed for: ${identifier}`);
+    console.error(`📋 Error Details:`, error.message);
+    console.groupEnd();
     handleApiError(error, res);
   }
 });
@@ -257,7 +318,13 @@ app.get('/api/profiles/:identifier/events', async (req, res) => {
   const { identifier } = req.params;
   const { limit = 10, next } = req.query;
   
+  console.group(`🔍 [SERVER EVENTS] Request for: ${identifier}`);
+  console.log(`🕐 Request Time: ${new Date().toISOString()}`);
+  console.log(`📋 Query Params:`, { limit, next });
+  
   if (!process.env.SEGMENT_SPACE_ID || !process.env.SEGMENT_ACCESS_TOKEN) {
+    console.error(`❌ [SERVER EVENTS] Missing Segment configuration`);
+    console.groupEnd();
     return res.status(400).json({
       error: { message: 'Segment configuration not set. Please configure Space ID and Access Token.' }
     });
@@ -265,7 +332,11 @@ app.get('/api/profiles/:identifier/events', async (req, res) => {
 
   try {
     const baseUrl = getBaseUrl(process.env.SEGMENT_SPACE_ID);
-    const url = `${baseUrl}/collections/users/profiles/${identifier}/events`;
+    // Properly encode the identifier for the Segment API URL
+    const encodedIdentifier = encodeURIComponent(identifier);
+    const url = `${baseUrl}/collections/users/profiles/${encodedIdentifier}/events`;
+    
+    console.log(`📡 [SERVER EVENTS] Calling Segment API: ${url}`);
     
     const params = {};
     if (limit) params.limit = limit;
@@ -276,8 +347,18 @@ app.get('/api/profiles/:identifier/events', async (req, res) => {
       params
     });
     
+    console.log(`📥 [SERVER EVENTS] Response received for: ${identifier}`);
+    console.log(`📊 Status: ${response.status}`);
+    console.log(`🕐 Response Time: ${new Date().toISOString()}`);
+    console.log(`📋 Data Summary: ${Array.isArray(response.data.data) ? `${response.data.data.length} events` : 'Non-array data'}`);
+    console.log(`📄 Full Response:`, JSON.stringify(response.data, null, 2));
+    console.groupEnd();
+    
     res.json(response.data);
   } catch (error) {
+    console.error(`❌ [SERVER EVENTS] Request failed for: ${identifier}`);
+    console.error(`📋 Error Details:`, error.message);
+    console.groupEnd();
     handleApiError(error, res);
   }
 });
@@ -286,7 +367,12 @@ app.get('/api/profiles/:identifier/events', async (req, res) => {
 app.get('/api/profiles/:identifier/metadata', async (req, res) => {
   const { identifier } = req.params;
   
+  console.group(`🔍 [SERVER METADATA] Request for: ${identifier}`);
+  console.log(`🕐 Request Time: ${new Date().toISOString()}`);
+  
   if (!process.env.SEGMENT_SPACE_ID || !process.env.SEGMENT_ACCESS_TOKEN) {
+    console.error(`❌ [SERVER METADATA] Missing Segment configuration`);
+    console.groupEnd();
     return res.status(400).json({
       error: { message: 'Segment configuration not set. Please configure Space ID and Access Token.' }
     });
@@ -294,14 +380,27 @@ app.get('/api/profiles/:identifier/metadata', async (req, res) => {
 
   try {
     const baseUrl = getBaseUrl(process.env.SEGMENT_SPACE_ID);
-    const url = `${baseUrl}/collections/users/profiles/${identifier}/metadata`;
+    // Properly encode the identifier for the Segment API URL
+    const encodedIdentifier = encodeURIComponent(identifier);
+    const url = `${baseUrl}/collections/users/profiles/${encodedIdentifier}/metadata`;
+    
+    console.log(`📡 [SERVER METADATA] Calling Segment API: ${url}`);
     
     const response = await axios.get(url, {
       headers: createAuthHeader(process.env.SEGMENT_ACCESS_TOKEN)
     });
     
+    console.log(`📥 [SERVER METADATA] Response received for: ${identifier}`);
+    console.log(`📊 Status: ${response.status}`);
+    console.log(`🕐 Response Time: ${new Date().toISOString()}`);
+    console.log(`📄 Full Response:`, JSON.stringify(response.data, null, 2));
+    console.groupEnd();
+    
     res.json(response.data);
   } catch (error) {
+    console.error(`❌ [SERVER METADATA] Request failed for: ${identifier}`);
+    console.error(`📋 Error Details:`, error.message);
+    console.groupEnd();
     handleApiError(error, res);
   }
 });
@@ -311,7 +410,13 @@ app.get('/api/profiles/:identifier/links', async (req, res) => {
   const { identifier } = req.params;
   const { limit = 20 } = req.query;
   
+  console.group(`🔍 [SERVER LINKS] Request for: ${identifier}`);
+  console.log(`🕐 Request Time: ${new Date().toISOString()}`);
+  console.log(`📋 Query Params:`, { limit });
+  
   if (!process.env.SEGMENT_SPACE_ID || !process.env.SEGMENT_ACCESS_TOKEN) {
+    console.error(`❌ [SERVER LINKS] Missing Segment configuration`);
+    console.groupEnd();
     return res.status(400).json({
       error: { message: 'Segment configuration not set. Please configure Space ID and Access Token.' }
     });
@@ -319,7 +424,11 @@ app.get('/api/profiles/:identifier/links', async (req, res) => {
 
   try {
     const baseUrl = getBaseUrl(process.env.SEGMENT_SPACE_ID);
-    const url = `${baseUrl}/collections/users/profiles/${identifier}/links`;
+    // Properly encode the identifier for the Segment API URL
+    const encodedIdentifier = encodeURIComponent(identifier);
+    const url = `${baseUrl}/collections/users/profiles/${encodedIdentifier}/links`;
+    
+    console.log(`📡 [SERVER LINKS] Calling Segment API: ${url}`);
     
     const params = {};
     if (limit) params.limit = limit;

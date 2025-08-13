@@ -42,14 +42,19 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 24px;
   overflow-y: auto;
   min-width: 0; /* Prevents flex item from overflowing */
 }
 
-/* Header */
+/* Navigation Header */
 .app__header {
-  margin-bottom: 32px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  padding: 12px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .app__header-content {
@@ -57,17 +62,20 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 24px;
+  max-width: 100%;
 }
 
 .app__title-section {
   flex: 1;
   text-align: left;
+  min-width: 0; /* Allows text to truncate if needed */
 }
 
 .app__header-actions {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .app__config-button,
@@ -103,25 +111,26 @@ body {
 }
 
 .app__title {
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 600;
   color: #111827;
-  margin: 0 0 8px 0;
+  margin: 0 0 4px 0;
   letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
 .app__subtitle {
-  font-size: 16px;
+  font-size: 14px;
   color: #6b7280;
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.3;
 }
 
 /* Profile Lookup Section */
 .app__profile-lookup-section {
-  margin-bottom: 24px;
+  margin: 24px 24px 24px 24px;
   animation: slideDown 0.3s ease-out;
-  width: 100%;
+  width: calc(100% - 48px);
   box-sizing: border-box;
   overflow: hidden;
   position: relative;
@@ -143,14 +152,14 @@ body {
 .app__user-section {
   display: flex;
   gap: 24px;
-  margin-bottom: 24px;
+  margin: 24px;
   align-items: stretch;
 }
 
 .app__user-container {
   flex: 0 0 auto;
-  min-width: 350px;
-  max-width: 400px;
+  min-width: 450px;
+  max-width: 520px;
 }
 
 .app__unique-users-container {
@@ -162,17 +171,14 @@ body {
 .app__builder-buttons-section {
   display: flex;
   gap: 16px;
-  margin-bottom: 32px;
+  margin: 0 24px 32px 24px;
   align-items: flex-start;
-  max-height: 35vh;
   min-height: 350px;
 }
 
 .app__builder-container {
   flex: 1;
   min-width: 300px;
-  max-height: 35vh;
-  overflow-y: auto;
 }
 
 .app__core-events-container,
@@ -221,9 +227,13 @@ body {
 
 /* Footer */
 .app__footer {
-  margin-top: auto;
-  padding-top: 16px;
+  margin: auto 24px 0 24px;
+  padding: 8px 0;
   border-top: 1px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
 }
 
 .app__footer-text {
@@ -235,9 +245,6 @@ body {
   max-width: none;
   margin-left: auto;
   margin-right: auto;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Responsive Design */
@@ -274,20 +281,17 @@ body {
   .app__builder-buttons-section {
     flex-direction: column;
     gap: 16px;
-    max-height: none;
   }
   
   .app__builder-container {
     max-width: 100%;
     min-width: 100%;
-    max-height: none;
   }
   
   .app__core-events-container,
   .app__product-events-container {
     flex: 1;
     min-width: 100%;
-    max-height: none;
   }
 }
 

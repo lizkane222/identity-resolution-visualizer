@@ -164,7 +164,7 @@
 
 .unique-user__trait {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   font-size: 10px;
 }
 
@@ -172,11 +172,11 @@
   color: #6b7280;
   font-weight: 500;
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .unique-user__trait-value {
   color: #374151;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -249,13 +249,24 @@
 }
 
 /* Identifiers Section */
-.unique-user__identifiers {
+.unique-user__identifiers,
+.unique-user__traits {
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px solid #e5e7eb;
 }
 
-.unique-user__identifiers-label {
+.unique-user__section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 6px;
+}
+
+.unique-user__identifiers-label,
+.unique-user__identifiers-preview {
   font-size: 11px;
   font-weight: 600;
   color: #6b7280;
@@ -264,10 +275,17 @@
   margin-bottom: 4px;
 }
 
+.unique-user__traits-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
 .unique-user__identifier {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   margin-bottom: 2px;
   font-size: 11px;
 }
@@ -275,22 +293,25 @@
 .unique-user__identifier-type {
   color: #6b7280;
   font-weight: 500;
-  min-width: 70px;
+  min-width: 50px;
   font-size: 10px;
+  flex-shrink: 0;
 }
 
 .unique-user__identifier-value {
   color: #374151;
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
   font-size: 10px;
-  background-color: #f3f4f6;
-  padding: 2px 4px;
-  border-radius: 3px;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 120px;
+  min-width: 0;
+}
+
+/* Collapsed state - ellipsis for long values */
+.unique-user__identifiers--collapsed .unique-user__identifier-value,
+.unique-user__traits--collapsed .unique-user__trait-value {
+  max-width: 100px;
 }
 
 .unique-user--expanded .unique-user__identifier-value {
@@ -303,11 +324,17 @@
 
 /* Dark mode styles for identifiers */
 @media (prefers-color-scheme: dark) {
-  .unique-user__identifiers {
+  .unique-user__identifiers,
+  .unique-user__traits {
     border-top-color: #374151;
   }
   
-  .unique-user__identifiers-label {
+  .unique-user__section-title {
+    color: #d1d5db;
+  }
+  
+  .unique-user__identifiers-label,
+  .unique-user__identifiers-preview {
     color: #9ca3af;
   }
   
@@ -317,6 +344,5 @@
   
   .unique-user__identifier-value {
     color: #d1d5db;
-    background-color: #374151;
   }
 }

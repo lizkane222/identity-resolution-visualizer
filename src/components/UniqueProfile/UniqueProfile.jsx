@@ -1,8 +1,75 @@
 import React, { useState } from 'react';
+import { getConfiguredIdentifiers, getIdentifierDisplayName } from '../../utils/idResolutionConfig';
 import './UniqueProfile.css';
 
 const UniqueProfile = ({ profile, onHighlightEvents }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Debug logging for profile data
+  console.group(`🎭 [UNIQUE PROFILE] Rendering profile: ${profile.id}`);
+  console.log(`📋 Profile data:`, profile);
+  console.log(`🏷️ Traits data:`, profile.traits);
+  console.log(`📊 Traits count:`, profile.traits ? Object.keys(profile.traits).length : 0);
+  console.log(`📡 Available endpoints:`, profile.endpoints);
+  console.groupEnd();
+
+  // Get display name prioritizing firstName and lastName when available from traits endpoint
+  const getDisplayName = () => {
+    const firstName = profile.traits?.firstName;
+    const lastName = profile.traits?.lastName;
+    
+    // If we have both firstName and lastName from traits, combine them
+    if (firstName && lastName) {
+      return `${firstName} ${lastName}`;
+    }
+    
+    // If we have only one name field from traits, use it
+    if (firstName) return firstName;
+    if (lastName) return lastName;
+    
+    // Fall back to existing logic
+    return profile.traits?.name || 
+           profile.traits?.email || 
+           profile.userId || 
+           (profile.externalIds?.length > 0 ? profile.externalIds[0].id : '') || 
+           `Profile ${profile.id}`;
+  };
+  
+  const displayName = getDisplayName();
+  
+  const avatarChar = displayName ? displayName.charAt(0).toUpperCase() : 'P';
+
+  // Sort identifiers based on ID Resolution Config order
+  const getOrderedExternalIds = () => {
+    if (!profile.externalIds || profile.externalIds.length === 0) return [];
+    
+    const configuredIds = getConfiguredIdentifiers();
+    
+    // Create ordered array of external IDs
+    const orderedIds = [];
+    
+    // Add identifiers in config order
+    configuredIds.forEach(config => {
+      const matchingIds = profile.externalIds.filter(extId => {
+        // Match by various possible naming conventions
+        return extId.type === config.id ||
+               extId.type === config.id.replace('_', '') ||
+               (config.id === 'user_id' && extId.type === 'userId') ||
+               (config.id === 'anonymous_id' && extId.type === 'anonymousId') ||
+               (config.id === 'ga_client_id' && extId.type === 'gaClientId');
+      });
+      orderedIds.push(...matchingIds);
+    });
+    
+    // Add any remaining identifiers not in config
+    profile.externalIds.forEach(extId => {
+      if (!orderedIds.some(orderedId => orderedId.type === extId.type && orderedId.id === extId.id)) {
+        orderedIds.push(extId);
+      }
+    });
+    
+    return orderedIds;
+  };
 
   const handleHighlight = () => {
     if (onHighlightEvents && profile.eventIndices) {
@@ -30,53 +97,89 @@ const UniqueProfile = ({ profile, onHighlightEvents }) => {
       onClick={handleCardClick}
     >
       <div className="unique-profile__header">
-        <h4 className="unique-profile__title">
-          Profile {profile.userId ? `(${profile.userId})` : `#${profile.id}`}
-        </h4>
-        <div className="unique-profile__metadata">
-          {profile.endpoints && (
-            <span className="unique-profile__endpoints">
-              Endpoints: {profile.endpoints.join(', ')}
-            </span>
-          )}
-          {profile.eventCount > 0 && (
-            <span className="unique-profile__event-count">
-              {profile.eventCount} event{profile.eventCount !== 1 ? 's' : ''}
-            </span>
-          )}
-          <span className="unique-profile__expand-indicator">
-            {isExpanded ? '−' : '+'}
-          </span>
+        <div className="unique-profile__avatar">
+          {avatarChar}
+        </div>
+        <div className="unique-profile__info">
+          <div className="unique-profile__name" title={displayName}>
+            {displayName}
+          </div>
+          <div className="unique-profile__id" title={profile.userId || profile.id}>
+            {profile.userId || `Profile #${profile.id}`}
+          </div>
+        </div>
+        <div className="unique-profile__expand-icon">
+          <svg 
+            width="16" 
+            height="16" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            className={`unique-profile__expand-chevron ${isExpanded ? 'unique-profile__expand-chevron--rotated' : ''}`}
+          >
+            <path 
+              d="M9 18L15 12L9 6" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+          </svg>
         </div>
       </div>
 
-      {/* External IDs Section */}
+      <div className="unique-profile__stats">
+        <div className="unique-profile__stat">
+          <span className="unique-profile__stat-value">{profile.eventCount || 0}</span>
+          <span className="unique-profile__stat-label">Events</span>
+        </div>
+      </div>
+
+      {/* Endpoints info */}
+      {profile.endpoints && profile.endpoints.length > 0 && (
+        <div className="unique-profile__endpoints-info">
+          <span className="unique-profile__endpoints">
+            Endpoints: {profile.endpoints.join(', ')}
+          </span>
+        </div>
+      )}
+
+      {/* Identifiers Section */}
       {profile.externalIds && profile.externalIds.length > 0 && (
         <div className="unique-profile__section">
-          <h5 className="unique-profile__section-title">External IDs</h5>
+          <h5 className="unique-profile__section-title">Identifiers</h5>
           <div className="unique-profile__identifiers">
-            {profile.externalIds.map((identifier, index) => (
-              <div key={index} className={`unique-profile__identifier ${isExpanded ? 'unique-profile__identifier--expanded' : ''}`}>
+            {getOrderedExternalIds().map((identifier, index) => (
+              <div key={`${identifier.type}-${index}`} className={`unique-profile__identifier ${isExpanded ? 'unique-profile__identifier--expanded' : ''}`}>
                 {isExpanded ? (
-                  // Expanded view: type, value, source, and date all on same line
+                  // Expanded view: type and value on first line, source and date on second line
                   <>
-                    <span className="unique-profile__identifier-type">{identifier.type}:</span>
-                    <span className="unique-profile__identifier-value">{identifier.id}</span>
-                    {identifier.source_id && (
-                      <span className="unique-profile__identifier-source">
-                        Source: {identifier.source_id.substring(0, 8)}...
+                    <div className="unique-profile__identifier-main">
+                      <span className="unique-profile__identifier-type">
+                        {getIdentifierDisplayName(identifier.type) || identifier.type}:
                       </span>
-                    )}
-                    {identifier.created_at && (
-                      <span className="unique-profile__identifier-date">
-                        {formatDate(identifier.created_at)}
-                      </span>
+                      <span className="unique-profile__identifier-value">{identifier.id}</span>
+                    </div>
+                    {(identifier.source_id || identifier.created_at) && (
+                      <div className="unique-profile__identifier-metadata">
+                        {identifier.source_id && (
+                          <span className="unique-profile__identifier-source">
+                            Source: {identifier.source_id}
+                          </span>
+                        )}
+                        {identifier.created_at && (
+                          <span className="unique-profile__identifier-date">
+                            {formatDate(identifier.created_at)}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </>
                 ) : (
                   // Collapsed view: only type and value (wrapped)
                   <>
-                    <span className="unique-profile__identifier-type">{identifier.type}:</span>
+                    <span className="unique-profile__identifier-type">
+                      {getIdentifierDisplayName(identifier.type) || identifier.type}:
+                    </span>
                     <span className="unique-profile__identifier-value unique-profile__identifier-value--wrapped">
                       {identifier.id}
                     </span>

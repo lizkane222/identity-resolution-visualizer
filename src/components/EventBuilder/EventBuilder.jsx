@@ -91,15 +91,18 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
         source.settings.writeKey.trim() !== ''
     );
     setConfiguredSources(sourcesWithWriteKeys);
-    // Auto-select if only one source is available
-    if (sourcesWithWriteKeys.length === 1) {
-      setSelectedSource(sourcesWithWriteKeys[0]);
-    }
+    // No default source selection - user must explicitly choose or send to all
   }, []);
 
   // Handle source selection
   const handleSourceSelect = (source) => {
-    setSelectedSource(source);
+    // If the clicked source is already selected, deselect it
+    if (selectedSource?.id === source.id) {
+      setSelectedSource(null);
+    } else {
+      // Otherwise, select the new source
+      setSelectedSource(source);
+    }
   };
 
   // Load selected event when it changes
@@ -293,6 +296,26 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
     }
   };
 
+  // Clear event content
+  const handleClear = () => {
+    setRawText('');
+    setIsValid(true);
+    setErrorMessage('');
+    
+    // Clear event info and notify parent to clear selectedEvent
+    if (onEventInfoChange) {
+      onEventInfoChange({
+        action: 'clear',
+        clearSelectedEvent: true
+      });
+    }
+    
+    // Focus back to textarea
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  };
+
   // Save event to the list
   const handleSave = () => {
     if (!rawText.trim()) {
@@ -306,18 +329,40 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
       return;
     }
 
-    const eventData = {
-      id: Date.now() + Math.random(), // Simple unique ID
-      timestamp: new Date().toISOString(),
-      rawData: rawText.trim(),
-      formattedData: formatAsJSON(rawText),
-      // Include selected source writeKey if available
-      writeKey: selectedSource?.settings?.writeKey || null,
-      sourceName: selectedSource?.name || null,
-      sourceType: selectedSource?.type || null
-    };
-
-    onSave(eventData);
+    // If no source is selected, save one event with all configured sources
+    // If a source is selected, save event for that source only
+    if (!selectedSource && configuredSources.length > 0) {
+      // Create a single event with all configured sources
+      const eventData = {
+        id: Date.now() + Math.random(),
+        timestamp: new Date().toISOString(),
+        rawData: rawText.trim(),
+        formattedData: formatAsJSON(rawText),
+        // Store all sources in arrays for multi-source support
+        writeKeys: configuredSources.map(source => source.settings?.writeKey).filter(Boolean),
+        sourceNames: configuredSources.map(source => source.name).filter(Boolean),
+        sourceTypes: configuredSources.map(source => source.type).filter(Boolean),
+        sources: configuredSources, // Store full source objects for reference
+        // Legacy single-source fields for backward compatibility (use first source)
+        writeKey: configuredSources[0]?.settings?.writeKey || null,
+        sourceName: configuredSources[0]?.name || null,
+        sourceType: configuredSources[0]?.type || null
+      };
+      onSave(eventData);
+    } else {
+      // Create a single event for the selected source or null if no sources configured
+      const sourceToUse = selectedSource || null;
+      const eventData = {
+        id: Date.now() + Math.random(),
+        timestamp: new Date().toISOString(),
+        rawData: rawText.trim(),
+        formattedData: formatAsJSON(rawText),
+        writeKey: sourceToUse?.settings?.writeKey || null,
+        sourceName: sourceToUse?.name || null,
+        sourceType: sourceToUse?.type || null
+      };
+      onSave(eventData);
+    }
     
     // Clear the input after saving
     setRawText('');
@@ -346,11 +391,14 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
   const handleCSVUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
     const reader = new FileReader();
     reader.onload = (evt) => {
       const csvText = evt.target.result;
       const rows = parseCSV(csvText);
-      rows.forEach((row) => {
+      // If no source is selected, create one event per row with all configured sources
+      // If a source is selected, create one event per row for that source only
+      rows.forEach((row, rowIndex) => {
         // Remove messageId if present (Segment generates this)
         delete row.messageId;
         delete row.messageid;
@@ -358,16 +406,39 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
         // Only use fields that were actually present in the CSV
         // Don't add timestamp if it wasn't in the original data
         const rawData = JSON.stringify(row);
-        const eventData = {
-          id: Date.now() + Math.random(),
-          rawData,
-          formattedData: formatAsJSON(rawData),
-          writeKey: selectedSource?.settings?.writeKey || null,
-          sourceName: selectedSource?.name || null,
-          sourceType: selectedSource?.type || null
-        };
-        onSave(eventData);
+        
+        if (!selectedSource && configuredSources.length > 0) {
+          // Create a single event with all configured sources
+          const eventData = {
+            id: Date.now() + Math.random() + rowIndex,
+            rawData,
+            formattedData: formatAsJSON(rawData),
+            // Store all sources in arrays for multi-source support
+            writeKeys: configuredSources.map(source => source.settings?.writeKey).filter(Boolean),
+            sourceNames: configuredSources.map(source => source.name).filter(Boolean),
+            sourceTypes: configuredSources.map(source => source.type).filter(Boolean),
+            sources: configuredSources, // Store full source objects for reference
+            // Legacy single-source fields for backward compatibility (use first source)
+            writeKey: configuredSources[0]?.settings?.writeKey || null,
+            sourceName: configuredSources[0]?.name || null,
+            sourceType: configuredSources[0]?.type || null
+          };
+          onSave(eventData);
+        } else {
+          // Create a single event for the selected source or null
+          const sourceToUse = selectedSource || null;
+          const eventData = {
+            id: Date.now() + Math.random() + rowIndex,
+            rawData,
+            formattedData: formatAsJSON(rawData),
+            writeKey: sourceToUse?.settings?.writeKey || null,
+            sourceName: sourceToUse?.name || null,
+            sourceType: sourceToUse?.type || null
+          };
+          onSave(eventData);
+        }
       });
+      
       // Reset file input so same file can be uploaded again if needed
       e.target.value = '';
     };
@@ -378,41 +449,73 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
     <div className="event-builder">
       <div className="event-builder__header">
         <h2 className="event-builder__title">Event Builder</h2>
-        {/* Source selection buttons */}
-        {configuredSources.length > 0 && (
-          <div className="event-builder__source-buttons">
-            {configuredSources.map((source) => (
-              <button
-                key={source.id}
-                className={`event-builder__source-button ${
-                  selectedSource?.id === source.id ? 'event-builder__source-button--active' : ''
-                }`}
-                onClick={() => handleSourceSelect(source)}
-                title={`WriteKey: ${source.settings.writeKey}`}
-              >
-                {source.type}
-              </button>
-            ))}
-            {selectedSource && (
-              <button
-                className="event-builder__source-button event-builder__source-button--clear"
-                onClick={() => setSelectedSource(null)}
-                title="Clear source selection"
-              >
-                ×
-              </button>
-            )}
+        
+        {/* Source status info */}
+        {configuredSources.length > 0 && selectedSource && (
+          <div className="event-builder__source-status">
+            <span className="event-builder__source-status-text">
+              Events will be sent to: <strong>{selectedSource.name}</strong> ({selectedSource.type})
+            </span>
+          </div>
+        )}
+        {configuredSources.length > 0 && !selectedSource && (
+          <div className="event-builder__source-status">
+            <span className="event-builder__source-status-text">
+              Events will be sent to: <strong>All configured sources</strong> ({configuredSources.map(s => s.name).join(', ')})
+            </span>
           </div>
         )}
       </div>
       
       <div className="event-builder__content">
-        {/* Tip text */}
-        <div className="event-builder__tip">
-          <p className="event-builder__tip-text">
-            <span className="event-builder__tip-title">Tip:</span> Paste any text and it will be formatted as valid JSON. 
-            Use the Copy button to copy the formatted version, or Save to add it to your event list.
-          </p>
+        {/* Tip and Source Row - aligned horizontally */}
+        <div className="event-builder__tip-source-row">
+          {/* Tip text */}
+          <div className="event-builder__tip">
+            <p className="event-builder__tip-text">
+              <span className="event-builder__tip-title">Tip:</span> Paste any text and it will be formatted as valid JSON. Save to add it to your event list.
+            </p>
+          </div>
+          
+          {/* Source selection row */}
+          {configuredSources.length > 0 && (
+            <div className="event-builder__source-row">
+              {/* Source selection indicator - bounces when payload exists but no source selected */}
+              {!selectedSource && rawText.trim() && (
+                <div className="event-builder__select-source-indicator">
+                  <span className="event-builder__select-source-text">
+                    Select a Source
+                  </span>
+                  <span className="event-builder__select-source-arrow">→</span>
+                </div>
+              )}
+              
+              {/* Source selection buttons */}
+              <div className="event-builder__source-buttons">
+                {configuredSources.map((source) => (
+                  <button
+                    key={source.id}
+                    className={`event-builder__source-button ${
+                      selectedSource?.id === source.id ? 'event-builder__source-button--active' : ''
+                    }`}
+                    onClick={() => handleSourceSelect(source)}
+                    title={`WriteKey: ${source.settings.writeKey}`}
+                  >
+                    {source.type}
+                  </button>
+                ))}
+                {selectedSource && (
+                  <button
+                    className="event-builder__source-button event-builder__source-button--clear"
+                    onClick={() => setSelectedSource(null)}
+                    title="Clear source selection - events will be sent to all configured sources"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Input and Preview sections side by side */}
@@ -459,11 +562,20 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
   <div className="event-builder__actions" style={{ position: 'relative' }}>
           <div className="event-builder__buttons-group">
             <button
+              onClick={handleClear}
+              disabled={!rawText.trim()}
+              className="event-builder__button event-builder__button--clear"
+            >
+              Clear Event
+            </button>
+            
+            <button
               onClick={handleCopy}
               disabled={!rawText.trim() || !isValid}
               className={`event-builder__button event-builder__button--copy ${
                 copySuccess ? 'event-builder__button--copy-success' : ''
               }`}
+              title="Use the Copy button to copy the JSON payload"
             >
               {copySuccess ? 'Copied!' : 'Copy JSON'}
             </button>
@@ -472,6 +584,7 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
               onClick={handleSave}
               disabled={!rawText.trim() || !isValid}
               className="event-builder__button event-builder__button--save"
+              title="Save this event to the event list on the left."
             >
               Save Event
             </button>

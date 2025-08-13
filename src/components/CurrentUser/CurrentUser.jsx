@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { loadRandomUserData } from '../../utils/userLoader.js';
+import { 
+  getEnabledIdentifiers, 
+  getIdentifierFieldsFromData, 
+  getTraitFields, 
+  getIdentifierDisplayName,
+  isIdentifierField 
+} from '../../utils/idResolutionConfig.js';
 import './CurrentUser.css';
 
 // UUID generation utility
@@ -27,90 +34,178 @@ function getOrPersistUserId() {
 }
 
 const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
-  const [userFields, setUserFields] = useState({
-    userId: '',
-    anonymousId: '',
+  // Get configured identifiers from ID Resolution Config
+  const [configuredIdentifiers, setConfiguredIdentifiers] = useState([]);
+  const [identifierFields, setIdentifierFields] = useState({});
+  const [traitFields, setTraitFields] = useState({
     email: '',
     firstName: '',
     lastName: ''
   });
-  const [customFields, setCustomFields] = useState({});
+  const [customTraits, setCustomTraits] = useState({});
   const [editingField, setEditingField] = useState(null);
   const [editingValue, setEditingValue] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customFieldName, setCustomFieldName] = useState('');
-  const [fieldToggles, setFieldToggles] = useState({
-    userId: true,
-    anonymousId: true
-  });
+  const [fieldToggles, setFieldToggles] = useState({});
   const inputRef = useRef(null);
+
+  // Load configured identifiers and initialize states
+  useEffect(() => {
+    const identifiers = getEnabledIdentifiers();
+    setConfiguredIdentifiers(identifiers);
+    
+    // Initialize identifier fields - Always include userId and anonymousId first
+    const initialIdentifierFields = {
+      userId: '',
+      anonymousId: ''
+    };
+    const initialToggles = {
+      userId: true,
+      anonymousId: true
+    };
+    
+    // Add ALL configured identifiers (they will appear in identifiers section)
+    identifiers.forEach(identifier => {
+      let fieldName;
+      switch (identifier.id) {
+        case 'user_id':
+          fieldName = 'userId';
+          break;
+        case 'anonymous_id':
+          fieldName = 'anonymousId';
+          break;
+        case 'ga_client_id':
+          fieldName = 'gaClientId';
+          break;
+        default:
+          fieldName = identifier.id;
+      }
+      
+      // Don't overwrite userId/anonymousId
+      if (fieldName !== 'userId' && fieldName !== 'anonymousId') {
+        initialIdentifierFields[fieldName] = '';
+      }
+    });
+    
+    setIdentifierFields(initialIdentifierFields);
+    setFieldToggles(initialToggles);
+    
+    // Initialize trait fields - standard traits only, excluding identifiers
+    const initialTraitFields = {};
+    const standardTraits = ['email', 'firstName', 'lastName', 'username', 'phone'];
+    
+    // Get list of identifier field names to avoid duplication
+    const identifierFieldNames = Object.keys(initialIdentifierFields);
+    
+    // Add standard traits that are NOT already configured as identifiers
+    standardTraits.forEach(field => {
+      if (!identifierFieldNames.includes(field)) {
+        initialTraitFields[field] = '';
+      }
+    });
+    
+    setTraitFields(initialTraitFields);
+  }, []);
 
   // Extract user data from event payload
   useEffect(() => {
     if (eventPayload) {
       try {
         const payload = typeof eventPayload === 'string' ? JSON.parse(eventPayload) : eventPayload;
-        const extractedFields = {};
+        const extractedIdentifiers = {};
+        const extractedTraits = {};
 
-        // Direct fields from payload - only if toggles are enabled
-        if (payload.userId && fieldToggles.userId) extractedFields.userId = payload.userId;
-        if (payload.anonymousId && fieldToggles.anonymousId) extractedFields.anonymousId = payload.anonymousId;
+        // Extract identifier fields - only if toggles are enabled
+        Object.keys(identifierFields).forEach(fieldName => {
+          const hasToggle = fieldName === 'userId' || fieldName === 'anonymousId';
+          const isToggleEnabled = hasToggle ? fieldToggles[fieldName] : true;
+          
+          if (isToggleEnabled && payload[fieldName]) {
+            extractedIdentifiers[fieldName] = payload[fieldName];
+          }
+        });
 
-        // Fields from traits object
+        // Extract trait fields from various locations
         if (payload.traits) {
-          if (payload.traits.email) extractedFields.email = payload.traits.email;
-          if (payload.traits.firstName) extractedFields.firstName = payload.traits.firstName;
-          if (payload.traits.lastName) extractedFields.lastName = payload.traits.lastName;
+          Object.keys(traitFields).forEach(traitName => {
+            if (payload.traits[traitName]) {
+              extractedTraits[traitName] = payload.traits[traitName];
+            }
+          });
         }
 
-        // Fields from properties object
+        // Also check properties object for traits
         if (payload.properties) {
-          if (payload.properties.email) extractedFields.email = payload.properties.email;
-          if (payload.properties.firstName) extractedFields.firstName = payload.properties.firstName;
-          if (payload.properties.lastName) extractedFields.lastName = payload.properties.lastName;
+          Object.keys(traitFields).forEach(traitName => {
+            if (payload.properties[traitName]) {
+              extractedTraits[traitName] = payload.properties[traitName];
+            }
+          });
         }
 
         // Update fields only if they're currently empty (don't overwrite manual edits)
-        // And respect toggle states for userId and anonymousId
-        setUserFields(prev => {
+        setIdentifierFields(prev => {
           const updated = { ...prev };
-          Object.keys(extractedFields).forEach(key => {
+          Object.keys(extractedIdentifiers).forEach(key => {
             if (!prev[key] || prev[key] === '') {
-              updated[key] = extractedFields[key];
+              updated[key] = extractedIdentifiers[key];
             }
           });
           
           // Force clear disabled fields
-          if (!fieldToggles.userId) updated.userId = '';
-          if (!fieldToggles.anonymousId) updated.anonymousId = '';
+          Object.keys(prev).forEach(key => {
+            const hasToggle = key === 'userId' || key === 'anonymousId';
+            if (hasToggle && !fieldToggles[key]) {
+              updated[key] = '';
+            }
+          });
           
+          return updated;
+        });
+
+        setTraitFields(prev => {
+          const updated = { ...prev };
+          Object.keys(extractedTraits).forEach(key => {
+            if (!prev[key] || prev[key] === '') {
+              updated[key] = extractedTraits[key];
+            }
+          });
           return updated;
         });
       } catch (error) {
         console.error('Error parsing event payload:', error);
       }
     }
-  }, [eventPayload, fieldToggles]);
+  }, [eventPayload, fieldToggles]); // Removed identifierFields and traitFields from dependencies
 
   // Notify parent of user changes
   useEffect(() => {
-    const allFields = { ...userFields, ...customFields };
+    const allIdentifiers = { ...identifierFields };
+    const allTraits = { ...traitFields, ...customTraits };
     
-    // Apply toggle state to the fields that get sent to parent
-    const filteredFields = { ...allFields };
-    if (!fieldToggles.userId) filteredFields.userId = '';
-    if (!fieldToggles.anonymousId) filteredFields.anonymousId = '';
+    // Apply toggle state to the identifier fields that get sent to parent
+    const filteredIdentifiers = { ...allIdentifiers };
+    Object.keys(allIdentifiers).forEach(key => {
+      const hasToggle = key === 'userId' || key === 'anonymousId';
+      if (hasToggle && !fieldToggles[key]) {
+        filteredIdentifiers[key] = '';
+      }
+    });
+    
+    // Combine all fields for backward compatibility
+    const allFields = { ...filteredIdentifiers, ...allTraits };
     
     // Include toggle states in the data sent to parent
     const userData = {
-      ...filteredFields,
+      ...allFields,
       _toggles: fieldToggles // Add toggle states with a special prefix
     };
     
     if (onUserChange) {
       onUserChange(userData);
     }
-  }, [userFields, customFields, fieldToggles]);
+  }, [identifierFields, traitFields, customTraits, fieldToggles]);
 
   // Focus input when editing starts
   useEffect(() => {
@@ -122,19 +217,27 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
 
   const handleFieldClick = (fieldName) => {
     setEditingField(fieldName);
-    setEditingValue(userFields[fieldName] || customFields[fieldName] || '');
+    const value = identifierFields[fieldName] || traitFields[fieldName] || customTraits[fieldName] || '';
+    setEditingValue(value);
   };
 
   const handleSaveField = () => {
     if (!editingField) return;
 
-    if (Object.keys(userFields).includes(editingField)) {
-      setUserFields(prev => ({
+    // Check if it's an identifier field
+    if (Object.keys(identifierFields).includes(editingField)) {
+      setIdentifierFields(prev => ({
+        ...prev,
+        [editingField]: editingValue
+      }));
+    } else if (Object.keys(traitFields).includes(editingField)) {
+      setTraitFields(prev => ({
         ...prev,
         [editingField]: editingValue
       }));
     } else {
-      setCustomFields(prev => ({
+      // Custom trait
+      setCustomTraits(prev => ({
         ...prev,
         [editingField]: editingValue
       }));
@@ -155,7 +258,7 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
 
   const handleAddCustomField = () => {
     if (customFieldName.trim()) {
-      setCustomFields(prev => ({
+      setCustomTraits(prev => ({
         ...prev,
         [customFieldName.trim()]: ''
       }));
@@ -174,24 +277,53 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
   };
 
   const handleRemoveCustomField = (fieldName) => {
-    setCustomFields(prev => {
+    setCustomTraits(prev => {
       const updated = { ...prev };
       delete updated[fieldName];
       return updated;
     });
   };
 
+  const handleClearField = (fieldName) => {
+    // Check if it's an identifier field
+    if (Object.keys(identifierFields).includes(fieldName)) {
+      setIdentifierFields(prev => ({
+        ...prev,
+        [fieldName]: ''
+      }));
+    } else if (Object.keys(traitFields).includes(fieldName)) {
+      setTraitFields(prev => ({
+        ...prev,
+        [fieldName]: ''
+      }));
+    } else {
+      // Custom trait
+      setCustomTraits(prev => ({
+        ...prev,
+        [fieldName]: ''
+      }));
+    }
+  };
+
   const handleUpdate = () => {
-    const allFields = { ...userFields, ...customFields };
+    const allIdentifiers = { ...identifierFields };
+    const allTraits = { ...traitFields, ...customTraits };
     
-    // Apply toggle state to the fields that get sent for update
-    const filteredFields = { ...allFields };
-    if (!fieldToggles.userId) filteredFields.userId = '';
-    if (!fieldToggles.anonymousId) filteredFields.anonymousId = '';
+    // Apply toggle state to the identifier fields that get sent for update
+    const filteredIdentifiers = { ...allIdentifiers };
+    Object.keys(allIdentifiers).forEach(key => {
+      const hasToggle = key === 'userId' || key === 'anonymousId';
+      if (hasToggle && !fieldToggles[key]) {
+        filteredIdentifiers[key] = '';
+      }
+    });
+    
+    // Combine all fields for backward compatibility
+    const allFields = { ...filteredIdentifiers, ...allTraits };
     
     // Include toggle states in the update data
     const userData = {
-      ...filteredFields,
+      ...allFields,
       _toggles: fieldToggles
     };
     
@@ -201,22 +333,35 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
   };
 
   const handleLoadRandomUser = () => {
-    const { userFields: randomUserFields, customFields: randomCustomFields } = loadRandomUserData();
+    const { userFields: randomUserData, customFields: randomCustomFields } = loadRandomUserData();
     
     // Generate new anonymousId for this random user
     const newAnonymousId = generateUUID();
     
-    // Update userFields state with new userId and anonymousId
-    setUserFields(prev => ({
-      ...prev,
-      ...randomUserFields,
-      // Always update both userId and anonymousId when loading random user
-      userId: fieldToggles.userId ? randomUserFields.userId : '',
-      anonymousId: fieldToggles.anonymousId ? newAnonymousId : ''
-    }));
+    // Separate identifiers from traits
+    const newIdentifiers = { ...identifierFields };
+    const newTraits = { ...traitFields };
     
-    // Update customFields state
-    setCustomFields(randomCustomFields);
+    // Update identifier fields
+    Object.keys(newIdentifiers).forEach(key => {
+      const hasToggle = key === 'userId' || key === 'anonymousId';
+      if (key === 'anonymousId') {
+        newIdentifiers[key] = hasToggle && fieldToggles[key] ? newAnonymousId : '';
+      } else if (randomUserData[key]) {
+        newIdentifiers[key] = hasToggle ? (fieldToggles[key] ? randomUserData[key] : '') : randomUserData[key];
+      }
+    });
+    
+    // Update trait fields (including any that overlap with identifiers)
+    Object.keys(newTraits).forEach(key => {
+      if (randomUserData[key]) {
+        newTraits[key] = randomUserData[key];
+      }
+    });
+    
+    setIdentifierFields(newIdentifiers);
+    setTraitFields(newTraits);
+    setCustomTraits(randomCustomFields);
   };
 
   const handleToggleField = (fieldName) => {
@@ -224,21 +369,27 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
       const newToggles = { ...prev, [fieldName]: !prev[fieldName] };
       // If toggling ON userId, get or persist UUID if not present
       if (fieldName === 'userId' && newToggles[fieldName]) {
-        const currentUserId = userFields.userId;
+        const currentUserId = identifierFields.userId;
         if (!currentUserId || currentUserId.trim() === '') {
           const newUserId = getOrPersistUserId();
-          setUserFields(prevFields => {
+          setIdentifierFields(prevFields => {
             const updatedFields = {
               ...prevFields,
               userId: newUserId
             };
             if (onUserUpdate) {
-              const allFields = { ...updatedFields, ...customFields };
-              const filteredFields = { ...allFields };
-              if (!newToggles.userId) filteredFields.userId = '';
-              if (!newToggles.anonymousId) filteredFields.anonymousId = '';
+              const allIdentifiers = { ...updatedFields };
+              const allTraits = { ...traitFields, ...customTraits };
+              const filteredIdentifiers = { ...allIdentifiers };
+              Object.keys(allIdentifiers).forEach(key => {
+                const hasToggle = key === 'userId' || key === 'anonymousId';
+                if (hasToggle && !newToggles[key]) {
+                  filteredIdentifiers[key] = '';
+                }
+              });
+              const allFields = { ...filteredIdentifiers, ...allTraits };
               const userData = {
-                ...filteredFields,
+                ...allFields,
                 _toggles: newToggles
               };
               setTimeout(() => onUserUpdate(userData), 0);
@@ -251,13 +402,13 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
       
       // If toggling off userId, generate anonymousId UUID if not present and anonymousId is enabled
       if (fieldName === 'userId' && !newToggles[fieldName] && newToggles.anonymousId) {
-        const currentAnonymousId = userFields.anonymousId;
+        const currentAnonymousId = identifierFields.anonymousId;
         if (!currentAnonymousId || currentAnonymousId.trim() === '') {
           // Generate a new UUID for anonymousId
           const newAnonymousId = generateUUID();
           
-          // Update userFields state
-          setUserFields(prevFields => {
+          // Update identifierFields state
+          setIdentifierFields(prevFields => {
             const updatedFields = {
               ...prevFields,
               [fieldName]: '', // Clear userId
@@ -266,13 +417,18 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
             
             // Trigger update to parent components with the new data
             if (onUserUpdate) {
-              const allFields = { ...updatedFields, ...customFields };
-              const filteredFields = { ...allFields };
-              if (!newToggles.userId) filteredFields.userId = '';
-              if (!newToggles.anonymousId) filteredFields.anonymousId = '';
+              const allTraits = { ...traitFields, ...customTraits };
+              const filteredIdentifiers = { ...updatedFields };
+              Object.keys(updatedFields).forEach(key => {
+                const hasToggle = key === 'userId' || key === 'anonymousId';
+                if (hasToggle && !newToggles[key]) {
+                  filteredIdentifiers[key] = '';
+                }
+              });
+              const allFields = { ...filteredIdentifiers, ...allTraits };
               
               const userData = {
-                ...filteredFields,
+                ...allFields,
                 _toggles: newToggles
               };
               
@@ -289,12 +445,12 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
       
       // If toggling ON anonymousId, generate UUID if not present
       if (fieldName === 'anonymousId' && newToggles[fieldName]) {
-        const currentAnonymousId = userFields.anonymousId;
+        const currentAnonymousId = identifierFields.anonymousId;
         if (!currentAnonymousId || currentAnonymousId.trim() === '') {
           // Generate a new UUID for anonymousId
           const newAnonymousId = generateUUID();
           
-          setUserFields(prevFields => {
+          setIdentifierFields(prevFields => {
             const updatedFields = {
               ...prevFields,
               anonymousId: newAnonymousId
@@ -302,13 +458,18 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
             
             // Trigger update to parent components with the new data
             if (onUserUpdate) {
-              const allFields = { ...updatedFields, ...customFields };
-              const filteredFields = { ...allFields };
-              if (!newToggles.userId) filteredFields.userId = '';
-              if (!newToggles.anonymousId) filteredFields.anonymousId = '';
+              const allTraits = { ...traitFields, ...customTraits };
+              const filteredIdentifiers = { ...updatedFields };
+              Object.keys(updatedFields).forEach(key => {
+                const hasToggle = key === 'userId' || key === 'anonymousId';
+                if (hasToggle && !newToggles[key]) {
+                  filteredIdentifiers[key] = '';
+                }
+              });
+              const allFields = { ...filteredIdentifiers, ...allTraits };
               
               const userData = {
-                ...filteredFields,
+                ...allFields,
                 _toggles: newToggles
               };
               
@@ -324,7 +485,7 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
       
       // If toggling off, clear the field immediately
       if (!newToggles[fieldName]) {
-        setUserFields(prevFields => ({
+        setIdentifierFields(prevFields => ({
           ...prevFields,
           [fieldName]: ''
         }));
@@ -334,7 +495,7 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
     });
   };
 
-  const renderField = (fieldName, value, isCustom = false) => {
+  const renderField = (fieldName, value, isCustom = false, isIdentifier = false) => {
     const isEditing = editingField === fieldName;
     const displayValue = value || '';
     const isEmpty = !displayValue;
@@ -342,28 +503,53 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
     const isToggleEnabled = hasToggle ? fieldToggles[fieldName] : true;
     const fieldDisabled = hasToggle && !isToggleEnabled;
 
+    // Get display name for identifier fields or special field names
+    let displayName;
+    if (isIdentifier) {
+      displayName = getIdentifierDisplayName(fieldName);
+    } else if (fieldName === 'streetAddress') {
+      displayName = 'Street Address';
+    } else if (fieldName === 'firstName') {
+      displayName = 'First Name';
+    } else if (fieldName === 'lastName') {
+      displayName = 'Last Name';
+    } else {
+      displayName = fieldName;
+    }
+
     return (
-      <div key={fieldName} className="current-user__field">
+      <div key={fieldName} className="current-user__field" data-field={fieldName}>
         <label className="current-user__label">
-          {fieldName}:
-          {hasToggle && (
-            <button
-              onClick={() => handleToggleField(fieldName)}
-              className={`current-user__toggle ${isToggleEnabled ? 'current-user__toggle--enabled' : 'current-user__toggle--disabled'}`}
-              title={`${isToggleEnabled ? 'Disable' : 'Enable'} ${fieldName}`}
-            >
-              {isToggleEnabled ? '✓' : '✗'}
-            </button>
-          )}
-          {isCustom && (
-            <button
-              onClick={() => handleRemoveCustomField(fieldName)}
-              className="current-user__remove-custom"
-              title="Remove custom field"
-            >
-              ×
-            </button>
-          )}
+          {displayName}:
+          <div className="current-user__label-controls">
+            {hasToggle && (
+              <button
+                onClick={() => handleToggleField(fieldName)}
+                className={`current-user__toggle ${isToggleEnabled ? 'current-user__toggle--enabled' : 'current-user__toggle--disabled'}`}
+                title={`${isToggleEnabled ? 'Disable' : 'Enable'} ${displayName}`}
+              >
+                {isToggleEnabled ? '✓' : '✗'}
+              </button>
+            )}
+            {!isEmpty && !fieldDisabled && (
+              <button
+                onClick={() => handleClearField(fieldName)}
+                className="current-user__clear-field"
+                title={`Clear ${displayName}`}
+              >
+                ×
+              </button>
+            )}
+            {isCustom && !['streetAddress', 'city', 'state', 'zipcode'].includes(fieldName) && (
+              <button
+                onClick={() => handleRemoveCustomField(fieldName)}
+                className="current-user__remove-custom"
+                title="Remove custom trait"
+              >
+                🗑
+              </button>
+            )}
+          </div>
         </label>
         {isEditing && !fieldDisabled ? (
           <input
@@ -374,15 +560,15 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
             onBlur={handleSaveField}
             onKeyDown={handleKeyPress}
             className="current-user__input"
-            placeholder={`Enter ${fieldName}`}
+            placeholder={`Enter ${displayName}`}
           />
         ) : (
           <div
             onClick={() => !fieldDisabled && handleFieldClick(fieldName)}
             className={`current-user__value ${isEmpty ? 'current-user__value--empty' : ''} ${fieldDisabled ? 'current-user__value--disabled' : ''}`}
-            title={fieldDisabled ? `${fieldName} is disabled` : "Click to edit"}
+            title={fieldDisabled ? `${displayName} is disabled` : "Click to edit"}
           >
-            {fieldDisabled ? `${fieldName} disabled` : (displayValue || `Enter ${fieldName}`)}
+            {fieldDisabled ? `${displayName} disabled` : (displayValue || `Enter ${displayName}`)}
           </div>
         )}
       </div>
@@ -396,27 +582,90 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
       </div>
 
       <div className="current-user__content">
-        {/* Core user fields */}
-        {Object.entries(userFields).map(([fieldName, value]) =>
-          renderField(fieldName, value)
-        )}
-
-        {/* Custom fields section */}
-        {(Object.keys(customFields).length > 0 || showCustomInput) && (
-          <div className="current-user__custom-section">
-            {/* Custom fields grid */}
-            {Object.keys(customFields).length > 0 && (
-              <div className="current-user__custom-fields">
-                {Object.entries(customFields).map(([fieldName, value]) =>
-                  renderField(fieldName, value, true)
+        {/* Identifiers section */}
+        {Object.keys(identifierFields).length > 0 && (
+          <div className="current-user__identifiers-section">
+            <h4 className="current-user__section-title">Identifiers</h4>
+            <div className="current-user__section-description">
+              Fields configured in ID Resolution Config
+            </div>
+            
+            {/* Primary identifiers always on top row */}
+            <div className="current-user__primary-identifiers">
+              {identifierFields.userId !== undefined && renderField('userId', identifierFields.userId, false, true)}
+              {identifierFields.anonymousId !== undefined && renderField('anonymousId', identifierFields.anonymousId, false, true)}
+            </div>
+            
+            {/* Other identifiers */}
+            {Object.keys(identifierFields).filter(key => key !== 'userId' && key !== 'anonymousId').length > 0 && (
+              <div className="current-user__other-identifiers">
+                {Object.entries(identifierFields)
+                  .filter(([fieldName]) => fieldName !== 'userId' && fieldName !== 'anonymousId')
+                  .map(([fieldName, value]) => renderField(fieldName, value, false, true)
                 )}
               </div>
             )}
+          </div>
+        )}
 
-            {/* Add custom field */}
+        {/* Traits section */}
+        <div className="current-user__traits-section">
+          <h4 className="current-user__section-title">Traits</h4>
+          {/* <div className="current-user__section-description">
+            User attributes and properties
+          </div> */}
+          
+          <div className="current-user__fields-grid">
+            {/* Name fields: firstName and lastName on same row if both exist in trait fields */}
+            {traitFields.hasOwnProperty('firstName') && traitFields.hasOwnProperty('lastName') && (
+              <div className="current-user__name-row">
+                {renderField('firstName', traitFields.firstName, false, false)}
+                {renderField('lastName', traitFields.lastName, false, false)}
+              </div>
+            )}
+            
+            {/* Address fields: streetAddress, city, state, zipcode on same row if all exist in custom traits */}
+            {customTraits.hasOwnProperty('streetAddress') && customTraits.hasOwnProperty('city') && customTraits.hasOwnProperty('state') && customTraits.hasOwnProperty('zipcode') && (
+              <div className="current-user__address-row">
+                {renderField('streetAddress', customTraits.streetAddress, true, false)}
+                {renderField('city', customTraits.city, true, false)}
+                {renderField('state', customTraits.state, true, false)}
+                {renderField('zipcode', customTraits.zipcode, true, false)}
+              </div>
+            )}
+            
+            {/* Other trait fields (excluding firstName and lastName if they were rendered above) */}
+            {Object.entries(traitFields)
+              .filter(([fieldName]) => {
+                // Exclude firstName and lastName if both exist in trait fields (they're rendered above)
+                if (traitFields.hasOwnProperty('firstName') && traitFields.hasOwnProperty('lastName')) {
+                  return !['firstName', 'lastName'].includes(fieldName);
+                }
+                return true;
+              })
+              .map(([fieldName, value]) =>
+                renderField(fieldName, value, false, false)
+              )}
+
+            {/* Custom traits (excluding address fields if they were rendered above) */}
+            {Object.entries(customTraits)
+              .filter(([fieldName]) => {
+                // Exclude address fields if all four exist in custom traits (they're rendered above)
+                if (customTraits.hasOwnProperty('streetAddress') && customTraits.hasOwnProperty('city') && customTraits.hasOwnProperty('state') && customTraits.hasOwnProperty('zipcode')) {
+                  return !['streetAddress', 'city', 'state', 'zipcode'].includes(fieldName);
+                }
+                return true;
+              })
+              .map(([fieldName, value]) =>
+                renderField(fieldName, value, true, false)
+              )}
+          </div>
+
+          {/* Add custom trait */}
+          <div className="current-user__custom-section">
             {showCustomInput ? (
               <div className="current-user__field">
-                <label className="current-user__label">New field:</label>
+                <label className="current-user__label">New trait:</label>
                 <input
                   type="text"
                   value={customFieldName}
@@ -424,7 +673,7 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
                   onBlur={() => customFieldName.trim() ? handleAddCustomField() : setShowCustomInput(false)}
                   onKeyDown={handleCustomFieldKeyPress}
                   className="current-user__input"
-                  placeholder="Field name"
+                  placeholder="Trait name"
                   autoFocus
                 />
               </div>
@@ -433,13 +682,13 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
                 onClick={() => setShowCustomInput(true)}
                 className="current-user__add-custom"
               >
-                + Add Custom Field
+                + Add Custom Trait
               </button>
             )}
           </div>
-        )}
+        </div>
         
-        {/* Update button */}
+        {/* Buttons section */}
         <div className="current-user__update-section">
           <div className="current-user__buttons">
             <button

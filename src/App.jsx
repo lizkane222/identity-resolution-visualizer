@@ -10,6 +10,8 @@ import ProfileLookup from './components/ProfileLookup/ProfileLookup.jsx';
 import { useEffect, useMemo } from 'react';
 import './App.css';
 
+// Log when the page is loaded/refreshed
+console.log(`Loading Client on localhost:3000 - ${new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })} PST`);
 
 function App() {
   const [events, setEvents] = useState([]);
@@ -127,7 +129,26 @@ function App() {
 
   // Handle saving a new event from EventBuilder
   const handleSaveEvent = (eventData) => {
-    setEvents(prevEvents => [...prevEvents, eventData]);
+    setEvents(prevEvents => {
+      // Prevent duplicates: check for same rawData and writeKey
+      const isDuplicate = prevEvents.some(
+        e => e.rawData === eventData.rawData && e.writeKey === eventData.writeKey
+      );
+      
+      console.log('Attempting to save event:', {
+        rawData: eventData.rawData.substring(0, 50) + '...',
+        writeKey: eventData.writeKey,
+        isDuplicate
+      });
+      
+      if (isDuplicate) {
+        console.log('Duplicate detected, not adding');
+        return prevEvents;
+      }
+      
+      console.log('Adding new event to list');
+      return [...prevEvents, eventData];
+    });
   };
 
   // Handle removing a specific event

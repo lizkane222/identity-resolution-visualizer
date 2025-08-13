@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { simulateEvents } from '../../utils/eventSimulator';
 import { sendAppEventsToSegment, getStoredWriteKey } from '../../utils/segmentAPI';
+import { getSourceIcon } from '../../utils/sourceIcons';
 import './EventList.css';
 
 const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highlightedEventIndices = [] }) => {
@@ -58,8 +59,28 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
 
     // Check for events with writeKeys and global fallback writeKey
     const globalWriteKey = getStoredWriteKey();
-    const eventsWithWriteKeys = events.filter(event => event.writeKey && event.writeKey.trim() !== '');
-    const eventsWithoutWriteKeys = events.filter(event => !event.writeKey || event.writeKey.trim() === '');
+    
+    // For multi-source events, check if any source has a writeKey
+    // For single-source events, check the writeKey field
+    const eventsWithWriteKeys = events.filter(event => {
+      if (event.sources && event.sources.length > 0) {
+        // Multi-source event: check if any source has a writeKey
+        return event.sources.some(source => source.settings?.writeKey && source.settings.writeKey.trim() !== '');
+      } else {
+        // Single-source event: check writeKey field
+        return event.writeKey && event.writeKey.trim() !== '';
+      }
+    });
+    
+    const eventsWithoutWriteKeys = events.filter(event => {
+      if (event.sources && event.sources.length > 0) {
+        // Multi-source event: only include if NO sources have writeKeys
+        return !event.sources.some(source => source.settings?.writeKey && source.settings.writeKey.trim() !== '');
+      } else {
+        // Single-source event: check writeKey field
+        return !event.writeKey || event.writeKey.trim() === '';
+      }
+    });
     
     let segmentEnabled = false;
     
@@ -164,15 +185,37 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
             }
           ]);
 
-          // Group events by writeKey
+          // Group events by writeKey, handling both single and multi-source events
           const eventsByWriteKey = new Map();
           
-          // Add events with their own writeKeys
+          // Handle events with their own writeKeys (single source events)
           eventsWithWriteKeys.forEach(event => {
-            if (!eventsByWriteKey.has(event.writeKey)) {
-              eventsByWriteKey.set(event.writeKey, []);
+            if (event.sources && event.sources.length > 0) {
+              // Multi-source event: create separate entries for each source
+              event.sources.forEach(source => {
+                const writeKey = source.settings?.writeKey;
+                if (writeKey) {
+                  if (!eventsByWriteKey.has(writeKey)) {
+                    eventsByWriteKey.set(writeKey, []);
+                  }
+                  // Create a single-source version of the event for sending
+                  const singleSourceEvent = {
+                    ...event,
+                    writeKey: writeKey,
+                    sourceName: source.name,
+                    sourceType: source.type,
+                    sources: undefined // Remove sources array for individual sending
+                  };
+                  eventsByWriteKey.get(writeKey).push(singleSourceEvent);
+                }
+              });
+            } else {
+              // Single source event
+              if (!eventsByWriteKey.has(event.writeKey)) {
+                eventsByWriteKey.set(event.writeKey, []);
+              }
+              eventsByWriteKey.get(event.writeKey).push(event);
             }
-            eventsByWriteKey.get(event.writeKey).push(event);
           });
           
           // Add events without writeKeys to global writeKey group (if available)
@@ -383,6 +426,16 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
             const isHighlighted = highlightedEvents.has(event.id);
             const isUserHighlighted = highlightedEventIndices.includes(index);
             const eventType = getEventType(event.rawData);
+            
+            // Parse rawData to extract event name
+            let eventName = null;
+            try {
+              const parsedData = JSON.parse(event.rawData);
+              eventName = parsedData.event || parsedData.properties?.name || null;
+            } catch (e) {
+              eventName = null;
+            }
+            
             const isEditing = editingEventId === event.id;
 
             const handleEditClick = (e) => {
@@ -424,49 +477,77 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
                   className="event-list__event-header"
                   onClick={() => toggleEventExpansion(event.id)}
                 >
-                  <div className="event-list__event-meta">
-                    <span className="event-list__event-number">
-                      Event #{index + 1} - {eventType}
-                    </span>
-                    {event.sourceName && (
-                      <span className="event-list__event-source" title={`WriteKey: ${event.writeKey || 'Not set'}`}>
-                        📡 {event.sourceName}
+                  {/* First Line: Event # - type - "event name" and timestamp */}
+                  <div className="event-list__event-line-one">
+                    <div className="event-list__event-meta">
+                      <span className="event-list__event-number">
+                        Event #{index + 1} - {eventType}{eventType === 'track' && eventName ? ` - ${eventName}` : ''}
                       </span>
-                    )}
-                    {currentEventIndex === index && (
-                      <span className="event-list__event-status">
-                        Running...
-                      </span>
-                    )}
-                  </div>
-                  <div className="event-list__event-controls">
-                    <div className="event-list__event-toggle">
-                      {isExpanded ? '▼' : '▶'}
+                      {eventName && eventType !== 'track' && (
+                        <span className="event-list__event-name">
+                          "{eventName}"
+                        </span>
+                      )}
+                      {currentEventIndex === index && (
+                        <span className="event-list__event-status">
+                          Running...
+                        </span>
+                      )}
                     </div>
-                    <span className="event-list__event-timestamp">
-                      {(() => {
-                        try {
-                          // For CSV uploaded events, timestamp is in rawData
-                          const parsedData = JSON.parse(event.rawData);
-                          const timestamp = parsedData.timestamp || parsedData.originalTimestamp || parsedData.receivedAt || event.timestamp;
-                          return timestamp ? new Date(timestamp).toLocaleTimeString() : 'No timestamp';
-                        } catch (e) {
-                          // Fallback for built-in events that have timestamp directly
-                          return event.timestamp ? new Date(event.timestamp).toLocaleTimeString() : 'No timestamp';
-                        }
-                      })()}
-                    </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent toggle when clicking remove
-                        onRemoveEvent(event.id);
-                      }}
-                      disabled={isRunning}
-                      className="event-list__remove-button"
-                    >
-                      ×
-                    </button>
+                    <div className="event-list__event-controls">
+                      <span className="event-list__event-timestamp">
+                        {(() => {
+                          try {
+                            // For CSV uploaded events, timestamp is in rawData
+                            const parsedData = JSON.parse(event.rawData);
+                            const timestamp = parsedData.timestamp || parsedData.originalTimestamp || parsedData.receivedAt || event.timestamp;
+                            return timestamp ? new Date(timestamp).toLocaleTimeString() : 'No timestamp';
+                          } catch (e) {
+                            // Fallback for built-in events that have timestamp directly
+                            return event.timestamp ? new Date(event.timestamp).toLocaleTimeString() : 'No timestamp';
+                          }
+                        })()}
+                      </span>
+                      <div className="event-list__event-toggle">
+                        {isExpanded ? '▼' : '▶'}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent toggle when clicking remove
+                          onRemoveEvent(event.id);
+                        }}
+                        disabled={isRunning}
+                        className="event-list__remove-button"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
+                  
+                  {/* Second Line: Source flags */}
+                  {(event.sources && event.sources.length > 0) || event.sourceName ? (
+                    <div className="event-list__event-line-two">
+                      <div className="event-list__event-sources">
+                        {event.sources && event.sources.length > 0 ? (
+                          // Multi-source event: show all sources
+                          event.sources.map((source, sourceIndex) => (
+                            <span 
+                              key={sourceIndex}
+                              className="event-list__event-source" 
+                              title={`WriteKey: ${source.settings?.writeKey || 'Not set'}`}
+                            >
+                              {getSourceIcon(source.type)} {source.name}
+                            </span>
+                          ))
+                        ) : (
+                          // Single source event
+                          <span className="event-list__event-source" title={`WriteKey: ${event.writeKey || 'Not set'}`}>
+                            {getSourceIcon(event.sourceType)} {event.sourceName}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 {isExpanded && (

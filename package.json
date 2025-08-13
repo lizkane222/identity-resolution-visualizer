@@ -15,13 +15,15 @@
     "papaparse": "^5.5.3",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
     "server": "node server/server.js",
     "dev": "concurrently \"npm run server\" \"npm start\"",
+    "dev-prod": "concurrently \"npm run server\" \"npm run serve-build\"",
+    "serve-build": "serve -s build -l 3000",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

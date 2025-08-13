@@ -1,0 +1,15 @@
+const path = require('path');
+
+module.exports = {
+  devServer: {
+    allowedHosts: 'all',
+    host: 'localhost',
+    port: 3000,
+    historyApiFallback: true,
+    hot: true,
+    open: false,
+    client: {
+      webSocketURL: 'ws://localhost:3000/ws',
+    },
+  },
+};

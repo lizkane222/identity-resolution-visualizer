@@ -56,7 +56,7 @@ const SpaceConfig = () => {
 
   const loadCurrentConfig = async () => {
     try {
-      const response = await fetch('/api/config');
+      const response = await fetch('http://localhost:8888/api/config');
       const config = await response.json();
       
       if (config.spaceId) {
@@ -88,7 +88,7 @@ const SpaceConfig = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const response = await fetch('/api/config', {
+      const response = await fetch('http://localhost:8888/api/config', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,14 +119,7 @@ const SpaceConfig = () => {
   };
 
   const handleTokenChange = (value) => {
-    // Don't update if the user is trying to edit the obfuscated value
-    if (value === '••••••••••••••••' || profileApiToken === '••••••••••••••••') {
-      if (value !== '••••••••••••••••') {
-        setProfileApiToken(value);
-      }
-    } else {
-      setProfileApiToken(value);
-    }
+    setProfileApiToken(value);
   };
 
   const handleTokenFocus = () => {

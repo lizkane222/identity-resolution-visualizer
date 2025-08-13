@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { saveWriteKey, getStoredWriteKey, validateWriteKey, saveSourceConfig, getStoredSourceConfig } from '../../utils/segmentAPI';
 import './SourceConfig.css';
 
@@ -8,11 +8,23 @@ const SourceConfig = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [activeTab, setActiveTab] = useState('sources');
+  const [autoSaving, setAutoSaving] = useState(false);
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
-      onClose();
+      handleClose();
     }
+  };
+
+  const handleClose = async () => {
+    // Auto-save configuration before closing
+    try {
+      await saveSourceConfig(sources);
+      console.log('Source configuration saved on modal close');
+    } catch (error) {
+      console.warn('Failed to save source configuration on modal close:', error);
+    }
+    onClose();
   };
 
   // Initialize sources from stored configuration or create default ones from all available types
@@ -62,10 +74,7 @@ const SourceConfig = ({ isOpen, onClose }) => {
       icon: '📱',
       description: 'Native iOS app analytics tracking',
       settings: [
-        { key: 'writeKey', label: 'Write Key', type: 'text', required: true },
-        { key: 'trackApplicationLifecycleEvents', label: 'Track App Lifecycle', type: 'boolean' },
-        { key: 'recordScreenViews', label: 'Record Screen Views', type: 'boolean' },
-        { key: 'trackDeepLinks', label: 'Track Deep Links', type: 'boolean' }
+        { key: 'writeKey', label: 'Write Key', type: 'text', required: true }
       ]
     },
     'android': {
@@ -73,10 +82,7 @@ const SourceConfig = ({ isOpen, onClose }) => {
       icon: '🤖',
       description: 'Native Android app analytics tracking',
       settings: [
-        { key: 'writeKey', label: 'Write Key', type: 'text', required: true },
-        { key: 'trackApplicationLifecycleEvents', label: 'Track App Lifecycle', type: 'boolean' },
-        { key: 'recordScreenViews', label: 'Record Screen Views', type: 'boolean' },
-        { key: 'trackDeepLinks', label: 'Track Deep Links', type: 'boolean' }
+        { key: 'writeKey', label: 'Write Key', type: 'text', required: true }
       ]
     },
     'server': {
@@ -84,10 +90,7 @@ const SourceConfig = ({ isOpen, onClose }) => {
       icon: '🖥️',
       description: 'Backend server tracking (Node.js, Python, etc.)',
       settings: [
-        { key: 'writeKey', label: 'Write Key', type: 'text', required: true },
-        { key: 'flushAt', label: 'Flush At (events)', type: 'number' },
-        { key: 'flushInterval', label: 'Flush Interval (ms)', type: 'number' },
-        { key: 'maxEventsInBatch', label: 'Max Events in Batch', type: 'number' }
+        { key: 'writeKey', label: 'Write Key', type: 'text', required: true }
       ]
     },
     'http': {
@@ -95,10 +98,7 @@ const SourceConfig = ({ isOpen, onClose }) => {
       icon: '🔗',
       description: 'Direct HTTP API calls to Segment',
       settings: [
-        { key: 'writeKey', label: 'Write Key', type: 'text', required: true },
-        { key: 'endpoint', label: 'API Endpoint', type: 'text' },
-        { key: 'timeout', label: 'Request Timeout (ms)', type: 'number' },
-        { key: 'retries', label: 'Max Retries', type: 'number' }
+        { key: 'writeKey', label: 'Write Key', type: 'text', required: true }
       ]
     },
     'react-native': {
@@ -106,9 +106,7 @@ const SourceConfig = ({ isOpen, onClose }) => {
       icon: '⚛️',
       description: 'Cross-platform mobile app analytics',
       settings: [
-        { key: 'writeKey', label: 'Write Key', type: 'text', required: true },
-        { key: 'trackApplicationLifecycleEvents', label: 'Track App Lifecycle', type: 'boolean' },
-        { key: 'recordScreenViews', label: 'Record Screen Views', type: 'boolean' }
+        { key: 'writeKey', label: 'Write Key', type: 'text', required: true }
       ]
     },
     'flutter': {
@@ -116,8 +114,7 @@ const SourceConfig = ({ isOpen, onClose }) => {
       icon: '🐦',
       description: 'Cross-platform mobile app analytics with Flutter',
       settings: [
-        { key: 'writeKey', label: 'Write Key', type: 'text', required: true },
-        { key: 'trackApplicationLifecycleEvents', label: 'Track App Lifecycle', type: 'boolean' }
+        { key: 'writeKey', label: 'Write Key', type: 'text', required: true }
       ]
     },
     'unity': {
@@ -125,8 +122,7 @@ const SourceConfig = ({ isOpen, onClose }) => {
       icon: '🎮',
       description: 'Game development analytics tracking',
       settings: [
-        { key: 'writeKey', label: 'Write Key', type: 'text', required: true },
-        { key: 'trackGameEvents', label: 'Track Game Events', type: 'boolean' }
+        { key: 'writeKey', label: 'Write Key', type: 'text', required: true }
       ]
     }
   };
@@ -279,7 +275,7 @@ const SourceConfig = ({ isOpen, onClose }) => {
 
   // Handle changes to source settings
   const handleSourceSettingChange = (sourceId, settingKey, value) => {
-    setSources(prev => prev.map(source => 
+    const updatedSources = sources.map(source => 
       source.id === sourceId 
         ? { 
             ...source, 
@@ -289,8 +285,41 @@ const SourceConfig = ({ isOpen, onClose }) => {
             }
           }
         : source
-    ));
+    );
+    
+    setSources(updatedSources);
+    
+    // Auto-save configuration when writeKey is changed
+    if (settingKey === 'writeKey') {
+      autoSaveSourceConfig(updatedSources);
+    }
   };
+
+  // Auto-save source configuration (debounced to avoid excessive saves)
+  const autoSaveSourceConfig = useCallback(
+    useMemo(() => {
+      let timeoutId = null;
+      return (sources) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        setAutoSaving(true);
+        timeoutId = setTimeout(async () => {
+          try {
+            await saveSourceConfig(sources);
+            console.log('Source configuration auto-saved');
+            setMessage({ type: 'success', text: 'Configuration auto-saved' });
+            // Clear the message after 2 seconds
+            setTimeout(() => setMessage({ type: '', text: '' }), 2000);
+          } catch (error) {
+            console.warn('Failed to auto-save source configuration:', error);
+            setMessage({ type: 'error', text: 'Failed to auto-save configuration' });
+          } finally {
+            setAutoSaving(false);
+          }
+        }, 500); // 500ms debounce
+      };
+    }, []),
+    []
+  );
 
   // Save configuration including writeKey to localStorage and .env
   const handleSaveConfiguration = async () => {
@@ -562,7 +591,7 @@ const SourceConfig = ({ isOpen, onClose }) => {
         <div className="source-config__modal-header">
           <h2 className="source-config__title">Sources & Destinations Configuration</h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="source-config__close"
             aria-label="Close"
           >
@@ -581,6 +610,12 @@ const SourceConfig = ({ isOpen, onClose }) => {
       {message.text && (
         <div className={`source-config__message source-config__message--${message.type}`}>
           {message.text}
+        </div>
+      )}
+
+      {autoSaving && (
+        <div className="source-config__message source-config__message--info">
+          Auto-saving configuration...
         </div>
       )}
 
