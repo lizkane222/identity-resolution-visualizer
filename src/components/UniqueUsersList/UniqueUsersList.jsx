@@ -14,6 +14,17 @@ const UniqueUsersList = ({ events, currentUser, onHighlightEvents }) => {
         const userId = parsed.userId || parsed.user_id || parsed.userID;
         const anonymousId = parsed.anonymousId || parsed.anonymous_id;
         const email = parsed.traits?.email || parsed.properties?.email || parsed.email;
+        const phone = parsed.traits?.phone || parsed.properties?.phone || parsed.phone;
+        
+        // Extract all potential identifier fields from traits and properties
+        const allIdentifierFields = {
+          ...parsed.traits,
+          ...parsed.properties,
+          userId,
+          anonymousId,
+          email,
+          phone
+        };
         
         // Find existing user to merge with based on the hierarchy:
         // 1. If event has userId, find user with same userId
@@ -23,13 +34,13 @@ const UniqueUsersList = ({ events, currentUser, onHighlightEvents }) => {
         
         for (const [key, existingUser] of usersMap.entries()) {
           // Priority 1: Match by userId if current event has userId
-          if (userId && existingUser.userId === userId) {
+          if (userId && existingUser.identifierValues.userId && existingUser.identifierValues.userId.includes(userId)) {
             existingUserKey = key;
             break;
           }
           
           // Priority 2: Match by anonymousId if current event has anonymousId
-          if (anonymousId && existingUser.anonymousIds && existingUser.anonymousIds.includes(anonymousId)) {
+          if (anonymousId && existingUser.identifierValues.anonymousId && existingUser.identifierValues.anonymousId.includes(anonymousId)) {
             existingUserKey = key;
             break;
           }
@@ -38,9 +49,9 @@ const UniqueUsersList = ({ events, currentUser, onHighlightEvents }) => {
         // If no match found by userId or anonymousId, check email matching
         if (!existingUserKey && email) {
           for (const [key, existingUser] of usersMap.entries()) {
-            if (existingUser.email === email &&
-                ((userId && existingUser.userId === userId) ||
-                 (anonymousId && existingUser.anonymousIds && existingUser.anonymousIds.includes(anonymousId)))) {
+            if (existingUser.identifierValues.email && existingUser.identifierValues.email.includes(email) &&
+                ((userId && existingUser.identifierValues.userId && existingUser.identifierValues.userId.includes(userId)) ||
+                 (anonymousId && existingUser.identifierValues.anonymousId && existingUser.identifierValues.anonymousId.includes(anonymousId)))) {
               existingUserKey = key;
               break;
             }
@@ -63,8 +74,9 @@ const UniqueUsersList = ({ events, currentUser, onHighlightEvents }) => {
         if (!usersMap.has(existingUserKey)) {
           usersMap.set(existingUserKey, {
             userId: userId || null,
-            anonymousIds: anonymousId ? [anonymousId] : [], // Store as array
+            anonymousIds: anonymousId ? [anonymousId] : [], // Store as array for backward compatibility
             email: email || null,
+            identifierValues: {}, // New structure to store all unique values per identifier type
             traits: parsed.traits || {},
             properties: parsed.properties || {},
             eventCount: 0,
@@ -80,7 +92,23 @@ const UniqueUsersList = ({ events, currentUser, onHighlightEvents }) => {
         user.eventIndices.push(eventIndex);
         user.lastSeen = event.timestamp;
         
-        // Update identifiers if new ones are found (merge identities)
+        // Collect all unique identifier values for this user
+        Object.entries(allIdentifierFields).forEach(([fieldName, fieldValue]) => {
+          if (fieldValue !== null && fieldValue !== undefined && fieldValue !== '') {
+            // Initialize array for this identifier type if it doesn't exist
+            if (!user.identifierValues[fieldName]) {
+              user.identifierValues[fieldName] = [];
+            }
+            
+            // Add unique values only
+            const stringValue = String(fieldValue);
+            if (!user.identifierValues[fieldName].includes(stringValue)) {
+              user.identifierValues[fieldName].push(stringValue);
+            }
+          }
+        });
+        
+        // Update legacy fields for backward compatibility
         if (userId && !user.userId) {
           user.userId = userId;
           

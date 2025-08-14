@@ -1,0 +1,102 @@
+/* Twilio Sans Mono Font Definitions - CDN with comprehensive font weights */
+
+:root {
+  /* Primary Twilio font stack - CDN fonts first, then fallbacks */
+  --twilio-font-family: 'TwilioSansMono', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+  
+  /* Font weights available in Twilio Sans Mono */
+  --twilio-font-weight-light: 300;
+  --twilio-font-weight-regular: 400;
+  --twilio-font-weight-medium: 500;
+  --twilio-font-weight-retina: 550;
+  --twilio-font-weight-semibold: 600;
+  --twilio-font-weight-bold: 700;
+  --twilio-font-weight-extrabold: 800;
+  --twilio-font-weight-heavy: 900;
+}
+
+:root {
+  /* Primary Twilio font stack - Local fonts first, then fallbacks */
+  --twilio-font-family: 'TwilioSansMono', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+  
+  /* Font weights available in Twilio Sans Mono */
+  --twilio-font-weight-light: 300;
+  --twilio-font-weight-regular: 400;
+  --twilio-font-weight-medium: 500;
+  --twilio-font-weight-retina: 550;
+  --twilio-font-weight-semibold: 600;
+  --twilio-font-weight-bold: 700;
+  --twilio-font-weight-extrabold: 800;
+  --twilio-font-weight-heavy: 900;
+}
+
+/* Global font application */
+html {
+  font-family: var(--twilio-font-family);
+}
+
+body {
+  font-family: var(--twilio-font-family);
+  font-weight: var(--twilio-font-weight-regular);
+}
+
+/* Ensure all text elements use Twilio Sans Mono */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--twilio-font-family);
+  font-weight: var(--twilio-font-weight-semibold);
+}
+
+p, span, div, li, td, th, label {
+  font-family: var(--twilio-font-family);
+}
+
+/* Form elements */
+input, textarea, select, button {
+  font-family: var(--twilio-font-family);
+  font-weight: var(--twilio-font-weight-regular);
+}
+
+/* Code elements */
+code, pre, .code {
+  font-family: var(--twilio-font-family);
+  font-weight: var(--twilio-font-weight-regular);
+}
+
+/* Buttons and interactive elements */
+.btn, button, [role="button"] {
+  font-family: var(--twilio-font-family);
+  font-weight: var(--twilio-font-weight-medium);
+}
+
+/* Utility classes for different font weights */
+.font-light {
+  font-weight: var(--twilio-font-weight-light);
+}
+
+.font-regular {
+  font-weight: var(--twilio-font-weight-regular);
+}
+
+.font-medium {
+  font-weight: var(--twilio-font-weight-medium);
+}
+
+.font-retina {
+  font-weight: var(--twilio-font-weight-retina);
+}
+
+.font-semibold {
+  font-weight: var(--twilio-font-weight-semibold);
+}
+
+.font-bold {
+  font-weight: var(--twilio-font-weight-bold);
+}
+
+.font-extrabold {
+  font-weight: var(--twilio-font-weight-extrabold);
+}
+
+.font-heavy {
+  font-weight: var(--twilio-font-weight-heavy);
+}

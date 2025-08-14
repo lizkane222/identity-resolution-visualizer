@@ -191,6 +191,93 @@
   gap: 8px;
 }
 
+.idres-config__identifier-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-right: 16px;
+}
+
+.idres-config__control-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.idres-config__control-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: help;
+}
+
+.idres-config__limit-control {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+}
+
+.idres-config__limit-button {
+  background: none;
+  border: none;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.idres-config__limit-button:hover:not(:disabled) {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.idres-config__limit-button:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.idres-config__limit-value {
+  min-width: 20px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  padding: 0 4px;
+}
+
+.idres-config__frequency-select {
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.idres-config__frequency-select:focus {
+  outline: none;
+  border-color: #a855f7;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.1);
+}
+
+.idres-config__frequency-select:hover {
+  border-color: #9ca3af;
+}
+
 .idres-config__expand-button,
 .idres-config__toggle-button,
 .idres-config__remove-button {
@@ -502,5 +589,46 @@
   
   .idres-config__add-custom-help {
     color: #9ca3af;
+  }
+
+  .idres-config__control-label {
+    color: #9ca3af;
+  }
+
+  .idres-config__limit-control {
+    background: #111827;
+    border-color: #4b5563;
+  }
+
+  .idres-config__limit-button {
+    color: #9ca3af;
+  }
+
+  .idres-config__limit-button:hover:not(:disabled) {
+    background: #374151;
+    color: #d1d5db;
+  }
+
+  .idres-config__limit-button:disabled {
+    color: #4b5563;
+  }
+
+  .idres-config__limit-value {
+    color: #d1d5db;
+  }
+
+  .idres-config__frequency-select {
+    background: #111827;
+    border-color: #4b5563;
+    color: #d1d5db;
+  }
+
+  .idres-config__frequency-select:focus {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+  }
+
+  .idres-config__frequency-select:hover {
+    border-color: #6b7280;
   }
 }

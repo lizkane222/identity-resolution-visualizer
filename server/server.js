@@ -55,6 +55,9 @@ const handleApiError = (error, res) => {
 app.get('/api/config', (req, res) => {
   res.json({
     spaceId: process.env.SEGMENT_SPACE_ID || '',
+    unifySpaceSlug: process.env.SEGMENT_UNIFY_SPACE_SLUG || '',
+    unifySpaceFullUrl: process.env.SEGMENT_UNIFY_SPACE_FULL_URL || '',
+    unifyWorkspaceSlug: process.env.SEGMENT_UNIFY_WORKSPACE_SLUG || '',
     accessToken: process.env.SEGMENT_ACCESS_TOKEN ? '***' : '', // Mask token for security
     hasToken: !!process.env.SEGMENT_ACCESS_TOKEN
   });
@@ -62,18 +65,31 @@ app.get('/api/config', (req, res) => {
 
 // Update environment configuration
 app.post('/api/config', (req, res) => {
-  const { spaceId, accessToken } = req.body;
+  const { spaceId, accessToken, unifySpaceSlug, unifySpaceFullUrl, unifyWorkspaceSlug, integrations } = req.body;
   
   console.log('Received config update request:', {
     spaceId: spaceId ? `${spaceId.substring(0, 10)}...` : 'undefined',
-    accessToken: accessToken ? `${accessToken.substring(0, 10)}...` : 'undefined',
+    accessToken: accessToken ? `${accessToken.substring(0, 10)}...` : 'not provided (using existing)',
+    unifySpaceSlug: unifySpaceSlug || 'undefined',
+    unifySpaceFullUrl: unifySpaceFullUrl || 'undefined', 
+    unifyWorkspaceSlug: unifyWorkspaceSlug || 'undefined',
+    integrations: integrations || {},
     hasSpaceId: !!spaceId,
-    hasAccessToken: !!accessToken
+    hasAccessToken: !!accessToken,
+    existingTokenExists: !!process.env.SEGMENT_ACCESS_TOKEN
   });
   
-  if (!spaceId || !accessToken) {
+  if (!spaceId) {
     return res.status(400).json({
-      error: { message: 'Both spaceId and accessToken are required' }
+      error: { message: 'Space ID is required' }
+    });
+  }
+
+  // Check if we have a valid token - either provided or existing in env
+  const finalAccessToken = accessToken || process.env.SEGMENT_ACCESS_TOKEN;
+  if (!finalAccessToken) {
+    return res.status(400).json({
+      error: { message: 'Profile API Token is required. Please provide a token or ensure one exists in your configuration.' }
     });
   }
 
@@ -100,14 +116,52 @@ app.post('/api/config', (req, res) => {
   };
 
   envContent = updateEnvVar(envContent, 'SEGMENT_SPACE_ID', spaceId);
-  envContent = updateEnvVar(envContent, 'SEGMENT_ACCESS_TOKEN', accessToken);
+  
+  // Only update the access token if a new one was provided
+  if (accessToken) {
+    envContent = updateEnvVar(envContent, 'SEGMENT_ACCESS_TOKEN', accessToken);
+  }
+  
+  // Add unifySpaceSlug if provided
+  if (unifySpaceSlug) {
+    envContent = updateEnvVar(envContent, 'SEGMENT_UNIFY_SPACE_SLUG', unifySpaceSlug);
+  }
+  
+  // Add unifySpaceFullUrl if provided (store the original input for persistence)
+  if (unifySpaceFullUrl) {
+    envContent = updateEnvVar(envContent, 'SEGMENT_UNIFY_SPACE_FULL_URL', unifySpaceFullUrl);
+  }
+  
+  // Add unifyWorkspaceSlug if provided
+  if (unifyWorkspaceSlug) {
+    envContent = updateEnvVar(envContent, 'SEGMENT_UNIFY_WORKSPACE_SLUG', unifyWorkspaceSlug);
+  }
+  
+  // Add integrations config if provided
+  if (integrations) {
+    envContent = updateEnvVar(envContent, 'SEGMENT_INTEGRATIONS_CONFIG', JSON.stringify(integrations));
+  }
 
   try {
     fs.writeFileSync(envPath, envContent);
     
     // Update process.env
     process.env.SEGMENT_SPACE_ID = spaceId;
-    process.env.SEGMENT_ACCESS_TOKEN = accessToken;
+    if (accessToken) {
+      process.env.SEGMENT_ACCESS_TOKEN = accessToken;
+    }
+    if (unifySpaceSlug) {
+      process.env.SEGMENT_UNIFY_SPACE_SLUG = unifySpaceSlug;
+    }
+    if (unifySpaceFullUrl) {
+      process.env.SEGMENT_UNIFY_SPACE_FULL_URL = unifySpaceFullUrl;
+    }
+    if (unifyWorkspaceSlug) {
+      process.env.SEGMENT_UNIFY_WORKSPACE_SLUG = unifyWorkspaceSlug;
+    }
+    if (integrations) {
+      process.env.SEGMENT_INTEGRATIONS_CONFIG = JSON.stringify(integrations);
+    }
     
     console.log('Configuration saved successfully to .env file');
     res.json({ success: true, message: 'Configuration updated successfully' });

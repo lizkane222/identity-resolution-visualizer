@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import SpaceConfig from './SpaceConfig';
 import IdResConfig from './IdResConfig';
 import './UnifySpaceConfig.css';
@@ -6,7 +6,52 @@ import './UnifySpaceConfig.css';
 
 const UnifySpaceConfig = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('space');
+  const [unifySpaceSlug, setUnifySpaceSlug] = useState('');
   const idResConfigRef = useRef();
+
+  // Load unifySpaceSlug from server configuration
+  useEffect(() => {
+    const loadUnifySpaceSlug = async () => {
+      try {
+        const response = await fetch('http://localhost:8888/api/config');
+        const config = await response.json();
+        if (config.unifySpaceSlug) {
+          setUnifySpaceSlug(config.unifySpaceSlug);
+        }
+      } catch (error) {
+        console.error('Failed to load unifySpaceSlug:', error);
+      }
+    };
+    if (isOpen) {
+      loadUnifySpaceSlug();
+    }
+  }, [isOpen]);
+
+  // Listen for storage events to update unifySpaceSlug when SpaceConfig changes it
+  useEffect(() => {
+    const handleStorageChange = () => {
+      // Reload the config when we detect changes
+      if (isOpen) {
+        const loadUnifySpaceSlug = async () => {
+          try {
+            const response = await fetch('http://localhost:8888/api/config');
+            const config = await response.json();
+            if (config.unifySpaceSlug) {
+              setUnifySpaceSlug(config.unifySpaceSlug);
+            }
+          } catch (error) {
+            console.error('Failed to reload unifySpaceSlug:', error);
+          }
+        };
+        loadUnifySpaceSlug();
+      }
+    };
+
+    // Set up an interval to check for changes (since server config changes don't trigger storage events)
+    const interval = setInterval(handleStorageChange, 1000);
+    
+    return () => clearInterval(interval);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -60,7 +105,7 @@ const UnifySpaceConfig = ({ isOpen, onClose }) => {
           )}
           {activeTab === 'idres' && (
             <div className="unify-space-config__card">
-              <IdResConfig ref={idResConfigRef} />
+              <IdResConfig ref={idResConfigRef} unifySpaceSlug={unifySpaceSlug} />
             </div>
           )}
         </div>

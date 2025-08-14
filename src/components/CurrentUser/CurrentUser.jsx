@@ -185,11 +185,19 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
     const allTraits = { ...traitFields, ...customTraits };
     
     // Apply toggle state to the identifier fields that get sent to parent
-    const filteredIdentifiers = { ...allIdentifiers };
+    const filteredIdentifiers = {};
     Object.keys(allIdentifiers).forEach(key => {
       const hasToggle = key === 'userId' || key === 'anonymousId';
-      if (hasToggle && !fieldToggles[key]) {
-        filteredIdentifiers[key] = '';
+      if (hasToggle) {
+        // Only include the field if toggle is enabled AND it has a value
+        if (fieldToggles[key] && allIdentifiers[key] && allIdentifiers[key].trim()) {
+          filteredIdentifiers[key] = allIdentifiers[key];
+        }
+      } else {
+        // For fields without toggles, include if they have values
+        if (allIdentifiers[key] && allIdentifiers[key].trim()) {
+          filteredIdentifiers[key] = allIdentifiers[key];
+        }
       }
     });
     
@@ -201,7 +209,11 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
       ...allFields,
       _toggles: fieldToggles // Add toggle states with a special prefix
     };
-    
+
+    console.log('📤 [CurrentUser] Sending userData to parent:', JSON.stringify(userData, null, 2));
+    console.log('📤 [CurrentUser] anonymousId in userData:', userData.anonymousId);
+    console.log('📤 [CurrentUser] toggles:', userData._toggles);
+
     if (onUserChange) {
       onUserChange(userData);
     }
@@ -362,6 +374,35 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
     setIdentifierFields(newIdentifiers);
     setTraitFields(newTraits);
     setCustomTraits(randomCustomFields);
+    
+    // Immediately update the event payload to sync with the UI
+    if (onUserChange) {
+      // Build the complete user data
+      const allIdentifiers = { ...newIdentifiers };
+      const allTraits = { ...newTraits, ...randomCustomFields };
+      
+      // Filter identifiers based on toggles
+      const filteredIdentifiers = {};
+      Object.keys(allIdentifiers).forEach(key => {
+        const hasToggle = key === 'userId' || key === 'anonymousId';
+        if (hasToggle) {
+          if (fieldToggles[key] && allIdentifiers[key]) {
+            filteredIdentifiers[key] = allIdentifiers[key];
+          }
+        } else {
+          if (allIdentifiers[key]) {
+            filteredIdentifiers[key] = allIdentifiers[key];
+          }
+        }
+      });
+      
+      // Call onUserChange to sync the event payload
+      onUserChange({
+        identifiers: filteredIdentifiers,
+        traits: allTraits,
+        _toggles: fieldToggles
+      });
+    }
   };
 
   const handleToggleField = (fieldName) => {

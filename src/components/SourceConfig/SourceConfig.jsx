@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { saveWriteKey, getStoredWriteKey, validateWriteKey, saveSourceConfig, getStoredSourceConfig } from '../../utils/segmentAPI';
 import './SourceConfig.css';
 
-const SourceConfig = ({ isOpen, onClose }) => {
+const SourceConfig = ({ isOpen, onClose, unifySpaceSlug }) => {
   const [sources, setSources] = useState([]);
   const [destinations, setDestinations] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -14,6 +14,49 @@ const SourceConfig = ({ isOpen, onClose }) => {
     if (e.target === e.currentTarget) {
       handleClose();
     }
+  };
+
+  // Helper functions for generating Segment URLs
+  const processUnifySpaceInput = (input) => {
+    if (!input || !input.trim()) return '';
+    
+    // Check if input contains a Segment URL pattern (handles both unify and engage)
+    const urlMatch = input.match(/segment\.com\/[^/]+\/(?:unify|engage)\/spaces\/([^/]+)/);
+    if (urlMatch) {
+      return urlMatch[1]; // Extract the slug from the URL
+    }
+    
+    // If it's not a URL, assume it's just the slug itself
+    return input.trim();
+  };
+
+  const extractWorkspaceSlug = (input) => {
+    if (!input || !input.trim()) return null;
+    
+    // Match pattern: https://app.segment.com/workspace-slug/...
+    const workspaceMatch = input.match(/https?:\/\/app\.segment\.com\/([^/]+)/);
+    if (workspaceMatch) {
+      return workspaceMatch[1];
+    }
+    
+    return null;
+  };
+
+  const generatePageURL = (page) => {
+    const processedSlug = processUnifySpaceInput(unifySpaceSlug);
+    const extractedWorkspaceSlug = extractWorkspaceSlug(unifySpaceSlug);
+    
+    if (!processedSlug) return '';
+    
+    const basePath = extractedWorkspaceSlug 
+      ? `https://app.segment.com/${extractedWorkspaceSlug}/unify/spaces/${processedSlug}`
+      : `https://app.segment.com/goto-my-workspace/unify/spaces/${processedSlug}`;
+    
+    const pagePaths = {
+      'profile-sources': '/settings/sources'
+    };
+    
+    return `${basePath}${pagePaths[page] || ''}`;
   };
 
   const handleClose = async () => {
@@ -295,6 +338,46 @@ const SourceConfig = ({ isOpen, onClose }) => {
     }
   };
 
+  // Handle updating source name
+  const handleSourceNameChange = (sourceId, newName) => {
+    const updatedSources = sources.map(source => 
+      source.id === sourceId 
+        ? { ...source, name: newName }
+        : source
+    );
+    
+    setSources(updatedSources);
+    autoSaveSourceConfig(updatedSources);
+  };
+
+  // Handle duplicating a source
+  const handleDuplicateSource = (sourceId) => {
+    const sourceIndex = sources.findIndex(source => source.id === sourceId);
+    if (sourceIndex === -1) return;
+
+    const originalSource = sources[sourceIndex];
+    const sourceType = sourceTypes[originalSource.type];
+    
+    // Generate unique ID for the duplicated source
+    const timestamp = Date.now();
+    const duplicatedSource = {
+      ...originalSource,
+      id: `${originalSource.type}-source-${timestamp}`,
+      name: `${originalSource.name} Copy`,
+      settings: {
+        ...originalSource.settings,
+        writeKey: '' // Clear writeKey for the duplicate
+      }
+    };
+
+    // Insert the duplicate right after the original source
+    const updatedSources = [...sources];
+    updatedSources.splice(sourceIndex + 1, 0, duplicatedSource);
+    
+    setSources(updatedSources);
+    autoSaveSourceConfig(updatedSources);
+  };
+
   // Auto-save source configuration (debounced to avoid excessive saves)
   const autoSaveSourceConfig = useCallback(
     useMemo(() => {
@@ -490,11 +573,26 @@ const SourceConfig = ({ isOpen, onClose }) => {
         <div className="source-config__card-header">
           <div className="source-config__card-icon">{sourceType.icon}</div>
           <div className="source-config__card-info">
-            <h4 className="source-config__card-title">{source.name}</h4>
-            <p className="source-config__card-type">{sourceType.name}</p>
+            <div className="source-config__card-name-section">
+              <input
+                type="text"
+                value={source.name}
+                onChange={(e) => handleSourceNameChange(source.id, e.target.value)}
+                className="source-config__card-title-input"
+                placeholder="Enter source name"
+              />
+              <p className="source-config__card-type">{sourceType.name}</p>
+            </div>
             <p className="source-config__card-description">{sourceType.description}</p>
           </div>
-          <div className="source-config__card-toggle">
+          <div className="source-config__card-actions">
+            <button
+              onClick={() => handleDuplicateSource(source.id)}
+              className="source-config__duplicate-button"
+              title="Duplicate source"
+            >
+              ⧉
+            </button>
             <button
               onClick={() => handleToggleSource(source.id)}
               className={`source-config__toggle-button ${source.enabled ? 'source-config__toggle-button--enabled' : 'source-config__toggle-button--disabled'}`}
@@ -589,7 +687,7 @@ const SourceConfig = ({ isOpen, onClose }) => {
     <div className="source-config__overlay" onClick={handleOverlayClick}>
       <div className="source-config__modal">
         <div className="source-config__modal-header">
-          <h2 className="source-config__title">Sources & Destinations Configuration</h2>
+          <h2 className="source-config__title">Source Configuration</h2>
           <button
             onClick={handleClose}
             className="source-config__close"
@@ -601,13 +699,23 @@ const SourceConfig = ({ isOpen, onClose }) => {
 
         <div className="source-config__modal-content">
           <div className="source-config">
-            <div className="source-config__header">
-              <p className="source-config__description">
-                Configure your data sources and destinations to track events and send data to various platforms.
+
+
+
+
+
+            <div className="source-config__header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px', padding: '12px 24px', width: '100%', boxSizing: 'border-box' }}>
+              <p className="source-config__description" style={{ margin: 0, flex: 1, minWidth: 0, paddingLeft: '12px' }}>
+                Configure your Profile Sources and destinations to track events and send data to various platforms.
               </p>
+              {message.type === 'success' && message.text && (
+                <div className={`source-config__message source-config__message--${message.type}`} style={{ whiteSpace: 'nowrap', flexShrink: 1, paddingRight: '12px', minWidth: 0 }}>
+                  {message.text}
+                </div>
+              )}
             </div>
 
-      {message.text && (
+      {message.type !== 'success' && message.text && (
         <div className={`source-config__message source-config__message--${message.type}`}>
           {message.text}
         </div>
@@ -619,20 +727,7 @@ const SourceConfig = ({ isOpen, onClose }) => {
         </div>
       )}
 
-      <div className="source-config__tabs">
-        <button
-          className={`source-config__tab ${activeTab === 'sources' ? 'source-config__tab--active' : ''}`}
-          onClick={() => setActiveTab('sources')}
-        >
-          Sources ({sources.length})
-        </button>
-        <button
-          className={`source-config__tab ${activeTab === 'destinations' ? 'source-config__tab--active' : ''}`}
-          onClick={() => setActiveTab('destinations')}
-        >
-          Destinations ({destinations.length})
-        </button>
-      </div>
+  {/* Tabs removed: Only sources are shown, so no tab UI needed */}
 
       <div className="source-config__content">
         {isLoading ? (
@@ -641,43 +736,55 @@ const SourceConfig = ({ isOpen, onClose }) => {
           </div>
         ) : (
           <>
-            {activeTab === 'sources' && (
-              <div className="source-config__sources">
-                <div className="source-config__section-header">
-                  <h3 className="source-config__section-title">Data Sources</h3>
-                  <p className="source-config__section-description">
-                    Configure where your event data is coming from. Sources collect and send data to Segment.
-                  </p>
-                </div>
-                <div className="source-config__cards">
-                  {sources.map(renderSourceCard)}
-                </div>
-                {sources.length === 0 && (
-                  <div className="source-config__empty">
-                    <p>No sources configured. Add sources to start collecting data.</p>
-                  </div>
-                )}
+            {/* Only show sources section, Destinations tab and content commented out */}
+            <div className="source-config__sources">
+              <div className="source-config__section-header">
+                <h3 className="source-config__section-title">
+                  Profile Sources
+                  {unifySpaceSlug && processUnifySpaceInput(unifySpaceSlug) && (
+                    <span style={{ fontSize: '0.6em', fontWeight: 'normal', marginLeft: '12px', display: 'block', marginTop: '4px' }}>
+                      <a 
+                        href={generatePageURL('profile-sources')} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ color: '#0066cc', textDecoration: 'underline' }}
+                      >
+                        Check that each of these sources are added in your Unify Space as Profile Sources, which forward their data to Unify.
+                      </a>
+                    </span>
+                  )}
+                </h3>
+                <p className="source-config__section-description">
+                  Configure where your event data is coming from. Sources collect and send data to Segment.
+                </p>
               </div>
-            )}
-
-            {activeTab === 'destinations' && (
-              <div className="source-config__destinations">
-                <div className="source-config__section-header">
-                  <h3 className="source-config__section-title">Destinations</h3>
-                  <p className="source-config__section-description">
-                    Configure where your event data is sent. Destinations receive data from your sources.
-                  </p>
-                </div>
-                <div className="source-config__cards">
-                  {destinations.map(renderDestinationCard)}
-                </div>
-                {destinations.length === 0 && (
-                  <div className="source-config__empty">
-                    <p>No destinations configured. Add destinations to send data to external platforms.</p>
-                  </div>
-                )}
+              <div className="source-config__cards">
+                {sources.map(renderSourceCard)}
               </div>
-            )}
+              {sources.length === 0 && (
+                <div className="source-config__empty">
+                  <p>No sources configured. Add sources to start collecting data.</p>
+                </div>
+              )}
+            </div>
+            {/*
+            <div className="source-config__destinations">
+              <div className="source-config__section-header">
+                <h3 className="source-config__section-title">Destinations</h3>
+                <p className="source-config__section-description">
+                  Configure where your event data is sent. Destinations receive data from your sources.
+                </p>
+              </div>
+              <div className="source-config__cards">
+                {destinations.map(renderDestinationCard)}
+              </div>
+              {destinations.length === 0 && (
+                <div className="source-config__empty">
+                  <p>No destinations configured. Add destinations to send data to external platforms.</p>
+                </div>
+              )}
+            </div>
+            */}
           </>
         )}
       </div>

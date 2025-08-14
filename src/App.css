@@ -1,15 +1,28 @@
 /* App.css - Main Layout Styles */
 
+:root {
+  --twilio-font-family: 'TwilioSansMono', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+}
+
 * {
   box-sizing: border-box;
+}
+
+/* Ensure all elements use Twilio Sans Mono */
+*, *::before, *::after {
+  font-family: var(--twilio-font-family);
+}
+
+/* Specific targeting for form elements */
+input, textarea, select, button, 
+.form-control, .btn, .card, .modal {
+  font-family: var(--twilio-font-family) !important;
 }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--twilio-font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f8fafc;
@@ -79,7 +92,8 @@ body {
 }
 
 .app__config-button,
-.app__lookup-button {
+.app__lookup-button,
+.app__theme-button {
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
@@ -97,11 +111,82 @@ body {
 }
 
 .app__config-button:hover,
-.app__lookup-button:hover {
+.app__lookup-button:hover,
+.app__theme-button:hover {
   background: #f9fafb;
   border-color: #d1d5db;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.app__theme-button {
+  padding: 8px 10px;
+  font-size: 16px;
+}
+
+/* Floating Dark Mode Toggle */
+/* Floating Theme Buttons Container */
+.app__floating-theme-buttons {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  z-index: 1000;
+}
+
+/* Twilio Glow Button Wrapper */
+.app__twilio-glow-button-wrapper {
+  position: relative;
+}
+
+.app__floating-theme-button {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.app__floating-theme-button:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.app__floating-theme-button--clear {
+  /* Clear glow mode button styles */
+  background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+  border: none;
+  color: white;
+}
+
+/* Icon styles */
+.app__title-icon {
+  width: 28px;
+  height: 28px;
+  margin-right: 12px;
+  vertical-align: middle;
+}
+
+.app__button-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.app__twilio-icon {
+  width: 24px;
+  height: 24px;
 }
 
 .app__lookup-button--active {
@@ -111,8 +196,9 @@ body {
 }
 
 .app__title {
+  font-family: var(--twilio-font-family);
+  font-weight: var(--twilio-font-weight-heavy);
   font-size: 24px;
-  font-weight: 600;
   color: #111827;
   margin: 0 0 4px 0;
   letter-spacing: -0.025em;
@@ -379,7 +465,7 @@ body {
   }
 }
 
-/* Dark mode support */
+/* Dark mode support - system preference */
 @media (prefers-color-scheme: dark) {
   body {
     background-color: #0f172a;
@@ -390,11 +476,25 @@ body {
     background-color: #1e293b;
     border-right-color: #334155;
   }
+
+  .app__header {
+    background: #1e293b;
+    border-bottom-color: #334155;
+  }
   
-  .app__config-button:hover,
-  .app__lookup-button:hover {
+  .app__config-button,
+  .app__lookup-button,
+  .app__theme-button {
     background: #374151;
     border-color: #4b5563;
+    color: #f1f5f9;
+  }
+  
+  .app__config-button:hover,
+  .app__lookup-button:hover,
+  .app__theme-button:hover {
+    background: #4b5563;
+    border-color: #6b7280;
   }
   
   .app__lookup-button--active {
@@ -438,6 +538,93 @@ body {
   }
 }
 
+/* Manual dark mode - overrides system preference */
+.dark-mode body {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+.dark-mode .app__sidebar {
+  background-color: #1e293b;
+  border-right-color: #334155;
+}
+
+.dark-mode .app__header {
+  background: #1e293b;
+  border-bottom-color: #334155;
+}
+
+.dark-mode .app__config-button,
+.dark-mode .app__lookup-button,
+.dark-mode .app__theme-button {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f1f5f9;
+}
+
+.dark-mode .app__config-button:hover,
+.dark-mode .app__lookup-button:hover,
+.dark-mode .app__theme-button:hover {
+  background: #4b5563;
+  border-color: #6b7280;
+}
+
+.dark-mode .app__floating-theme-button {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+.dark-mode .app__floating-theme-button:hover {
+  background: #4b5563;
+  border-color: #6b7280;
+}
+
+.dark-mode .app__floating-theme-button--clear {
+  /* Keep the gradient background for the clear button in dark mode */
+  background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+  border: none;
+}
+
+.dark-mode .app__lookup-button--active {
+  background: #1e3a8a;
+  border-color: #3b82f6;
+  color: #dbeafe;
+}
+
+.dark-mode .app__title {
+  color: #f1f5f9;
+}
+
+.dark-mode .app__subtitle {
+  color: #94a3b8;
+}
+
+.dark-mode .app__stats {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+.dark-mode .app__stat-card {
+  background-color: #0f172a;
+  border-color: #1e293b;
+}
+
+.dark-mode .app__stat-value {
+  color: #60a5fa;
+}
+
+.dark-mode .app__stat-label {
+  color: #94a3b8;
+}
+
+.dark-mode .app__footer {
+  border-top-color: #334155;
+}
+
+.dark-mode .app__footer-text {
+  color: #94a3b8;
+}
+
 /* Custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
   width: 6px;
@@ -469,5 +656,190 @@ body {
   
   ::-webkit-scrollbar-thumb:hover {
     background: #64748b;
+  }
+}
+
+/* Manual dark mode scrollbar styles */
+.dark-mode ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* ===== GLOW MODE STYLES ===== */
+
+/* Global glow mode overrides */
+.glow-mode {
+  background: var(--glow-main-bg) !important;
+  color: var(--glow-text-color) !important;
+  transition: all 0.3s ease !important;
+}
+
+.glow-mode body {
+  background: var(--glow-main-bg) !important;
+  color: var(--glow-text-color) !important;
+}
+
+/* App layout overrides */
+.glow-mode .app {
+  background: var(--glow-main-bg) !important;
+}
+
+.glow-mode .app__sidebar {
+  background: var(--glow-component-bg) !important;
+  border-right: 1px solid var(--glow-border) !important;
+  box-shadow: 0 0 20px var(--glow-shadow) !important;
+}
+
+.glow-mode .app__main {
+  background: var(--glow-main-bg) !important;
+}
+
+.glow-mode .app__header {
+  background: var(--glow-component-bg) !important;
+  border-bottom: 1px solid var(--glow-border) !important;
+  box-shadow: 0 0 10px var(--glow-shadow) !important;
+}
+
+.glow-mode .app__footer {
+  background: var(--glow-component-bg) !important;
+  border-top: 1px solid var(--glow-border) !important;
+  box-shadow: 0 0 10px var(--glow-shadow) !important;
+}
+
+/* Text and headings */
+.glow-mode h1,
+.glow-mode h2,
+.glow-mode h3,
+.glow-mode h4,
+.glow-mode h5,
+.glow-mode h6,
+.glow-mode p,
+.glow-mode span,
+.glow-mode div,
+.glow-mode label {
+  color: var(--glow-text-color) !important;
+  text-shadow: 0 0 5px var(--glow-color) !important;
+}
+
+/* Buttons */
+.glow-mode button {
+  background: var(--glow-button-primary) !important;
+  color: var(--glow-text-color) !important;
+  border: 1px solid var(--glow-border) !important;
+  box-shadow: 
+    0 0 10px var(--glow-color),
+    inset 0 0 10px rgba(255, 255, 255, 0.1) !important;
+  transition: all 0.3s ease !important;
+}
+
+.glow-mode button:hover {
+  background: var(--glow-button-secondary) !important;
+  box-shadow: 
+    0 0 20px var(--glow-color),
+    inset 0 0 15px rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-2px) !important;
+}
+
+.glow-mode button:active {
+  transform: translateY(0) !important;
+}
+
+/* Input fields */
+.glow-mode input,
+.glow-mode textarea,
+.glow-mode select {
+  background: var(--glow-component-bg) !important;
+  color: var(--glow-text-color) !important;
+  border: 1px solid var(--glow-border) !important;
+  box-shadow: 
+    inset 0 0 10px var(--glow-shadow),
+    0 0 5px var(--glow-color) !important;
+}
+
+.glow-mode input:focus,
+.glow-mode textarea:focus,
+.glow-mode select:focus {
+  box-shadow: 
+    inset 0 0 15px var(--glow-shadow),
+    0 0 15px var(--glow-color) !important;
+  border-color: var(--glow-color) !important;
+}
+
+/* Cards and containers */
+.glow-mode .card,
+.glow-mode .container,
+.glow-mode .panel,
+.glow-mode [class*="__card"],
+.glow-mode [class*="__container"],
+.glow-mode [class*="__panel"] {
+  background: var(--glow-component-bg) !important;
+  border: 1px solid var(--glow-border) !important;
+  box-shadow: 
+    0 4px 20px var(--glow-shadow),
+    0 0 15px var(--glow-color) !important;
+}
+
+/* Floating theme button update */
+.glow-mode .app__floating-theme-button {
+  background: linear-gradient(135deg, var(--glow-button-primary) 0%, var(--glow-color) 100%) !important;
+  box-shadow: 
+    0 4px 20px var(--glow-color),
+    0 0 20px var(--glow-color) !important;
+}
+
+.glow-mode .app__floating-theme-button:hover {
+  box-shadow: 
+    0 6px 30px var(--glow-color),
+    0 0 30px var(--glow-color) !important;
+}
+
+/* Scrollbar for glow mode */
+.glow-mode ::-webkit-scrollbar-track {
+  background: var(--glow-component-bg) !important;
+}
+
+.glow-mode ::-webkit-scrollbar-thumb {
+  background: var(--glow-border) !important;
+  box-shadow: 0 0 5px var(--glow-color) !important;
+}
+
+.glow-mode ::-webkit-scrollbar-thumb:hover {
+  background: var(--glow-color) !important;
+  box-shadow: 0 0 10px var(--glow-color) !important;
+}
+
+/* Mobile responsiveness for floating theme buttons */
+@media (max-width: 768px) {
+  .app__floating-theme-buttons {
+    bottom: 15px;
+    right: 15px;
+    gap: 8px;
+  }
+  
+  .app__floating-theme-button {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app__floating-theme-buttons {
+    bottom: 12px;
+    right: 12px;
+    gap: 6px;
+  }
+  
+  .app__floating-theme-button {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
   }
 }

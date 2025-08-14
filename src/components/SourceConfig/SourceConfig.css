@@ -171,6 +171,34 @@
   flex: 1;
 }
 
+.source-config__card-name-section {
+  margin-bottom: 8px;
+}
+
+.source-config__card-title-input {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 4px 0;
+  border: none;
+  background: transparent;
+  width: 100%;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.source-config__card-title-input:focus {
+  outline: none;
+  background: #f8f9fa;
+  border: 1px solid #2b5ce6;
+  box-shadow: 0 0 0 2px rgba(43, 92, 230, 0.1);
+}
+
+.source-config__card-title-input:hover {
+  background: #f8f9fa;
+}
+
 .source-config__card-title {
   font-size: 20px;
   font-weight: 600;
@@ -190,6 +218,34 @@
   color: #666;
   margin: 0;
   line-height: 1.4;
+}
+
+.source-config__card-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.source-config__duplicate-button {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #e9ecef;
+  background: #ffffff;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.source-config__duplicate-button:hover {
+  border-color: #2b5ce6;
+  background: #f8f9fa;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .source-config__card-toggle {

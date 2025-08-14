@@ -91,7 +91,15 @@ export const isIdentifierField = (fieldName) => {
 export const getIdentifierDisplayName = (fieldName) => {
   const identifiers = getEnabledIdentifiers();
   const identifier = identifiers.find(id => normalizeIdentifierName(id.id) === fieldName);
-  return identifier ? identifier.name : fieldName;
+  
+  if (identifier) {
+    // Capitalize the first letter of the identifier name
+    const name = identifier.name;
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  }
+  
+  // Fallback: capitalize the first letter of the field name
+  return fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
 };
 
 /**

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { formatAsJSON, validateJSON } from '../../utils/jsonUtils';
+import { parseSegmentMethodCall } from '../../utils/EventBuilderSpecPayloads';
 
 import { getStoredSourceConfig } from '../../utils/segmentAPI';
 import { parseCSV } from '../../utils/parseCSV';
@@ -9,6 +10,8 @@ import './EventBuilder.css';
 
 
 // Utility to clean up CSV row keys/values and convert to Segment event spec
+// (Currently unused but kept for potential future CSV processing enhancements)
+// eslint-disable-next-line no-unused-vars
 function cleanCSVRowToSegmentEvent(row) {
   const cleaned = {};
   for (let key in row) {
@@ -18,7 +21,7 @@ function cleanCSVRowToSegmentEvent(row) {
     if (typeof value === 'string') {
       value = value.replace(/^"+|"+$/g, '').replace(/^'+|'+$/g, '');
       // Replace equals before curly brace with colon (for malformed JSON)
-      value = value.replace(/=\s*([\{\[])/g, ':$1');
+      value = value.replace(/=\s*([\{[])/g, ':$1');
       // Remove unnecessary backslashes except in URLs
       if (!/^https?:\/\//.test(value)) {
         value = value.replace(/\\(?!["\/bnrt])/g, '');
@@ -67,14 +70,17 @@ function reorderPayloadFields(payload) {
 
 
 
-const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, userUpdateTrigger }) => {
+const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, userUpdateTrigger, sourceConfigUpdateTrigger, onCurrentUserUpdate }) => {
   const [rawText, setRawText] = useState('');
+  const [formattedText, setFormattedText] = useState('');
   const [isValid, setIsValid] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
   const [selectedSource, setSelectedSource] = useState(null);
   const [configuredSources, setConfiguredSources] = useState([]);
+  const [lastUpdatedFrom, setLastUpdatedFrom] = useState('raw'); // Track which field was last updated
   const textareaRef = useRef(null);
+  const formattedTextareaRef = useRef(null);
   
   // Extract toggle states to a separate variable for better dependency detection
   const toggleStatesStr = JSON.stringify(currentUser?._toggles || {});
@@ -94,6 +100,22 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
     // No default source selection - user must explicitly choose or send to all
   }, []);
 
+  // Refresh configured sources when source config is updated
+  useEffect(() => {
+    if (sourceConfigUpdateTrigger > 0) {
+      const sources = getStoredSourceConfig();
+      const sourcesWithWriteKeys = sources.filter(
+        source =>
+          source.enabled &&
+          source.settings &&
+          source.settings.writeKey &&
+          source.settings.writeKey.trim() !== ''
+      );
+      setConfiguredSources(sourcesWithWriteKeys);
+      console.log('🔄 [EventBuilder] Refreshed configured sources after config update');
+    }
+  }, [sourceConfigUpdateTrigger]);
+
   // Handle source selection
   const handleSourceSelect = (source) => {
     // If the clicked source is already selected, deselect it
@@ -108,33 +130,46 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
   // Load selected event when it changes
   useEffect(() => {
     if (selectedEvent) {
+      console.log('🔄 [EventBuilder] Loading selectedEvent:', selectedEvent.name);
+      console.log('👤 [EventBuilder] currentUser data:', JSON.stringify(currentUser, null, 2));
+      
       // Check if payload is a function (new format) or object (old format)
       let payload;
       if (typeof selectedEvent.payload === 'function') {
         // New format: payload is a function that takes currentUser
         payload = selectedEvent.payload(currentUser);
+        console.log('📦 [EventBuilder] Payload from function:', JSON.stringify(payload, null, 2));
       } else {
         // Old format: payload is an object (fallback for compatibility)
         payload = { ...selectedEvent.payload };
+        console.log('📦 [EventBuilder] Initial payload (before user merge):', JSON.stringify(payload, null, 2));
         
         // Merge current user data into payload (legacy logic)
         if (currentUser) {
           // Get toggle states from currentUser (if available)
           const toggles = currentUser._toggles || { userId: true, anonymousId: true };
+          console.log('🔀 [EventBuilder] Toggle states:', toggles);
+          console.log('🆔 [EventBuilder] anonymousId in currentUser:', !!currentUser.anonymousId, currentUser.anonymousId);
           
-          // Only update fields if their toggles are enabled AND they have values
+          // Only update fields if their toggles are enabled AND they exist in currentUser
           if (toggles.userId && currentUser.userId) {
             payload.userId = currentUser.userId;
+            console.log('✅ [EventBuilder] Added userId to payload:', currentUser.userId);
           } else if (!toggles.userId) {
             // Remove userId if toggle is disabled
             delete payload.userId;
+            console.log('❌ [EventBuilder] Removed userId from payload (toggle disabled)');
           }
           
           if (toggles.anonymousId && currentUser.anonymousId) {
             payload.anonymousId = currentUser.anonymousId;
+            console.log('✅ [EventBuilder] Added anonymousId to payload:', currentUser.anonymousId);
           } else if (!toggles.anonymousId) {
             // Remove anonymousId if toggle is disabled
             delete payload.anonymousId;
+            console.log('❌ [EventBuilder] Removed anonymousId from payload (toggle disabled)');
+          } else {
+            console.log('⚠️ [EventBuilder] anonymousId not added. Toggle enabled:', toggles.anonymousId, 'Value exists:', !!currentUser.anonymousId);
           }
           
           // Update traits object
@@ -157,7 +192,11 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
       // Reorder payload to ensure userId and anonymousId are first
       const reorderedPayload = reorderPayloadFields(payload);
       const formattedPayload = JSON.stringify(reorderedPayload, null, 2);
+      
+      // Set both raw and formatted text to the same value initially
       setRawText(formattedPayload);
+      setFormattedText(formattedPayload);
+      setLastUpdatedFrom('system');
       
       // Send event info to parent component
       const eventInfo = {
@@ -175,9 +214,11 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
 
   // Handle user updates for existing payload
   useEffect(() => {
-    if (userUpdateTrigger > 0 && rawText.trim()) {
+    if (userUpdateTrigger > 0 && (rawText.trim() || formattedText.trim())) {
       try {
-        const currentPayload = JSON.parse(rawText);
+        // Use the formatted text as the source of truth for user updates
+        const sourceText = formattedText.trim() || rawText.trim();
+        const currentPayload = JSON.parse(sourceText);
         let updatedPayload = { ...currentPayload };
         
         // Apply dynamic user identification logic
@@ -246,35 +287,141 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
         // Reorder payload to ensure userId and anonymousId are first
         const reorderedPayload = reorderPayloadFields(updatedPayload);
         const formattedPayload = JSON.stringify(reorderedPayload, null, 2);
+        
+        // Update both raw and formatted text
         setRawText(formattedPayload);
+        setFormattedText(formattedPayload);
+        setLastUpdatedFrom('system');
         setIsValid(true);
         setErrorMessage('');
       } catch (error) {
         console.error('Error updating payload with user data:', error);
       }
     }
-  }, [userUpdateTrigger, currentUser, rawText]);
+  }, [userUpdateTrigger, currentUser, rawText, formattedText]);
 
-  // Handle text input and format as JSON
-  const handleTextChange = (e) => {
+  // Handle raw text input (Event Data section)
+  const handleRawTextChange = (e) => {
     const value = e.target.value;
     setRawText(value);
+    setLastUpdatedFrom('raw');
     
-    // Validate and format JSON
+    // Check if this looks like a Segment analytics method call
+    const segmentMethodCall = parseSegmentMethodCall(value, currentUser);
+    if (segmentMethodCall) {
+      // Convert the analytics call to proper Segment JSON format
+      const formattedJSON = JSON.stringify(segmentMethodCall, null, 2);
+      setFormattedText(formattedJSON);
+      setIsValid(true);
+      setErrorMessage('');
+      
+      // Notify parent of payload change
+      if (onEventInfoChange) {
+        const eventInfo = {
+          payload: segmentMethodCall,
+          action: 'method_call_converted'
+        };
+        onEventInfoChange(eventInfo);
+      }
+      
+      // Extract user data and sync back to CurrentUser
+      extractAndSyncUserData(segmentMethodCall);
+      return; // Exit early since we converted the method call
+    }
+    
+    // Try to parse as JSON and format
+    const validation = validateJSON(value);
+    if (validation.isValid) {
+      try {
+        const parsedPayload = JSON.parse(value);
+        const reorderedPayload = reorderPayloadFields(parsedPayload);
+        const formattedJSON = JSON.stringify(reorderedPayload, null, 2);
+        setFormattedText(formattedJSON);
+        setIsValid(true);
+        setErrorMessage('');
+        
+        // Notify parent and sync user data
+        notifyPayloadChange(parsedPayload);
+        extractAndSyncUserData(parsedPayload);
+      } catch (error) {
+        // This shouldn't happen if validation passed, but handle it gracefully
+        setFormattedText(value);
+        setIsValid(false);
+        setErrorMessage('Failed to parse JSON');
+      }
+    } else {
+      // Invalid JSON or plain text - just show it in formatted section
+      setFormattedText(value);
+      setIsValid(false);
+      setErrorMessage(validation.error);
+    }
+  };
+
+  // Handle formatted text input (Formatted Preview section)
+  const handleFormattedTextChange = (e) => {
+    const value = e.target.value;
+    setFormattedText(value);
+    setLastUpdatedFrom('formatted');
+    
+    // Validate JSON
     const validation = validateJSON(value);
     setIsValid(validation.isValid);
     setErrorMessage(validation.error);
     
-    // If valid JSON, notify parent of payload change
-    if (validation.isValid && onEventInfoChange) {
+    if (validation.isValid) {
       try {
         const parsedPayload = JSON.parse(value);
-        const eventInfo = {
-          payload: parsedPayload
-        };
-        onEventInfoChange(eventInfo);
+        const reorderedPayload = reorderPayloadFields(parsedPayload);
+        
+        // Only update raw text if the content actually changed (avoid infinite loops)
+        const reFormattedJSON = JSON.stringify(reorderedPayload, null, 2);
+        if (reFormattedJSON !== value) {
+          setFormattedText(reFormattedJSON);
+        }
+        
+        // Update raw text to match
+        setRawText(reFormattedJSON);
+        
+        // Notify parent and sync user data
+        notifyPayloadChange(parsedPayload);
+        extractAndSyncUserData(parsedPayload);
       } catch (error) {
-        // JSON parsing error - ignore for now since validation already handles this
+        // JSON parsing error - this shouldn't happen if validation passed
+        console.error('Error parsing formatted JSON:', error);
+      }
+    }
+  };
+
+  // Helper function to notify parent of payload changes
+  const notifyPayloadChange = (parsedPayload) => {
+    if (onEventInfoChange) {
+      const eventInfo = {
+        payload: parsedPayload
+      };
+      onEventInfoChange(eventInfo);
+    }
+  };
+
+  // Helper function to extract user data and sync back to CurrentUser
+  const extractAndSyncUserData = (parsedPayload) => {
+    if (onCurrentUserUpdate && parsedPayload) {
+      const extractedUserData = {};
+      
+      // Extract identifier fields
+      if (parsedPayload.userId) extractedUserData.userId = parsedPayload.userId;
+      if (parsedPayload.anonymousId) extractedUserData.anonymousId = parsedPayload.anonymousId;
+      
+      // Extract traits if they exist
+      if (parsedPayload.traits && typeof parsedPayload.traits === 'object') {
+        Object.keys(parsedPayload.traits).forEach(key => {
+          extractedUserData[key] = parsedPayload.traits[key];
+        });
+      }
+      
+      // Only update if we found user data
+      if (Object.keys(extractedUserData).length > 0) {
+        console.log('🔄 [EventBuilder] Extracted user data from payload:', extractedUserData);
+        onCurrentUserUpdate(extractedUserData);
       }
     }
   };
@@ -282,8 +429,8 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
   // Copy formatted JSON to clipboard
   const handleCopy = async () => {
     try {
-      const formattedJSON = formatAsJSON(rawText);
-      await navigator.clipboard.writeText(formattedJSON);
+      const textToCopy = formattedText.trim() ? formattedText : formatAsJSON(rawText);
+      await navigator.clipboard.writeText(textToCopy);
       
       // Visual feedback
       setCopySuccess(true);
@@ -299,8 +446,10 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
   // Clear event content
   const handleClear = () => {
     setRawText('');
+    setFormattedText('');
     setIsValid(true);
     setErrorMessage('');
+    setLastUpdatedFrom('system');
     
     // Clear event info and notify parent to clear selectedEvent
     if (onEventInfoChange) {
@@ -318,12 +467,14 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
 
   // Save event to the list
   const handleSave = () => {
-    if (!rawText.trim()) {
+    const dataToSave = formattedText.trim() || rawText.trim();
+    
+    if (!dataToSave) {
       alert('Please enter some event data before saving');
       return;
     }
 
-    const validation = validateJSON(rawText);
+    const validation = validateJSON(dataToSave);
     if (!validation.isValid) {
       alert('Please fix JSON errors before saving:\n' + validation.error);
       return;
@@ -336,8 +487,8 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
       const eventData = {
         id: Date.now() + Math.random(),
         timestamp: new Date().toISOString(),
-        rawData: rawText.trim(),
-        formattedData: formatAsJSON(rawText),
+        rawData: dataToSave,
+        formattedData: formatAsJSON(dataToSave),
         // Store all sources in arrays for multi-source support
         writeKeys: configuredSources.map(source => source.settings?.writeKey).filter(Boolean),
         sourceNames: configuredSources.map(source => source.name).filter(Boolean),
@@ -355,8 +506,8 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
       const eventData = {
         id: Date.now() + Math.random(),
         timestamp: new Date().toISOString(),
-        rawData: rawText.trim(),
-        formattedData: formatAsJSON(rawText),
+        rawData: dataToSave,
+        formattedData: formatAsJSON(dataToSave),
         writeKey: sourceToUse?.settings?.writeKey || null,
         sourceName: sourceToUse?.name || null,
         sourceType: sourceToUse?.type || null
@@ -364,10 +515,12 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
       onSave(eventData);
     }
     
-    // Clear the input after saving
+    // Clear both inputs after saving
     setRawText('');
+    setFormattedText('');
     setIsValid(true);
     setErrorMessage('');
+    setLastUpdatedFrom('system');
     
     // Clear event info and notify parent to clear selectedEvent
     if (onEventInfoChange) {
@@ -384,7 +537,7 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
   };
 
   // Format display text for the textarea
-  const displayText = rawText ? formatAsJSON(rawText) : '';
+  // const displayText = rawText ? formatAsJSON(rawText) : '';
 
   // Handle CSV upload
   const fileInputRef = useRef();
@@ -402,6 +555,11 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
         // Remove messageId if present (Segment generates this)
         delete row.messageId;
         delete row.messageid;
+        
+        // Clear both raw and formatted text
+        setRawText('');
+        setFormattedText('');
+        setLastUpdatedFrom('system');
         
         // Only use fields that were actually present in the CSV
         // Don't add timestamp if it wasn't in the original data
@@ -473,7 +631,7 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
           {/* Tip text */}
           <div className="event-builder__tip">
             <p className="event-builder__tip-text">
-              <span className="event-builder__tip-title">Tip:</span> Paste any text and it will be formatted as valid JSON. Save to add it to your event list.
+              <span className="event-builder__tip-title">Tip:</span> Paste any text, analytics method calls (e.g. analytics.identify({})), or JSON and it will be formatted as valid Segment spec JSON. Save to add it to your event list.
             </p>
           </div>
           
@@ -481,10 +639,10 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
           {configuredSources.length > 0 && (
             <div className="event-builder__source-row">
               {/* Source selection indicator - bounces when payload exists but no source selected */}
-              {!selectedSource && rawText.trim() && (
+              {!selectedSource && rawText.trim() && configuredSources.length > 1 && (
                 <div className="event-builder__select-source-indicator">
                   <span className="event-builder__select-source-text">
-                    Select a Source
+                    Will Send to ALL Sources
                   </span>
                   <span className="event-builder__select-source-arrow">→</span>
                 </div>
@@ -501,7 +659,7 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
                     onClick={() => handleSourceSelect(source)}
                     title={`WriteKey: ${source.settings.writeKey}`}
                   >
-                    {source.type}
+                    {source.name || source.type}
                   </button>
                 ))}
                 {selectedSource && (
@@ -520,17 +678,17 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
 
         {/* Input and Preview sections side by side */}
         <div className="event-builder__main-section">
-          {/* Input textarea */}
+          {/* Raw input textarea */}
           <div className="event-builder__input-group">
             <label htmlFor="event-input" className="event-builder__label">
-              Event Data (will be formatted as JSON)
+              Event Data (paste analytics calls or JSON here)
             </label>
             <textarea
               id="event-input"
               ref={textareaRef}
               value={rawText}
-              onChange={handleTextChange}
-              placeholder='Enter event data... e.g.: {"userId": "123", "action": "login", "timestamp": "2024-01-01"}'
+              onChange={handleRawTextChange}
+              placeholder='Enter event data... e.g.: {"userId": "123", "action": "login"} or analytics.identify({nickname: "Grace"})'
               className={`event-builder__textarea ${
                 !isValid ? 'event-builder__textarea--error' : ''
               }`}
@@ -545,16 +703,21 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
             )}
           </div>
 
-          {/* Formatted preview */}
+          {/* Formatted/editable preview */}
           <div className="event-builder__preview-group">
-            <label className="event-builder__label">
-              Formatted Preview
+            <label htmlFor="formatted-input" className="event-builder__label">
+              Segment JSON (editable)
             </label>
-            <div className="event-builder__preview">
-              <pre className="event-builder__preview-content">
-                {rawText && isValid ? displayText : (rawText ? 'Fix JSON errors to see preview' : 'Preview will appear here')}
-              </pre>
-            </div>
+            <textarea
+              id="formatted-input"
+              ref={formattedTextareaRef}
+              value={formattedText}
+              onChange={handleFormattedTextChange}
+              placeholder='Formatted JSON will appear here and can be edited directly'
+              className={`event-builder__textarea event-builder__textarea--formatted ${
+                !isValid ? 'event-builder__textarea--error' : ''
+              }`}
+            />
           </div>
         </div>
 
@@ -563,7 +726,7 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
           <div className="event-builder__buttons-group">
             <button
               onClick={handleClear}
-              disabled={!rawText.trim()}
+              disabled={!rawText.trim() && !formattedText.trim()}
               className="event-builder__button event-builder__button--clear"
             >
               Clear Event
@@ -571,7 +734,7 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
             
             <button
               onClick={handleCopy}
-              disabled={!rawText.trim() || !isValid}
+              disabled={(!rawText.trim() && !formattedText.trim()) || !isValid}
               className={`event-builder__button event-builder__button--copy ${
                 copySuccess ? 'event-builder__button--copy-success' : ''
               }`}
@@ -582,7 +745,7 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
             
             <button
               onClick={handleSave}
-              disabled={!rawText.trim() || !isValid}
+              disabled={(!rawText.trim() && !formattedText.trim()) || !isValid}
               className="event-builder__button event-builder__button--save"
               title="Save this event to the event list on the left."
             >

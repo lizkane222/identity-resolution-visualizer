@@ -4,40 +4,59 @@ import './UniqueUser.css';
 
 const UniqueUser = ({ user, eventCount, eventIndices = [], isActive, onHighlightEvents }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const { userId, anonymousIds = [], email, traits = {} } = user;
+  const { userId, anonymousIds = [], email, traits = {}, identifierValues = {} } = user;
   
   // For backward compatibility, handle both old anonymousId and new anonymousIds array
   const allAnonymousIds = anonymousIds.length > 0 ? anonymousIds : (user.anonymousId ? [user.anonymousId] : []);
   
-  // Separate identifiers from traits based on ID Resolution Config
+  // Build comprehensive identifiers from both legacy fields and new identifierValues structure
   const identifiers = {};
   const userTraits = {};
   
-  // Add core identifiers if they exist
-  if (userId) identifiers.userId = userId;
-  if (allAnonymousIds.length > 0) {
-    // Handle multiple anonymous IDs
-    allAnonymousIds.forEach((id, index) => {
-      const key = allAnonymousIds.length > 1 ? `anonymousId_${index + 1}` : 'anonymousId';
-      identifiers[key] = id;
+  // Use new identifierValues structure if available, otherwise fall back to legacy fields
+  if (Object.keys(identifierValues).length > 0) {
+    // Use the new structure that contains all unique values per identifier type
+    Object.entries(identifierValues).forEach(([fieldName, values]) => {
+      if (values && values.length > 0) {
+        // For identifier fields, store all unique values
+        if (isIdentifierField(fieldName) || fieldName === 'userId' || fieldName === 'anonymousId' || fieldName === 'email') {
+          identifiers[fieldName] = values;
+        } else {
+          // For non-identifier fields, add to traits (use the latest/first value)
+          userTraits[fieldName] = values[0];
+        }
+      }
     });
-  }
-  if (email) {
-    identifiers.email = email;
-    // Email also appears in traits since it's both an identifier and a trait in Unify
-    userTraits.email = email;
-  }
-  
-  // Add other configured identifiers from traits
-  Object.entries(traits).forEach(([key, value]) => {
-    if (isIdentifierField(key)) {
-      identifiers[key] = value;
-      // Also add identifiers (except userId and anonymousId variants) to traits section
-      // This reflects how Unify stores data where identifiers can also be traits
-      if (!key.startsWith('userId') && !key.startsWith('anonymousId')) {
+  } else {
+    // Fallback to legacy structure for backward compatibility
+    if (userId) identifiers.userId = [userId];
+    if (allAnonymousIds.length > 0) {
+      allAnonymousIds.forEach((id, index) => {
+        const key = allAnonymousIds.length > 1 ? `anonymousId_${index + 1}` : 'anonymousId';
+        identifiers[key] = [id];
+      });
+    }
+    if (email) {
+      identifiers.email = [email];
+      userTraits.email = email;
+    }
+    
+    // Add other configured identifiers from traits
+    Object.entries(traits).forEach(([key, value]) => {
+      if (isIdentifierField(key)) {
+        identifiers[key] = [value];
+        if (!key.startsWith('userId') && !key.startsWith('anonymousId')) {
+          userTraits[key] = value;
+        }
+      } else {
         userTraits[key] = value;
       }
-    } else {
+    });
+  }
+  
+  // Also merge legacy traits for any missing fields
+  Object.entries(traits).forEach(([key, value]) => {
+    if (!userTraits[key] && !identifiers[key]) {
       userTraits[key] = value;
     }
   });
@@ -54,7 +73,7 @@ const UniqueUser = ({ user, eventCount, eventIndices = [], isActive, onHighlight
       }
     });
     
-    // Create ordered array of [key, value] pairs
+    // Create ordered array of [key, values] pairs
     const orderedIdentifiers = [];
     
     // Add identifiers in config order
@@ -65,9 +84,9 @@ const UniqueUser = ({ user, eventCount, eventIndices = [], isActive, onHighlight
     });
     
     // Add any remaining identifiers not in config (like multiple anonymous IDs)
-    Object.entries(identifiers).forEach(([key, value]) => {
+    Object.entries(identifiers).forEach(([key, values]) => {
       if (!orderedIdentifiers.some(([orderedKey]) => orderedKey === key)) {
-        orderedIdentifiers.push([key, value]);
+        orderedIdentifiers.push([key, values]);
       }
     });
     
@@ -88,14 +107,30 @@ const UniqueUser = ({ user, eventCount, eventIndices = [], isActive, onHighlight
     if (firstName) return firstName;
     if (lastName) return lastName;
     
-    // Fall back to existing logic
-    return userTraits.name || traits.name || email || userId || allAnonymousIds[0] || 'Unknown User';
+    // Fall back to existing logic - handle both array and single values
+    const fallbackEmail = Array.isArray(identifiers.email) ? identifiers.email[0] : email;
+    const fallbackUserId = Array.isArray(identifiers.userId) ? identifiers.userId[0] : userId;
+    const fallbackAnonymousId = allAnonymousIds[0];
+    
+    return userTraits.name || traits.name || fallbackEmail || fallbackUserId || fallbackAnonymousId || 'Unknown User';
   };
   
   const displayName = getDisplayName();
   
-  // Get primary identifier
-  const primaryId = userId || allAnonymousIds[0] || 'No ID';
+  // Get primary identifier - handle both array and single values
+  const getPrimaryId = () => {
+    if (Array.isArray(identifiers.userId) && identifiers.userId.length > 0) {
+      return identifiers.userId[0];
+    }
+    if (userId) return userId;
+    if (allAnonymousIds.length > 0) return allAnonymousIds[0];
+    if (Array.isArray(identifiers.anonymousId) && identifiers.anonymousId.length > 0) {
+      return identifiers.anonymousId[0];
+    }
+    return 'No ID';
+  };
+  
+  const primaryId = getPrimaryId();
   
   // Handle mouse events for highlighting
   const handleMouseEnter = () => {
@@ -166,16 +201,21 @@ const UniqueUser = ({ user, eventCount, eventIndices = [], isActive, onHighlight
       {Object.keys(identifiers).length > 0 && (
         <div className={`unique-user__identifiers ${!isExpanded ? 'unique-user__identifiers--collapsed' : ''}`}>
           {isExpanded && <div className="unique-user__section-title">Identifiers</div>}
-          {getOrderedIdentifiers().map(([key, value]) => (
-            <div key={key} className="unique-user__identifier">
-              <span className="unique-user__identifier-type">
-                {getIdentifierDisplayName(key)}:
-              </span>
-              <span className="unique-user__identifier-value" title={String(value)}>
-                {String(value)}
-              </span>
-            </div>
-          ))}
+          {getOrderedIdentifiers().map(([key, values]) => {
+            // Handle both array and single values for backward compatibility
+            const valueArray = Array.isArray(values) ? values : [values];
+            
+            return valueArray.map((value, index) => (
+              <div key={`${key}_${index}`} className="unique-user__identifier">
+                <span className="unique-user__identifier-type">
+                  {getIdentifierDisplayName(key)}{valueArray.length > 1 ? ` (${index + 1})` : ''}:
+                </span>
+                <span className="unique-user__identifier-value" title={String(value)}>
+                  {String(value)}
+                </span>
+              </div>
+            ));
+          })}
         </div>
       )}
       

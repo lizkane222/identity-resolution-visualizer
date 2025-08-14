@@ -5,6 +5,373 @@
 
 import { uuidv4 } from './uuid';
 
+/**
+ * Parse Segment analytics method calls and convert to proper JSON format
+ * Supports: analytics.identify(), analytics.track(), analytics.page(), analytics.screen(), analytics.group(), analytics.alias()
+ */
+export function parseSegmentMethodCall(input, currentUser) {
+  // Clean up the input - remove extra whitespace and newlines
+  const cleanInput = input.trim();
+  
+  // Pattern to match analytics method calls with flexible parameter handling
+  const methodPattern = /analytics\.(identify|track|page|screen|group|alias)\s*\(\s*(.*?)\s*\);?\s*$/s;
+  const match = cleanInput.match(methodPattern);
+  
+  if (!match) {
+    return null; // Not a valid analytics method call
+  }
+  
+  const method = match[1].toLowerCase();
+  const paramsString = match[2].trim();
+  
+  // Parse parameters based on method type
+  let parsedParams = [];
+  if (paramsString) {
+    try {
+      // For track method, we need to handle: event, properties, options, callback
+      // For other methods, it's usually just one object parameter
+      
+      if (method === 'track') {
+        parsedParams = parseTrackParameters(paramsString);
+      } else if (method === 'page') {
+        parsedParams = parsePageParameters(paramsString);
+      } else if (method === 'group') {
+        parsedParams = parseGroupParameters(paramsString);
+      } else if (method === 'alias') {
+        parsedParams = parseAliasParameters(paramsString);
+      } else {
+        // For non-track methods, try to parse as a single object
+        if (paramsString.startsWith('{') && paramsString.endsWith('}')) {
+          const cleanParams = paramsString
+            .replace(/(\w+):/g, '"$1":') // Convert unquoted keys to quoted keys
+            .replace(/'/g, '"') // Convert single quotes to double quotes
+            .replace(/,(\s*[}\]])/g, '$1'); // Remove trailing commas
+          
+          parsedParams = [JSON.parse(cleanParams)];
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to parse analytics method parameters:', error);
+      return null;
+    }
+  }
+  
+  // Get user identification
+  const userIds = getUserId(currentUser);
+  
+  // Build the Segment spec payload based on the method
+  const basePayload = {
+    type: method,
+    timestamp: new Date().toISOString(),
+    ...userIds
+  };
+  
+  switch (method) {
+    case 'identify':
+      const identifyData = parsedParams[0] || getUserTraits(currentUser);
+      return {
+        ...basePayload,
+        traits: identifyData,
+        context: {
+          ip: "192.168.1.1",
+          userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        }
+      };
+      
+    case 'track':
+      const eventName = parsedParams[0] || 'Custom Event';
+      const properties = parsedParams[1] || {};
+      
+      return {
+        ...basePayload,
+        event: eventName,
+        properties,
+        context: {
+          ip: "192.168.1.1",
+          userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        }
+      };
+      
+    case 'page':
+      // parsedParams: [category], [name], [properties], [options], [callback]
+      // or [name], [properties] if category is omitted
+      let pageName = 'Untitled Page';
+      let pageCategory = undefined;
+      let pageProperties = {};
+      
+      if (parsedParams.length >= 1) {
+        const firstParam = parsedParams[0];
+        const secondParam = parsedParams[1];
+        const thirdParam = parsedParams[2];
+        
+        if (typeof firstParam === 'string') {
+          if (typeof secondParam === 'string') {
+            // format: analytics.page('category', 'name', properties)
+            pageCategory = firstParam;
+            pageName = secondParam;
+            pageProperties = thirdParam || {};
+          } else {
+            // format: analytics.page('name', properties) or analytics.page('name')
+            pageName = firstParam;
+            pageProperties = secondParam || {};
+          }
+        } else if (typeof firstParam === 'object') {
+          // format: analytics.page(properties)
+          pageProperties = firstParam;
+          pageName = pageProperties.name || 'Untitled Page';
+          pageCategory = pageProperties.category;
+        }
+      }
+      
+      return {
+        ...basePayload,
+        name: pageName,
+        category: pageCategory,
+        properties: pageProperties,
+        context: {
+          ip: "192.168.1.1",
+          userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        }
+      };
+      
+    case 'screen':
+      // Similar to page but for mobile screens
+      let screenName = 'Untitled Screen';
+      let screenCategory = undefined;
+      let screenProperties = {};
+      
+      if (parsedParams.length >= 1) {
+        const firstParam = parsedParams[0];
+        const secondParam = parsedParams[1];
+        const thirdParam = parsedParams[2];
+        
+        if (typeof firstParam === 'string') {
+          if (typeof secondParam === 'string') {
+            screenCategory = firstParam;
+            screenName = secondParam;
+            screenProperties = thirdParam || {};
+          } else {
+            screenName = firstParam;
+            screenProperties = secondParam || {};
+          }
+        } else if (typeof firstParam === 'object') {
+          screenProperties = firstParam;
+          screenName = screenProperties.name || 'Untitled Screen';
+          screenCategory = screenProperties.category;
+        }
+      }
+      
+      return {
+        ...basePayload,
+        name: screenName,
+        category: screenCategory,
+        properties: screenProperties,
+        context: {
+          ip: "192.168.1.1",
+          userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+          app: {
+            name: "Example Mobile App",
+            version: "2.1.0",
+            build: "1234"
+          },
+          device: {
+            type: "mobile",
+            manufacturer: "Apple",
+            model: "iPhone 14"
+          },
+          os: {
+            name: "iOS",
+            version: "16.0"
+          }
+        }
+      };
+      
+    case 'group':
+      // parsedParams: groupId, [traits], [options], [callback]
+      let groupId = 'group-123';
+      let groupTraits = {};
+      
+      if (parsedParams.length >= 1) {
+        const firstParam = parsedParams[0];
+        const secondParam = parsedParams[1];
+        
+        if (typeof firstParam === 'string') {
+          groupId = firstParam;
+          groupTraits = secondParam || {};
+        } else if (typeof firstParam === 'object') {
+          // If first param is object, treat it as traits and use default groupId
+          groupTraits = firstParam;
+          groupId = firstParam.groupId || 'group-123';
+        }
+      }
+      
+      return {
+        ...basePayload,
+        groupId: groupId,
+        traits: groupTraits,
+        context: {
+          ip: "192.168.1.1",
+          userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        }
+      };
+      
+    case 'alias':
+      // parsedParams: userId, [previousId], [options], [callback]
+      const aliasPayload = {
+        ...basePayload,
+        context: {
+          ip: "192.168.1.1",
+          userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        }
+      };
+      
+      // Remove userId and anonymousId from base payload for alias
+      delete aliasPayload.userId;
+      delete aliasPayload.anonymousId;
+      
+      if (parsedParams.length >= 1) {
+        const newUserId = parsedParams[0];
+        const previousId = parsedParams[1];
+        
+        if (newUserId) {
+          aliasPayload.userId = newUserId;
+        }
+        
+        if (previousId) {
+          aliasPayload.previousId = previousId;
+        } else {
+          // If no previousId provided, use current user's anonymousId if available
+          const toggles = currentUser?._toggles || { userId: true, anonymousId: true };
+          if (toggles.anonymousId && currentUser?.anonymousId) {
+            aliasPayload.previousId = currentUser.anonymousId;
+          }
+        }
+      } else {
+        // No parameters provided - create a template for user to fill in
+        aliasPayload.userId = ""; // Empty for user to fill
+        aliasPayload.previousId = ""; // Empty for user to fill
+        
+        // Add a comment in the JSON to guide the user
+        aliasPayload._instructions = "Fill in userId (new identity) and previousId (current identity from CurrentUser or custom value)";
+      }
+      
+      return aliasPayload;
+      
+    default:
+      return null;
+  }
+}
+
+// Helper function to parse track method parameters
+function parseTrackParameters(paramsString) {
+  // Track method can have: event, properties, options, callback
+  // We need to carefully parse these parameters
+  
+  const params = [];
+  let current = '';
+  let depth = 0;
+  let inQuotes = false;
+  let quoteChar = '';
+  let i = 0;
+  
+  while (i < paramsString.length) {
+    const char = paramsString[i];
+    // const nextChar = paramsString[i + 1]; // Reserved for future use
+    
+    if (!inQuotes) {
+      if (char === '"' || char === "'") {
+        inQuotes = true;
+        quoteChar = char;
+        current += char;
+      } else if (char === '{' || char === '[') {
+        depth++;
+        current += char;
+      } else if (char === '}' || char === ']') {
+        depth--;
+        current += char;
+      } else if (char === ',' && depth === 0) {
+        // Found a parameter separator
+        const param = current.trim();
+        if (param) {
+          params.push(parseParameter(param));
+        }
+        current = '';
+        i++;
+        continue;
+      } else {
+        current += char;
+      }
+    } else {
+      current += char;
+      if (char === quoteChar && paramsString[i - 1] !== '\\') {
+        inQuotes = false;
+        quoteChar = '';
+      }
+    }
+    
+    i++;
+  }
+  
+  // Don't forget the last parameter
+  const param = current.trim();
+  if (param) {
+    params.push(parseParameter(param));
+  }
+  
+  return params;
+}
+
+// Helper function to parse individual parameters
+function parseParameter(param) {
+  param = param.trim();
+  
+  // Remove surrounding quotes if it's a string
+  if ((param.startsWith('"') && param.endsWith('"')) || 
+      (param.startsWith("'") && param.endsWith("'"))) {
+    return param.slice(1, -1);
+  }
+  
+  // Try to parse as object/array
+  if ((param.startsWith('{') && param.endsWith('}')) || 
+      (param.startsWith('[') && param.endsWith(']'))) {
+    try {
+      const cleanParam = param
+        .replace(/(\w+):/g, '"$1":') // Convert unquoted keys to quoted keys
+        .replace(/'/g, '"') // Convert single quotes to double quotes
+        .replace(/,(\s*[}\]])/g, '$1'); // Remove trailing commas
+      
+      return JSON.parse(cleanParam);
+    } catch (error) {
+      console.warn('Failed to parse parameter as JSON:', param, error);
+      return param;
+    }
+  }
+  
+  // Return as-is if it's not a recognizable format
+  return param;
+}
+
+// Helper function to parse page method parameters
+// analytics.page([category], [name], [properties], [options], [callback]);
+function parsePageParameters(paramsString) {
+  const params = parseTrackParameters(paramsString); // Reuse the track parameter parser
+  return params;
+}
+
+// Helper function to parse group method parameters  
+// analytics.group(groupId, [traits], [options], [callback]);
+function parseGroupParameters(paramsString) {
+  const params = parseTrackParameters(paramsString); // Reuse the track parameter parser
+  return params;
+}
+
+// Helper function to parse alias method parameters
+// analytics.alias(userId, [previousId], [options], [callback]);
+function parseAliasParameters(paramsString) {
+  const params = parseTrackParameters(paramsString); // Reuse the track parameter parser
+  return params;
+}
+
 // Get or generate a persistent userId for this browser
 function getOrPersistUserId() {
   let userId = null;
@@ -26,23 +393,24 @@ const getUserId = (currentUser) => {
   // Get toggle states from currentUser (if available)
   const toggles = currentUser?._toggles || { userId: true, anonymousId: true };
   
-  // Apply userId only if toggle is enabled and value exists
+  const ids = {};
+  
+  // Include userId if toggle is enabled and value exists
   if (toggles.userId && currentUser?.userId && currentUser.userId.trim()) {
-    return { userId: currentUser.userId.trim() };
+    ids.userId = currentUser.userId.trim();
   }
   
-  // Apply anonymousId only if toggle is enabled and value exists  
+  // Include anonymousId if toggle is enabled and value exists
   if (toggles.anonymousId && currentUser?.anonymousId && currentUser.anonymousId.trim()) {
-    return { anonymousId: currentUser.anonymousId.trim() };
+    ids.anonymousId = currentUser.anonymousId.trim();
   }
   
-  // Fallback logic: only provide default if both toggles are enabled but no values
-  if (toggles.userId && toggles.anonymousId) {
-    return { userId: getOrPersistUserId() };
+  // If no IDs were added but both toggles are enabled, provide default userId
+  if (Object.keys(ids).length === 0 && toggles.userId && toggles.anonymousId) {
+    ids.userId = getOrPersistUserId();
   }
   
-  // If no toggles are enabled or no data available, return empty object
-  return {};
+  return ids;
 };
 
 // Helper function to get user traits from current user
@@ -213,26 +581,20 @@ export const CORE_EVENTS = {
   alias: {
     name: "Alias",
     description: "The Alias call lets you merge two user identities, effectively connecting two sets of user data as one.",
+    requiresInput: true, // Flag to indicate this event needs user input
     payload: (currentUser) => {
-      const toggles = currentUser?._toggles || { userId: true, anonymousId: true };
+      // Return a template payload that requires user input
       const aliasPayload = {
         "type": "alias",
+        "userId": "", // Empty - user must provide
+        "previousId": "", // Empty - user must provide
         "context": {
           "ip": "192.168.1.1",
           "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
         },
-        "timestamp": new Date().toISOString()
+        "timestamp": new Date().toISOString(),
+        "_instructions": "Please provide userId (new identity) and previousId (current/previous identity to merge)"
       };
-      
-      // Only add userId if toggle is enabled
-      if (toggles.userId) {
-        aliasPayload.userId = currentUser?.userId?.trim() || "new-user-123";
-      }
-      
-      // Only add previousId (anonymousId) if toggle is enabled
-      if (toggles.anonymousId) {
-        aliasPayload.previousId = currentUser?.anonymousId?.trim() || "anonymous-456";
-      }
       
       return aliasPayload;
     }

@@ -7,6 +7,7 @@ import UniqueUsersList from './components/UniqueUsersList/UniqueUsersList.jsx';
 import UnifySpaceConfig from './components/UnifySpaceConfig/UnifySpaceConfig.jsx';
 import SourceConfig from './components/SourceConfig/SourceConfig.jsx';
 import ProfileLookup from './components/ProfileLookup/ProfileLookup.jsx';
+import GlowModesList from './components/GlowModesList/GlowModesList.jsx';
 import { useEffect, useMemo } from 'react';
 import './App.css';
 
@@ -20,10 +21,121 @@ function App() {
   const [currentEventPayload, setCurrentEventPayload] = useState(null);
   const [currentEventInfo, setCurrentEventInfo] = useState(null);
   const [userUpdateTrigger, setUserUpdateTrigger] = useState(0);
+  const [sourceConfigUpdateTrigger, setSourceConfigUpdateTrigger] = useState(0);
   const [showUnifySpaceConfig, setShowUnifySpaceConfig] = useState(false);
   const [showSourceConfig, setShowSourceConfig] = useState(false);
   const [showProfileLookup, setShowProfileLookup] = useState(false);
   const [highlightedEventIndices, setHighlightedEventIndices] = useState([]);
+  const [unifySpaceSlug, setUnifySpaceSlug] = useState('');
+  
+  // Dark mode state
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  // Glow mode state
+  const [currentGlowMode, setCurrentGlowMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('glowMode');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Ensure it's a valid glow mode object with required properties
+        if (parsed && typeof parsed === 'object' && parsed.id && parsed.mainBg) {
+          return parsed;
+        }
+      }
+    } catch (error) {
+      console.warn('Invalid glow mode data in localStorage, clearing:', error);
+      localStorage.removeItem('glowMode');
+    }
+    return null;
+  });
+
+  // Apply dark mode class to document
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark-mode');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+    }
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
+
+  // Apply glow mode styles to document
+  useEffect(() => {
+    if (currentGlowMode) {
+      document.documentElement.classList.add('glow-mode');
+      
+      // Set CSS custom properties for the glow mode
+      const root = document.documentElement;
+      root.style.setProperty('--glow-main-bg', currentGlowMode.mainBg);
+      root.style.setProperty('--glow-component-bg', currentGlowMode.componentBg);
+      root.style.setProperty('--glow-text-color', currentGlowMode.textColor);
+      root.style.setProperty('--glow-color', currentGlowMode.glowColor);
+      root.style.setProperty('--glow-button-primary', currentGlowMode.buttonPrimary);
+      root.style.setProperty('--glow-button-secondary', currentGlowMode.buttonSecondary);
+      root.style.setProperty('--glow-border', currentGlowMode.border);
+      root.style.setProperty('--glow-shadow', currentGlowMode.shadow);
+      
+      // Remove dark mode when glow mode is active
+      document.documentElement.classList.remove('dark-mode');
+    } else {
+      document.documentElement.classList.remove('glow-mode');
+      
+      // Clear CSS custom properties
+      const root = document.documentElement;
+      root.style.removeProperty('--glow-main-bg');
+      root.style.removeProperty('--glow-component-bg');
+      root.style.removeProperty('--glow-text-color');
+      root.style.removeProperty('--glow-color');
+      root.style.removeProperty('--glow-button-primary');
+      root.style.removeProperty('--glow-button-secondary');
+      root.style.removeProperty('--glow-border');
+      root.style.removeProperty('--glow-shadow');
+    }
+    try {
+      localStorage.setItem('glowMode', JSON.stringify(currentGlowMode));
+    } catch (error) {
+      console.warn('Failed to save glow mode to localStorage:', error);
+    }
+  }, [currentGlowMode]);
+
+  // Load unifySpaceSlug from server configuration
+  useEffect(() => {
+    const loadUnifySpaceSlug = async () => {
+      try {
+        const response = await fetch('http://localhost:8888/api/config');
+        const config = await response.json();
+        if (config.unifySpaceSlug) {
+          setUnifySpaceSlug(config.unifySpaceSlug);
+        }
+      } catch (error) {
+        console.error('Failed to load unifySpaceSlug:', error);
+      }
+    };
+    loadUnifySpaceSlug();
+    
+    // Set up an interval to periodically check for updates
+    const interval = setInterval(loadUnifySpaceSlug, 2000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Toggle dark mode
+  const handleToggleDarkMode = () => {
+    // Clear glow mode when switching to dark/light mode
+    if (currentGlowMode) {
+      setCurrentGlowMode(null);
+    }
+    setIsDarkMode(prev => !prev);
+  };
+
+  // Handle glow mode change
+  const handleGlowModeChange = (glowMode) => {
+    setCurrentGlowMode(glowMode);
+    setIsDarkMode(false); // Disable dark mode when glow mode is active
+  };
 
   // Load enabled identifiers from ID Resolution Config (localStorage)
   const enabledIdentifiers = useMemo(() => {
@@ -212,6 +324,21 @@ function App() {
     setUserUpdateTrigger(prev => prev + 1);
   }, []);
 
+  // Handle current user update from EventBuilder payload changes
+  const handleCurrentUserUpdateFromPayload = useCallback((extractedUserData) => {
+    console.log('📥 [App] Received user data from EventBuilder:', extractedUserData);
+    
+    // Merge the extracted user data with current user data
+    setCurrentUser(prevUser => {
+      const updatedUser = {
+        ...prevUser,
+        ...extractedUserData
+      };
+      console.log('📝 [App] Updated currentUser with payload data:', updatedUser);
+      return updatedUser;
+    });
+  }, []);
+
   // Handle editing an event in the EventList
   const handleEditEvent = (eventId, newPayload) => {
     setEvents(prevEvents => prevEvents.map(event =>
@@ -240,7 +367,10 @@ function App() {
         <header className="app__header">
           <div className="app__header-content">
             <div className="app__title-section">
-              <h1 className="app__title">Identity Resolution Visualizer</h1>
+              <h1 className="app__title">
+                <img src="/SegmentLogo.svg" alt="Segment" className="app__title-icon" />
+                Identity Resolution Visualizer
+              </h1>
               <p className="app__subtitle">
                 Build and simulate event processing workflows using Segment's API specifications
               </p>
@@ -251,14 +381,16 @@ function App() {
                 className="app__config-button"
                 title="Configure Segment Source & Tracking Settings"
               >
-                🔧 Source Config
+                <img src="/Connections.svg" alt="Connections" className="app__button-icon" />
+                Source Config
               </button>
               <button 
                 onClick={() => setShowUnifySpaceConfig(true)}
                 className="app__config-button"
                 title="Configure Unify Space & Identity Resolution"
               >
-                ⚙️ Unify Config
+                <img src="/Unify.svg" alt="Unify" className="app__button-icon" />
+                Unify Config
               </button>
               <button 
                 onClick={() => setShowProfileLookup(!showProfileLookup)}
@@ -310,17 +442,19 @@ function App() {
               currentUser={currentUser}
               onEventInfoChange={handleEventInfoChange}
               userUpdateTrigger={userUpdateTrigger}
+              sourceConfigUpdateTrigger={sourceConfigUpdateTrigger}
+              onCurrentUserUpdate={handleCurrentUserUpdateFromPayload}
             />
           </div>
 
           {/* Core Events */}
           <div className="app__core-events-container">
-            <EventButtons onLoadEvent={handleLoadEvent} eventType="core" />
+            <EventButtons onLoadEvent={handleLoadEvent} eventType="core" currentUser={currentUser} />
           </div>
 
           {/* Product Events */}
           <div className="app__product-events-container">
-            <EventButtons onLoadEvent={handleLoadEvent} eventType="product" />
+            <EventButtons onLoadEvent={handleLoadEvent} eventType="product" currentUser={currentUser} />
           </div>
         </section>
 
@@ -344,9 +478,44 @@ function App() {
       {showSourceConfig && (
         <SourceConfig 
           isOpen={showSourceConfig}
-          onClose={() => setShowSourceConfig(false)}
+          onClose={() => {
+            setShowSourceConfig(false);
+            setSourceConfigUpdateTrigger(prev => prev + 1);
+          }}
+          unifySpaceSlug={unifySpaceSlug}
         />
       )}
+      
+      {/* Floating Theme Buttons - Bottom Right */}
+      <div className="app__floating-theme-buttons">
+        {/* Light/Dark Mode Toggle */}
+        <button 
+          onClick={handleToggleDarkMode}
+          className="app__floating-theme-button app__floating-theme-button--primary"
+          title={isDarkMode ? "Light Mode" : "Dark Mode"}
+        >
+          {isDarkMode ? '☀️' : '🌙'}
+        </button>
+        
+        {/* Clear Glow Mode Button (only show when glow mode is active) */}
+        {currentGlowMode && (
+          <button 
+            onClick={() => setCurrentGlowMode(null)}
+            className="app__floating-theme-button app__floating-theme-button--clear"
+            title="Exit Glow Mode"
+          >
+            ✨
+          </button>
+        )}
+        
+        {/* Twilio Glow Button - positioned on the right */}
+        <div className="app__twilio-glow-button-wrapper">
+          <GlowModesList
+            currentGlowMode={currentGlowMode}
+            onGlowModeChange={handleGlowModeChange}
+          />
+        </div>
+      </div>
     </div>
   );
 }

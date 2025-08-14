@@ -536,13 +536,13 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
                               className="event-list__event-source" 
                               title={`WriteKey: ${source.settings?.writeKey || 'Not set'}`}
                             >
-                              {getSourceIcon(source.type)} {source.name}
+                              {getSourceIcon(source.type)} {source.name || source.type}
                             </span>
                           ))
                         ) : (
                           // Single source event
                           <span className="event-list__event-source" title={`WriteKey: ${event.writeKey || 'Not set'}`}>
-                            {getSourceIcon(event.sourceType)} {event.sourceName}
+                            {getSourceIcon(event.sourceType)} {event.sourceName || event.sourceType}
                           </span>
                         )}
                       </div>
