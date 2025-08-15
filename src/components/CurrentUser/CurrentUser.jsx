@@ -737,15 +737,15 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
               className="current-user__random-user-button"
               title="Load random user data from users.json"
             >
-              Load Random User
+              Load Random User Data
             </button>
-            <button
+            {/* <button
               onClick={handleUpdate}
               className="current-user__update-button"
               title="Update EventBuilder with current user data"
             >
               Update
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

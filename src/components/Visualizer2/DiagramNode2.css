@@ -1,0 +1,630 @@
+/* DiagramNode2 - Horizontal Timeline Layout with Simulation Logic */
+.diagram-node2 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  width: 300px;
+  height: 100%;
+  margin: 0 20px;
+}
+
+/* Above Timeline Section */
+.diagram-node2__above {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+  min-height: 400px; /* Fixed height to ensure consistent spacing */
+}
+
+/* Event Payload Container - maintains consistent space at top */
+.diagram-node2__payload-container {
+  width: 280px;
+  min-height: 150px; /* Fixed height to accommodate largest payload */
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start; /* Align payloads to top of container */
+  justify-content: center;
+}
+
+.diagram-node2__payload-card {
+  background: white;
+  border: 2px solid #4f46e5;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+  width: 100%;
+  animation: slideDown 0.3s ease;
+}
+
+.diagram-node2__payload-card h5 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4f46e5;
+}
+
+/* JSON Display in Payload Card */
+.diagram-node2__payload-card .diagram-node2__json-display {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 10px;
+  line-height: 1.3;
+  overflow-x: auto;
+  max-height: 100px;
+  color: #333;
+  margin: 0;
+}
+
+@keyframes slideDown {
+  from { 
+    opacity: 0; 
+    transform: translateY(-10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+.diagram-node2__event-card,
+.diagram-node2__profiles-card {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 280px;
+  font-size: 13px;
+}
+
+.diagram-node2__event-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.diagram-node2__event-card:hover {
+  border-color: #4f46e5;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+  transform: translateY(-2px);
+}
+
+.diagram-node2__event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.diagram-node2__event-type {
+  font-weight: bold;
+  color: #4f46e5;
+  font-size: 14px;
+}
+
+.diagram-node2__event-time {
+  font-size: 11px;
+  color: #666;
+}
+
+.diagram-node2__event-identifiers h5,
+.diagram-node2__profiles-card h5 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+.diagram-node2__identifier-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.diagram-node2__identifier-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 16px;
+  padding: 4px 8px;
+  font-size: 11px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.diagram-node2__identifier-chip--dropped {
+  background: #ffebee;
+  border-color: #f44336;
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+
+.diagram-node2__identifier-label {
+  font-weight: 600;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.diagram-node2__identifier-value {
+  color: #666;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  min-width: 0;
+  flex: 1;
+}
+
+.diagram-node2__identifier-priority {
+  background: #e3f2fd;
+  color: #1976d2;
+  border-radius: 8px;
+  padding: 1px 4px;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.diagram-node2__no-identifiers {
+  color: #999;
+  font-style: italic;
+  font-size: 11px;
+}
+
+.diagram-node2__profiles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.diagram-node2__profile-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.diagram-node2__profile-id {
+  font-weight: 600;
+  color: #333;
+  font-size: 11px;
+}
+
+.diagram-node2__profile-meta {
+  color: #666;
+  font-size: 10px;
+}
+
+/* Connection Lines */
+.diagram-node2__connection-line {
+  width: 2px;
+  background: linear-gradient(to bottom, #ddd, #999);
+  position: relative;
+}
+
+.diagram-node2__connection-line--above {
+  height: 20px;
+  margin-bottom: 10px;
+}
+
+.diagram-node2__connection-line--below {
+  height: 20px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+/* Timeline Node Circle */
+.diagram-node2__timeline-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+  position: relative;
+  align-self: center;
+}
+
+.diagram-node2__node-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  transition: all 0.3s ease;
+}
+
+.diagram-node2__node-circle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+}
+
+.diagram-node2__sequence {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.diagram-node2__node-label {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #666;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Below Timeline Section */
+.diagram-node2__below {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  min-height: 300px;
+}
+
+.diagram-node2__action-card,
+.diagram-node2__logic-card,
+.diagram-node2__dropped-card,
+.diagram-node2__profile-target-card {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 280px;
+  font-size: 13px;
+}
+
+.diagram-node2__action-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.diagram-node2__action-icon {
+  font-size: 18px;
+}
+
+.diagram-node2__action-title {
+  font-weight: bold;
+  color: #333;
+  font-size: 14px;
+}
+
+.diagram-node2__action-description {
+  color: #666;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.diagram-node2__action-dropped {
+  color: #f44336;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Dropped Identifiers Card */
+.diagram-node2__dropped-card {
+  border-color: #f44336;
+  background: #fff5f5;
+}
+
+.diagram-node2__dropped-card h5 {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f44336;
+}
+
+.diagram-node2__dropped-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.diagram-node2__dropped-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  background: #ffebee;
+  border-radius: 6px;
+  border: 1px solid #f44336;
+}
+
+.diagram-node2__dropped-name {
+  font-weight: 600;
+  color: #d32f2f;
+  font-size: 11px;
+}
+
+.diagram-node2__dropped-reason {
+  color: #666;
+  font-size: 10px;
+}
+
+/* Logic Card */
+.diagram-node2__logic-card h5 {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+.diagram-node2__logic-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.diagram-node2__logic-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.diagram-node2__step-number {
+  background: #e3f2fd;
+  color: #1976d2;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.diagram-node2__step-text {
+  font-size: 11px;
+  color: #666;
+  line-height: 1.3;
+  margin-top: 1px;
+}
+
+/* Profile Target Card */
+.diagram-node2__profile-target-card h5 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+.diagram-node2__profile-target {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.diagram-node2__target-arrow {
+  font-size: 16px;
+  color: #4f46e5;
+  font-weight: bold;
+}
+
+.diagram-node2__target-profile {
+  font-weight: 600;
+  color: #4f46e5;
+  background: #f0f9ff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+}
+
+/* Dark mode support */
+.dark-mode .diagram-node2__event-card,
+.dark-mode .diagram-node2__profiles-card,
+.dark-mode .diagram-node2__action-card,
+.dark-mode .diagram-node2__logic-card,
+.dark-mode .diagram-node2__dropped-card,
+.dark-mode .diagram-node2__profile-target-card,
+.dark-mode .diagram-node2__payload-card {
+  background: #1f2937;
+  border-color: #374151;
+  color: #f9fafb;
+}
+
+.dark-mode .diagram-node2__event-card:hover {
+  border-color: #6366f1;
+}
+
+.dark-mode .diagram-node2__payload-card {
+  border-color: #6366f1;
+}
+
+.dark-mode .diagram-node2__payload-card h5 {
+  color: #6366f1;
+}
+
+.dark-mode .diagram-node2__event-type {
+  color: #6366f1;
+}
+
+.dark-mode .diagram-node2__event-identifiers h5,
+.dark-mode .diagram-node2__profiles-card h5,
+.dark-mode .diagram-node2__logic-card h5,
+.dark-mode .diagram-node2__profile-target-card h5 {
+  color: #f9fafb;
+}
+
+.dark-mode .diagram-node2__dropped-card h5 {
+  color: #f87171;
+}
+
+.dark-mode .diagram-node2__identifier-chip {
+  background: #374151;
+  border-color: #4b5563;
+  color: #d1d5db;
+}
+
+.dark-mode .diagram-node2__profile-item {
+  background: #374151;
+}
+
+/* Brand mode support */
+.segment-mode .diagram-node2__node-circle {
+  background: linear-gradient(135deg, #4fb58b, #36a378);
+}
+
+.segment-mode .diagram-node2__node-circle:hover {
+  box-shadow: 0 6px 16px rgba(79, 181, 139, 0.4);
+}
+
+.segment-mode .diagram-node2__event-card:hover {
+  border-color: #4fb58b;
+  box-shadow: 0 4px 12px rgba(79, 181, 139, 0.2);
+}
+
+.segment-mode .diagram-node2__event-type {
+  color: #4fb58b;
+}
+
+.segment-mode .diagram-node2__payload-card {
+  border-color: #4fb58b;
+}
+
+.segment-mode .diagram-node2__payload-card h5 {
+  color: #4fb58b;
+}
+
+.segment-mode .diagram-node2__target-arrow,
+.segment-mode .diagram-node2__target-profile {
+  color: #4fb58b;
+}
+
+.segment-mode .diagram-node2__target-profile {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.twilio-mode .diagram-node2__event-card,
+.twilio-mode .diagram-node2__profiles-card,
+.twilio-mode .diagram-node2__action-card,
+.twilio-mode .diagram-node2__logic-card,
+.twilio-mode .diagram-node2__dropped-card,
+.twilio-mode .diagram-node2__profile-target-card,
+.twilio-mode .diagram-node2__payload-card {
+  background: #0f172a;
+  border-color: #1e293b;
+  color: #f1f5f9;
+}
+
+.twilio-mode .diagram-node2__node-circle {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+
+.twilio-mode .diagram-node2__node-circle:hover {
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+}
+
+.twilio-mode .diagram-node2__event-card:hover {
+  border-color: #dc2626;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+.twilio-mode .diagram-node2__event-type {
+  color: #dc2626;
+}
+
+.twilio-mode .diagram-node2__payload-card {
+  border-color: #dc2626;
+}
+
+.twilio-mode .diagram-node2__payload-card h5 {
+  color: #dc2626;
+}
+
+.twilio-mode .diagram-node2__event-identifiers h5,
+.twilio-mode .diagram-node2__profiles-card h5,
+.twilio-mode .diagram-node2__logic-card h5,
+.twilio-mode .diagram-node2__profile-target-card h5 {
+  color: #f1f5f9;
+}
+
+.twilio-mode .diagram-node2__identifier-chip {
+  background: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+.twilio-mode .diagram-node2__profile-item {
+  background: #1e293b;
+}
+
+.twilio-mode .diagram-node2__target-arrow,
+.twilio-mode .diagram-node2__target-profile {
+  color: #dc2626;
+}
+
+.twilio-mode .diagram-node2__target-profile {
+  background: #1e293b;
+  border-color: #dc2626;
+}
+
+.twilio-mode .diagram-node2__dropped-card {
+  background: #1e293b;
+  border-color: #dc2626;
+}
+
+.twilio-mode .diagram-node2__dropped-card h5 {
+  color: #dc2626;
+}
+
+.twilio-mode .diagram-node2__event-time,
+.twilio-mode .diagram-node2__profile-meta,
+.twilio-mode .diagram-node2__node-label,
+.twilio-mode .diagram-node2__action-description,
+.twilio-mode .diagram-node2__step-text,
+.twilio-mode .diagram-node2__dropped-reason {
+  color: #94a3b8;
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .diagram-node2 {
+    width: 250px;
+    margin: 0 10px;
+  }
+
+  .diagram-node2__above {
+    min-height: 320px;
+  }
+
+  .diagram-node2__payload-container {
+    width: 230px;
+    min-height: 120px;
+  }
+  
+  .diagram-node2__event-card,
+  .diagram-node2__profiles-card,
+  .diagram-node2__action-card,
+  .diagram-node2__logic-card,
+  .diagram-node2__dropped-card,
+  .diagram-node2__profile-target-card {
+    width: 230px;
+    padding: 12px;
+  }
+  
+  .diagram-node2__node-circle {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+}

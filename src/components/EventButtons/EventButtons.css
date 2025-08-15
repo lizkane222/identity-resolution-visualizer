@@ -353,3 +353,12 @@
   border-color: #1866EE; /* blue-500 */
   color: #F3F4F7; /* grey-50 */
 }
+
+/* Glow effect for event buttons container */
+.dark-mode .event-buttons {
+  box-shadow: 0 0 10px rgba(24, 102, 238, 0.4), 0 0 40px rgba(24, 102, 238, 0.2);
+}
+
+.dark-mode .event-buttons--single {
+  box-shadow: 0 0 10px rgba(24, 102, 238, 0.4), 0 0 40px rgba(24, 102, 238, 0.2);
+}

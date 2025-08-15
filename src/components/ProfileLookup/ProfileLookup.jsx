@@ -680,7 +680,7 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
             <button
               onClick={cancelAllRequests}
               className="profile-lookup__button profile-lookup__button--stop"
-              style={{ marginLeft: '10px' }}
+              style={{ marginTop: '10px', width: '100%' }}
             >
               Stop Lookup
             </button>

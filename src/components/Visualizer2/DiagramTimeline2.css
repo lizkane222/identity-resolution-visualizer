@@ -1,0 +1,120 @@
+/* DiagramTimeline2 Styles */
+.diagram-timeline2 {
+  width: 100%;
+  min-height: 100%;
+  padding: 0;
+}
+
+.diagram-timeline2__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.diagram-timeline2__loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #4f46e5;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Timeline Container */
+.diagram-timeline2__timeline-container {
+  position: relative;
+  margin-top: 20px;
+  padding: 80px 40px 120px 40px;
+  overflow-x: auto;
+  min-height: 400px;
+}
+
+/* Horizontal Timeline Line */
+.diagram-timeline2__timeline-line {
+  position: absolute;
+  top: 50%;
+  left: 40px;
+  right: 40px;
+  height: 3px;
+  background: linear-gradient(
+    to right,
+    #4f46e5,
+    #7c3aed
+  );
+  border-radius: 2px;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+/* Events Container */
+.diagram-timeline2__events {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  min-width: 800px; /* Minimum width to ensure proper spacing */
+  z-index: 2;
+}
+
+/* Dark mode support */
+.dark-mode .diagram-timeline2__loading {
+  color: #d1d5db;
+}
+
+.dark-mode .diagram-timeline2__loading-spinner {
+  border-color: #374151;
+  border-top-color: #6366f1;
+}
+
+/* Brand mode support */
+.segment-mode .diagram-timeline2__timeline-line {
+  background: linear-gradient(to right, #4fb58b, #36a378);
+}
+
+.segment-mode .diagram-timeline2__loading-spinner {
+  border-top-color: #4fb58b;
+}
+
+.twilio-mode .diagram-timeline2 {
+  color: #f1f5f9;
+}
+
+.twilio-mode .diagram-timeline2__loading {
+  color: #94a3b8;
+}
+
+.twilio-mode .diagram-timeline2__timeline-line {
+  background: linear-gradient(to right, #dc2626, #b91c1c);
+}
+
+.twilio-mode .diagram-timeline2__loading-spinner {
+  border-color: #1e293b;
+  border-top-color: #dc2626;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .diagram-timeline2__timeline-container {
+    padding: 60px 20px 100px 20px;
+  }
+  
+  .diagram-timeline2__timeline-line {
+    left: 20px;
+    right: 20px;
+  }
+  
+  .diagram-timeline2__events {
+    min-width: 600px;
+  }
+}

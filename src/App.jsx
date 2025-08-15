@@ -9,6 +9,7 @@ import SourceConfig from './components/SourceConfig/SourceConfig.jsx';
 import ProfileLookup from './components/ProfileLookup/ProfileLookup.jsx';
 import GlowModesList from './components/GlowModesList/GlowModesList.jsx';
 import Visualizer from './components/Visualizer/Visualizer.jsx';
+import Visualizer2 from './components/Visualizer2/Visualizer2.jsx';
 import { useEffect, useMemo } from 'react';
 import './App.css';
 
@@ -29,7 +30,7 @@ function App() {
   const [showUnifySpaceConfig, setShowUnifySpaceConfig] = useState(false);
   const [showSourceConfig, setShowSourceConfig] = useState(false);
   const [showProfileLookup, setShowProfileLookup] = useState(false);
-  const [currentPage, setCurrentPage] = useState('main'); // 'main' or 'visualizer'
+  const [currentPage, setCurrentPage] = useState('main'); // 'main', 'visualizer', or 'visualizer2'
   const [highlightedEventIndices, setHighlightedEventIndices] = useState([]);
   const [unifySpaceSlug, setUnifySpaceSlug] = useState('');
   
@@ -37,6 +38,12 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     return saved ? JSON.parse(saved) : false;
+  });
+
+  // Brand mode state (segment vs twilio)
+  const [brandMode, setBrandMode] = useState(() => {
+    const saved = localStorage.getItem('brandMode');
+    return saved || 'segment'; // default to segment
   });
 
   // Glow mode state
@@ -105,6 +112,17 @@ function App() {
       console.warn('Failed to save glow mode to localStorage:', error);
     }
   }, [currentGlowMode]);
+
+  // Apply brand mode classes to document
+  useEffect(() => {
+    // Remove existing brand mode classes
+    document.documentElement.classList.remove('segment-mode', 'twilio-mode');
+    
+    // Add the current brand mode class
+    document.documentElement.classList.add(`${brandMode}-mode`);
+    
+    localStorage.setItem('brandMode', brandMode);
+  }, [brandMode]);
 
   // Load unifySpaceSlug from server configuration
   useEffect(() => {
@@ -378,7 +396,7 @@ function App() {
       {/* Content wrapper for main area and footer */}
       <div className="app__content-wrapper">
         {/* Main Content Area */}
-        <main className={`app__main ${currentPage === 'visualizer' ? 'app__main--full-width' : ''}`}>
+        <main className={`app__main ${currentPage === 'visualizer' || currentPage === 'visualizer2' ? 'app__main--full-width' : ''}`}>
         {/* Header */}
         <header className="app__header">
           <div className="app__header-content">
@@ -422,7 +440,8 @@ function App() {
                 className={`app__lookup-button ${showProfileLookup ? 'app__lookup-button--active' : ''}`}
                 title="Profile Lookup Tool"
               >
-                🔍 Lookup
+                <img src="/assets/compass.svg" alt="Compass" className="app__button-icon" />
+                Lookup
               </button>
               <button 
                 onClick={() => setCurrentPage('visualizer')}
@@ -430,8 +449,17 @@ function App() {
                 title="Open Identity Resolution Visualizer"
                 disabled={events.length === 0}
               >
-                <img src="/assets/pie-chart.svg" alt="Visualize" className="app__button-icon" />
+                <img src="/assets/pie-chart.svg" alt="Visualize" className="app__button-icon app__button-icon--color" />
                 Visualize
+              </button>
+              <button 
+                onClick={() => setCurrentPage('visualizer2')}
+                className="app__visualize2-button"
+                title="Open Identity Resolution Simulator"
+                disabled={events.length === 0}
+              >
+                <img src="/assets/pie-chart.svg" alt="Simulate" className="app__button-icon app__button-icon--color" />
+                Simulate
               </button>
             </div>
           </div>
@@ -519,10 +547,33 @@ function App() {
             onClose={() => setCurrentPage('main')}
           />
         )}
+
+        {/* Identity Resolution Simulator Page */}
+        {currentPage === 'visualizer2' && (
+          <Visualizer2 
+            events={events}
+            identifierOptions={identifierOptions}
+            unifySpaceSlug={unifySpaceSlug}
+            onClose={() => setCurrentPage('main')}
+          />
+        )}
       </main>
 
       {/* Theme Buttons - Above Footer */}
       <div className="app__floating-theme-buttons">
+        {/* Brand Mode Toggle (Segment/Twilio) */}
+        <button 
+          onClick={() => setBrandMode(brandMode === 'segment' ? 'twilio' : 'segment')}
+          className={`app__floating-theme-button app__floating-theme-button--brand ${brandMode === 'twilio' ? 'app__floating-theme-button--twilio' : 'app__floating-theme-button--segment'}`}
+          title={`Switch to ${brandMode === 'segment' ? 'Twilio' : 'Segment'} Mode`}
+        >
+          {brandMode === 'segment' ? (
+            <img src="/assets/SegmentLogo.svg" alt="Segment" className="app__brand-icon" />
+          ) : (
+            <img src="/assets/TwilioButtonLogo.png" alt="Twilio" className="app__brand-icon" />
+          )}
+        </button>
+        
         {/* Light/Dark Mode Toggle */}
         <button 
           onClick={handleToggleDarkMode}
