@@ -55,7 +55,21 @@ const Visualizer = ({
       <div className="visualizer__header">
         <div className="visualizer__header-left">
           <img src="/assets/pie-chart.svg" alt="Visualizer" className="visualizer__header-icon" />
-          <h2 className="visualizer__title">Identity Resolution Visualizer</h2>
+          <h2 className="visualizer__title">
+            Identity Resolution Visualizer 
+            <div className="visualizer__separator">
+              <div className="separator-line">
+                <div className="dash-pixel dash-pixel-1"></div>
+                <div className="dash-pixel dash-pixel-2"></div>
+                <div className="dash-pixel dash-pixel-3"></div>
+                <div className="dash-pixel dash-pixel-4"></div>
+                <div className="dash-pixel dash-pixel-5"></div>
+                <div className="dash-pixel dash-pixel-6"></div>
+                <div className="dash-pixel dash-pixel-7"></div>
+              </div>
+            </div>
+            Event Flow
+          </h2>
         </div>
         <div className="visualizer__header-right">
           <button
@@ -66,6 +80,11 @@ const Visualizer = ({
             ← Back to Main
           </button>
         </div>
+      </div>
+
+      {/* Description */}
+      <div className="visualizer__description">
+        <p>This diagram shows how each event affects identity resolution based on existing profiles and configured rules.</p>
       </div>
 
       {/* Main Content */}

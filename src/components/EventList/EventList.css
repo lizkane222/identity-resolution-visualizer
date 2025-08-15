@@ -1067,3 +1067,99 @@
   background-color: rgba(251, 191, 36, 0.1);
   border-left-color: #fbbf24;
 }
+
+/* Dark Mode Styles for EventList - Events Level 1 */
+.dark-mode .event-list {
+  background: #081F47; /* blue-850 */
+  border-color: #081F47; /* blue-850 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+/* EventList header - Events Level 1 */
+.dark-mode .event-list__title {
+  color: #DDE0E6; /* grey-100 */
+}
+
+/* Events Level 2 - Controls */
+.dark-mode .event-list__controls,
+.dark-mode .event-list__controls--footer {
+  background: rgba(8, 31, 71, 0.9); /* blue-850 lightened by 10% */
+  border-color: #081F47; /* blue-850 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+/* Events Level 2 - Event items and log entries */
+.dark-mode .event-list__event {
+  background: #4D5777; /* grey-600 */
+  border-color: #4D5777; /* grey-600 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .event-list__event:hover {
+  background: rgba(77, 87, 119, 0.8); /* grey-600 with opacity */
+}
+
+.dark-mode .event-list__log-entry {
+  background: #4D5777; /* grey-600 */
+  border-color: #4D5777; /* grey-600 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+/* Event text elements - grey-50 */
+.dark-mode .event-list__event-number,
+.dark-mode .event-list__event-name,
+.dark-mode .event-list__event-meta {
+  color: #F3F4F7; /* grey-50 */
+}
+
+/* Simulation Log header - white color */
+.dark-mode .event-list__log-title {
+  color: #F3F4F7; /* grey-50 (white) */
+}
+
+.dark-mode .event-list__event-header {
+  color: #F3F4F7; /* grey-50 */
+  border-bottom-color: rgba(77, 87, 119, 0.3); /* grey-600 with opacity */
+}
+
+.dark-mode .event-list__event-title {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .event-list__event-timestamp {
+  color: #DDE0E6; /* grey-100 */
+}
+
+.dark-mode .event-list__run-button {
+  background: #1866EE; /* blue-500 */
+  color: #F3F4F7; /* grey-50 */
+  border-color: #1866EE; /* blue-500 */
+}
+
+.dark-mode .event-list__run-button:hover:not(:disabled) {
+  background: #081F47; /* blue-850 */
+  border-color: #081F47; /* blue-850 */
+}
+
+.dark-mode .event-list__checkpoint {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .event-list__checkpoint-text {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .event-list__checkpoint-line {
+  background: #4D5777; /* grey-600 */
+}
+
+.dark-mode .event-list__checkpoint-handle {
+  background: #1866EE; /* blue-500 */
+  border-color: #F3F4F7; /* grey-50 */
+}
+
+/* Order and Timeout labels - grey-50 */
+.dark-mode .event-list__order-label,
+.dark-mode .event-list__timeout-label {
+  color: #F3F4F7; /* grey-50 */
+}

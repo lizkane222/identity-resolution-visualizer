@@ -280,3 +280,76 @@
     border-color: #22c55e;
   }
 }
+
+/* Dark Mode Styles - Events Level 1 (EventButtons) */
+.dark-mode .event-buttons__section {
+  background: #081F47; /* blue-850 */
+  border-color: #081F47; /* blue-850 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .event-buttons__section-title {
+  color: #F3F4F7; /* grey-50 */
+  border-bottom-color: rgba(243, 244, 247, 0.2); /* grey-50 with opacity */
+}
+
+.dark-mode .event-buttons__button {
+  background-color: #191F36; /* blue-900 */
+  border-color: #191F36; /* blue-900 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .event-buttons__button:hover {
+  background-color: rgba(25, 31, 54, 0.8); /* blue-900 with opacity */
+  border-color: #1866EE; /* blue-500 */
+  box-shadow: 0 2px 4px rgba(24, 102, 238, 0.2);
+}
+
+.dark-mode .event-buttons__button:focus {
+  border-color: #1866EE; /* blue-500 */
+  box-shadow: 0 0 0 3px rgba(24, 102, 238, 0.1);
+}
+
+.dark-mode .event-buttons__button--shrunk {
+  border-left: none;
+}
+
+.dark-mode .event-buttons__send-button {
+  background-color: #1866EE; /* blue-500 */
+  border-color: #1866EE; /* blue-500 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .event-buttons__send-button:hover {
+  background-color: rgba(24, 102, 238, 0.9); /* blue-500 with opacity */
+  border-color: rgba(24, 102, 238, 0.9); /* blue-500 with opacity */
+  box-shadow: 0 2px 4px rgba(24, 102, 238, 0.3);
+}
+
+.dark-mode .event-buttons__send-button:focus {
+  box-shadow: 0 0 0 3px rgba(24, 102, 238, 0.3);
+}
+
+.dark-mode .event-buttons__button--core {
+  background-color: rgba(8, 31, 71, 0.8); /* blue-850 with opacity */
+  border-color: #1866EE; /* blue-500 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .event-buttons__button--core:hover {
+  background-color: #081F47; /* blue-850 */
+  border-color: #1866EE; /* blue-500 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .event-buttons__button--product {
+  background-color: rgba(25, 31, 54, 0.8); /* blue-900 with opacity */
+  border-color: #1866EE; /* blue-500 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .event-buttons__button--product:hover {
+  background-color: #191F36; /* blue-900 */
+  border-color: #1866EE; /* blue-500 */
+  color: #F3F4F7; /* grey-50 */
+}

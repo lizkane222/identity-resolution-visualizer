@@ -375,8 +375,10 @@ function App() {
         </aside>
       )}
 
-      {/* Main Content Area */}
-      <main className={`app__main ${currentPage === 'visualizer' ? 'app__main--full-width' : ''}`}>
+      {/* Content wrapper for main area and footer */}
+      <div className="app__content-wrapper">
+        {/* Main Content Area */}
+        <main className={`app__main ${currentPage === 'visualizer' ? 'app__main--full-width' : ''}`}>
         {/* Header */}
         <header className="app__header">
           <div className="app__header-content">
@@ -505,14 +507,6 @@ function App() {
             />
           </div>
         </section>
-
-        {/* Footer */}
-        <footer className="app__footer">
-          <p className="app__footer-text">
-            This tool simulates event processing for identity resolution systems using Segment's API specifications.
-            Events are processed in sequence with configurable timeouts to simulate real-world scenarios and to allow time for profiles to be resolved within Unify.
-          </p>
-        </footer>
           </>
         )}
 
@@ -527,26 +521,7 @@ function App() {
         )}
       </main>
 
-      {/* Modals */}
-      {showUnifySpaceConfig && (
-        <UnifySpaceConfig 
-          isOpen={showUnifySpaceConfig}
-          onClose={() => setShowUnifySpaceConfig(false)}
-        />
-      )}
-
-      {showSourceConfig && (
-        <SourceConfig 
-          isOpen={showSourceConfig}
-          onClose={() => {
-            setShowSourceConfig(false);
-            setSourceConfigUpdateTrigger(prev => prev + 1);
-          }}
-          unifySpaceSlug={unifySpaceSlug}
-        />
-      )}
-      
-      {/* Floating Theme Buttons - Bottom Right */}
+      {/* Theme Buttons - Above Footer */}
       <div className="app__floating-theme-buttons">
         {/* Light/Dark Mode Toggle */}
         <button 
@@ -576,6 +551,34 @@ function App() {
           />
         </div>
       </div>
+
+      {/* Footer - Full width excluding EventList sidebar */}
+      <footer className="app__footer">
+        <p className="app__footer-text">
+          This tool simulates event processing for identity resolution systems using Segment's API specifications.
+          Events are processed in sequence with configurable timeouts to simulate real-world scenarios and to allow time for profiles to be resolved within Unify.
+        </p>
+      </footer>
+      </div>
+
+      {/* Modals */}
+      {showUnifySpaceConfig && (
+        <UnifySpaceConfig 
+          isOpen={showUnifySpaceConfig}
+          onClose={() => setShowUnifySpaceConfig(false)}
+        />
+      )}
+
+      {showSourceConfig && (
+        <SourceConfig 
+          isOpen={showSourceConfig}
+          onClose={() => {
+            setShowSourceConfig(false);
+            setSourceConfigUpdateTrigger(prev => prev + 1);
+          }}
+          unifySpaceSlug={unifySpaceSlug}
+        />
+      )}
     </div>
   );
 }

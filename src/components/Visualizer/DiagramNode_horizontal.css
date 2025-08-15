@@ -147,6 +147,8 @@
   border-radius: 16px;
   padding: 4px 8px;
   font-size: 11px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .diagram-node__identifier-chip--dropped {
@@ -164,10 +166,15 @@
 .diagram-node__identifier-label {
   font-weight: 600;
   color: #333;
+  flex-shrink: 0;
 }
 
 .diagram-node__identifier-value {
   color: #666;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  min-width: 0;
+  flex: 1;
 }
 
 .diagram-node__identifier-priority {

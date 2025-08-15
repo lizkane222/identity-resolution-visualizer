@@ -78,11 +78,6 @@ const DiagramTimeline = ({ events, identifierOptions, unifySpaceSlug }) => {
 
   return (
     <div className="diagram-timeline">
-      <div className="diagram-timeline__header">
-        <h3>Identity Resolution Flow - {processedEvents.length} Events</h3>
-        <p>This diagram shows how each event affects identity resolution based on existing profiles and configured rules.</p>
-      </div>
-
       <div className="diagram-timeline__timeline-container">
         {/* Horizontal Timeline */}
         <div className="diagram-timeline__timeline-line"></div>

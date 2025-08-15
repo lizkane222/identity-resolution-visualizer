@@ -151,6 +151,19 @@ const GlowModesList = ({ isOpen, onClose, currentGlowMode, onGlowModeChange }) =
       shadow: 'rgba(29, 5, 8, 0.5)'
     },
     {
+      id: 'glow-dark-red',
+      name: 'Glow Dark Red',
+      color: '#DB132A',
+      mainBg: '#430B12',
+      componentBg: '#1D0508',
+      textColor: '#F3F4F7',
+      glowColor: '#DB132A',
+      buttonPrimary: '#DB132A',
+      buttonSecondary: '#F83D53',
+      border: '#DB132A',
+      shadow: 'rgba(219, 19, 42, 0.4)'
+    },
+    {
       id: 'blue-500',
       name: 'Blue 500',
       color: '#1866EE',

@@ -191,3 +191,57 @@
     border-color: #374151;
   }
 }
+
+/* Dark Mode Styles - Modal Components (UnifySpaceConfig) */
+.dark-mode .unify-space-config__overlay {
+  background: rgba(25, 31, 54, 0.8); /* blue-900 with opacity */
+}
+
+.dark-mode .unify-space-config__modal {
+  background: #191F36; /* grey-850 */
+  border: 1px solid #4D5777; /* grey-600 */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .unify-space-config__header {
+  border-bottom-color: #4D5777; /* grey-600 */
+}
+
+.dark-mode .unify-space-config__title {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .unify-space-config__close {
+  color: #DDE0E6; /* grey-100 */
+}
+
+.dark-mode .unify-space-config__close:hover {
+  background: rgba(77, 87, 119, 0.3); /* grey-600 with opacity */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .unify-space-config__tabs {
+  background: #4D5777; /* grey-600 */
+  border-bottom-color: #4D5777; /* grey-600 */
+}
+
+.dark-mode .unify-space-config__tab {
+  color: #DDE0E6; /* grey-100 */
+}
+
+.dark-mode .unify-space-config__tab:hover {
+  color: #F3F4F7; /* grey-50 */
+  background: rgba(25, 31, 54, 0.5); /* grey-850 with opacity */
+}
+
+.dark-mode .unify-space-config__tab--active {
+  color: #1866EE; /* blue-500 */
+  background: #191F36; /* grey-850 */
+  border-bottom-color: #1866EE; /* blue-500 */
+}
+
+.dark-mode .unify-space-config__card {
+  background: rgba(77, 87, 119, 0.3); /* grey-600 with opacity */
+  border-color: #4D5777; /* grey-600 */
+  color: #F3F4F7; /* grey-50 */
+}

@@ -1,7 +1,6 @@
 .profile-lookup {
   background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-top: none;
+  border: none;
   border-radius: 8px;
   padding: 1.5rem;
   margin: 1rem 0;
@@ -316,7 +315,7 @@
 }
 
 .profile-lookup__endpoint-option:hover {
-  background-color: #f8f9fa;
+  color: #DB132A; /* red-500 */
 }
 
 .profile-lookup__endpoint-toggle {
@@ -376,7 +375,7 @@
 }
 
 .profile-lookup__identifier-option:hover {
-  background-color: #f8f9fa;
+  color: #DB132A; /* red-500 */
 }
 
 .profile-lookup__identifier-toggle {
@@ -543,7 +542,7 @@
 }
 
 .profile-lookup__results {
-  margin-top: 1.5rem;
+  /* margin-top: 1.5rem; */
   border-top: 1px solid #dee2e6;
   padding-top: 1.5rem;
 }
@@ -766,6 +765,402 @@
 .profile-lookup__error-details small {
   color: #6b7280;
   font-style: italic;
+}
+
+/* Dark Mode Styles - Lookup Level 1 now follows Events Level 1 */
+.dark-mode .profile-lookup {
+  background: #081F47; /* blue-850 */
+  border: none;
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .profile-lookup__title {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .profile-lookup__subtitle {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .profile-lookup__label {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .profile-lookup__help {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .profile-lookup__custom-label {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .profile-lookup__not-configured {
+  color: #F3F4F7; /* grey-50 */
+}
+
+/* Dark Mode Styles - Lookup Level 2 now follows Events Level 2 */
+.dark-mode .profile-lookup__identifier-list {
+  background: #4D5777; /* grey-600 */
+  border: 2px solid transparent;
+  color: #F3F4F7; /* grey-50 */
+  transition: box-shadow 0.4s ease-in-out, border-color 0.4s ease-in-out;
+}
+
+.dark-mode .profile-lookup__identifier-list:hover,
+.dark-mode .profile-lookup__identifier-list:focus-within {
+  box-shadow: 0 0 20px rgba(24, 102, 238, 0.4), 0 0 40px rgba(24, 102, 238, 0.2);
+}
+
+.dark-mode .profile-lookup__endpoint-list {
+  background: #4D5777; /* grey-600 */
+  border: 2px solid transparent;
+  color: #F3F4F7; /* grey-50 */
+  transition: box-shadow 0.4s ease-in-out, border-color 0.4s ease-in-out;
+}
+
+.dark-mode .profile-lookup__endpoint-list:hover,
+.dark-mode .profile-lookup__endpoint-list:focus-within {
+  box-shadow: 0 0 20px rgba(24, 102, 238, 0.4), 0 0 40px rgba(24, 102, 238, 0.2);
+}
+
+.dark-mode .profile-lookup__params {
+  background: #4D5777; /* grey-600 */
+  border: 2px solid transparent;
+  color: #F3F4F7; /* grey-50 */
+  transition: box-shadow 0.4s ease-in-out, border-color 0.4s ease-in-out;
+}
+
+.dark-mode .profile-lookup__params:hover,
+.dark-mode .profile-lookup__params:focus-within {
+  box-shadow: 0 0 20px rgba(24, 102, 238, 0.4), 0 0 40px rgba(24, 102, 238, 0.2);
+}
+
+.dark-mode .profile-lookup__params-title {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .profile-lookup__results {
+  background: #4D5777; /* grey-600 */
+  border-top: 2px solid transparent;
+  color: #F3F4F7; /* grey-50 */
+  transition: box-shadow 0.4s ease-in-out, border-color 0.4s ease-in-out;
+}
+
+.dark-mode .profile-lookup__results:hover,
+.dark-mode .profile-lookup__results:focus-within {
+  box-shadow: 0 0 20px rgba(24, 102, 238, 0.4), 0 0 40px rgba(24, 102, 238, 0.2);
+}
+
+.dark-mode .unique-profiles-list {
+  background: #4D5777; /* grey-600 */
+  border: 2px solid transparent;
+  color: #F3F4F7; /* grey-50 */
+  transition: box-shadow 0.4s ease-in-out, border-color 0.4s ease-in-out;
+}
+
+.dark-mode .unique-profiles-list:hover,
+.dark-mode .unique-profiles-list:focus-within {
+  box-shadow: 0 0 20px rgba(24, 102, 238, 0.4), 0 0 40px rgba(24, 102, 238, 0.2);
+}
+
+.dark-mode .unique-profiles-list__title {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .unique-profiles-list__subtitle {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .unique-profiles-list__empty-message {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .unique-profiles-list__empty-subtitle {
+  color: #F3F4F7; /* grey-50 */
+}
+
+/* Additional glow effects for active child elements */
+.dark-mode .profile-lookup__identifier-list:has(.profile-lookup__identifier-toggle--selected),
+.dark-mode .profile-lookup__identifier-list:has(.profile-lookup__identifier-option--editing) {
+  box-shadow: 0 0 20px rgba(24, 102, 238, 0.5), 0 0 40px rgba(24, 102, 238, 0.3);
+}
+
+.dark-mode .profile-lookup__endpoint-list:has(.profile-lookup__endpoint-toggle--selected) {
+  box-shadow: 0 0 20px rgba(24, 102, 238, 0.5), 0 0 40px rgba(24, 102, 238, 0.3);
+}
+
+.dark-mode .profile-lookup__params:has(input:focus),
+.dark-mode .profile-lookup__params:has(select:focus) {
+  box-shadow: 0 0 20px rgba(24, 102, 238, 0.5), 0 0 40px rgba(24, 102, 238, 0.3);
+}
+
+.dark-mode .unique-profiles-list:has(.unique-user--active) {
+  box-shadow: 0 0 20px rgba(24, 102, 238, 0.5), 0 0 40px rgba(24, 102, 238, 0.3);
+}
+
+.dark-mode .profile-lookup__identifier-text {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .profile-lookup__endpoint-text {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .profile-lookup__param label {
+  color: #F3F4F7; /* grey-50 */
+}
+
+/* Hover effects for identifiers and endpoints */
+.dark-mode .profile-lookup__identifier-option:hover {
+  color: #1866EE; /* blue-500 */
+}
+
+.dark-mode .profile-lookup__endpoint-option:hover {
+  color: #1866EE; /* blue-500 */
+}
+
+/* Form inputs in dark mode */
+.dark-mode .profile-lookup__input,
+.dark-mode .profile-lookup__select,
+.dark-mode .profile-lookup__param-input,
+.dark-mode .profile-lookup__param-select {
+  background: #081F47; /* blue-850 */
+  border-color: #4D5777; /* grey-600 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .profile-lookup__input:focus,
+.dark-mode .profile-lookup__select:focus,
+.dark-mode .profile-lookup__param-input:focus,
+.dark-mode .profile-lookup__param-select:focus {
+  border-color: #1866EE; /* blue-500 */
+  box-shadow: 0 0 0 2px rgba(24, 102, 238, 0.25);
+}
+
+/* Buttons in dark mode */
+.dark-mode .profile-lookup__button {
+  background: #1866EE; /* blue-500 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .profile-lookup__button:hover:not(:disabled) {
+  background: #081F47; /* blue-850 */
+}
+
+.dark-mode .profile-lookup__button--secondary {
+  background: #081F47; /* blue-850 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .profile-lookup__button--secondary:hover:not(:disabled) {
+  background: #4D5777; /* grey-600 */
+}
+
+.dark-mode .profile-lookup__button--stop {
+  background: #1866EE; /* blue-500 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .profile-lookup__button--stop:hover:not(:disabled) {
+  background: #081F47; /* blue-850 */
+}
+
+/* Glow Dark Red Mode Styles - Lookup Level 1 */
+.glow-dark-red .profile-lookup {
+  background: #430B12; /* red-850 */
+  border: none;
+  color: #F77786; /* red-300 */
+}
+
+.glow-dark-red .profile-lookup__title {
+  color: #F77786; /* red-300 */
+}
+
+.glow-dark-red .profile-lookup__subtitle {
+  color: #F77786; /* red-300 */
+}
+
+.glow-dark-red .profile-lookup__label {
+  color: #F77786; /* red-300 */
+}
+
+.glow-dark-red .profile-lookup__help {
+  color: #F77786; /* red-300 */
+}
+
+.glow-dark-red .profile-lookup__custom-label {
+  color: #F77786; /* red-300 */
+}
+
+.glow-dark-red .profile-lookup__not-configured {
+  color: #F77786; /* red-300 */
+}
+
+/* Glow Dark Red Mode Styles - Lookup Level 2 */
+.glow-dark-red .profile-lookup__identifier-list {
+  background: #1D0508; /* red-900 */
+  border: 2px solid transparent;
+  color: #F3F4F7; /* grey-50 */
+  transition: box-shadow 0.4s ease-in-out, border-color 0.4s ease-in-out;
+}
+
+.glow-dark-red .profile-lookup__identifier-list:hover,
+.glow-dark-red .profile-lookup__identifier-list:focus-within {
+  box-shadow: 0 0 20px rgba(219, 19, 42, 0.4), 0 0 40px rgba(219, 19, 42, 0.2);
+}
+
+.glow-dark-red .profile-lookup__endpoint-list {
+  background: #1D0508; /* red-900 */
+  border: 2px solid transparent;
+  color: #F3F4F7; /* grey-50 */
+  transition: box-shadow 0.4s ease-in-out, border-color 0.4s ease-in-out;
+}
+
+.glow-dark-red .profile-lookup__endpoint-list:hover,
+.glow-dark-red .profile-lookup__endpoint-list:focus-within {
+  box-shadow: 0 0 20px rgba(219, 19, 42, 0.4), 0 0 40px rgba(219, 19, 42, 0.2);
+}
+
+.glow-dark-red .profile-lookup__params {
+  background: #1D0508; /* red-900 */
+  border: 2px solid transparent;
+  color: #F3F4F7; /* grey-50 */
+  transition: box-shadow 0.4s ease-in-out, border-color 0.4s ease-in-out;
+}
+
+.glow-dark-red .profile-lookup__params:hover,
+.glow-dark-red .profile-lookup__params:focus-within {
+  box-shadow: 0 0 20px rgba(219, 19, 42, 0.4), 0 0 40px rgba(219, 19, 42, 0.2);
+}
+
+.glow-dark-red .profile-lookup__params-title {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.glow-dark-red .profile-lookup__results {
+  background: #1D0508; /* red-900 */
+  border-top: 2px solid transparent;
+  color: #F3F4F7; /* grey-50 */
+  transition: box-shadow 0.4s ease-in-out, border-color 0.4s ease-in-out;
+}
+
+.glow-dark-red .profile-lookup__results:hover,
+.glow-dark-red .profile-lookup__results:focus-within {
+  box-shadow: 0 0 20px rgba(219, 19, 42, 0.4), 0 0 40px rgba(219, 19, 42, 0.2);
+}
+
+.glow-dark-red .unique-profiles-list {
+  background: #1D0508; /* red-900 */
+  border: 2px solid transparent;
+  color: #F3F4F7; /* grey-50 */
+  transition: box-shadow 0.4s ease-in-out, border-color 0.4s ease-in-out;
+}
+
+.glow-dark-red .unique-profiles-list:hover,
+.glow-dark-red .unique-profiles-list:focus-within {
+  box-shadow: 0 0 20px rgba(219, 19, 42, 0.4), 0 0 40px rgba(219, 19, 42, 0.2);
+}
+
+.glow-dark-red .unique-profiles-list__title {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.glow-dark-red .unique-profiles-list__subtitle {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.glow-dark-red .unique-profiles-list__empty-message {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.glow-dark-red .unique-profiles-list__empty-subtitle {
+  color: #F3F4F7; /* grey-50 */
+}
+
+/* Additional glow effects for active child elements */
+.glow-dark-red .profile-lookup__identifier-list:has(.profile-lookup__identifier-toggle--selected),
+.glow-dark-red .profile-lookup__identifier-list:has(.profile-lookup__identifier-option--editing) {
+  box-shadow: 0 0 20px rgba(219, 19, 42, 0.5), 0 0 40px rgba(219, 19, 42, 0.3);
+}
+
+.glow-dark-red .profile-lookup__endpoint-list:has(.profile-lookup__endpoint-toggle--selected) {
+  box-shadow: 0 0 20px rgba(219, 19, 42, 0.5), 0 0 40px rgba(219, 19, 42, 0.3);
+}
+
+.glow-dark-red .profile-lookup__params:has(input:focus),
+.glow-dark-red .profile-lookup__params:has(select:focus) {
+  box-shadow: 0 0 20px rgba(219, 19, 42, 0.5), 0 0 40px rgba(219, 19, 42, 0.3);
+}
+
+.glow-dark-red .unique-profiles-list:has(.unique-user--active) {
+  box-shadow: 0 0 20px rgba(219, 19, 42, 0.5), 0 0 40px rgba(219, 19, 42, 0.3);
+}
+
+.glow-dark-red .profile-lookup__identifier-text {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.glow-dark-red .profile-lookup__endpoint-text {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.glow-dark-red .profile-lookup__param label {
+  color: #F3F4F7; /* grey-50 */
+}
+
+/* Hover effects for identifiers and endpoints */
+.glow-dark-red .profile-lookup__identifier-option:hover {
+  color: #DB132A; /* red-500 */
+}
+
+.glow-dark-red .profile-lookup__endpoint-option:hover {
+  color: #DB132A; /* red-500 */
+}
+
+/* Form inputs in glow dark red mode */
+.glow-dark-red .profile-lookup__input,
+.glow-dark-red .profile-lookup__select,
+.glow-dark-red .profile-lookup__param-input,
+.glow-dark-red .profile-lookup__param-select {
+  background: #430B12; /* red-850 */
+  border-color: #B10F23; /* red-600 */
+  color: #F77786; /* red-300 */
+}
+
+.glow-dark-red .profile-lookup__input:focus,
+.glow-dark-red .profile-lookup__select:focus,
+.glow-dark-red .profile-lookup__param-input:focus,
+.glow-dark-red .profile-lookup__param-select:focus {
+  border-color: #FF1233; /* red-450 */
+  box-shadow: 0 0 0 2px rgba(247, 119, 134, 0.25);
+}
+
+/* Buttons in glow dark red mode */
+.glow-dark-red .profile-lookup__button {
+  background: #DB132A; /* red-500 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.glow-dark-red .profile-lookup__button:hover:not(:disabled) {
+  background: #B10F23; /* red-600 */
+}
+
+.glow-dark-red .profile-lookup__button--secondary {
+  background: #430B12; /* red-850 */
+  color: #F77786; /* red-300 */
+}
+
+.glow-dark-red .profile-lookup__button--secondary:hover:not(:disabled) {
+  background: #1D0508; /* red-900 */
+}
+
+.glow-dark-red .profile-lookup__button--stop {
+  background: #FF1233; /* red-450 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.glow-dark-red .profile-lookup__button--stop:hover:not(:disabled) {
+  background: #F83D53; /* red-400 */
 }
 
 /* Responsive design */

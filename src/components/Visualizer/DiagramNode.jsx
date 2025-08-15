@@ -75,9 +75,9 @@ const DiagramNode = ({ event, sequenceNumber, isLast, identifierOptions, positio
                       key={key} 
                       className={`diagram-node__identifier-chip ${isDropped ? 'diagram-node__identifier-chip--dropped' : ''} ${isConflicting ? 'diagram-node__identifier-chip--conflict' : ''}`}
                     >
+                      <span className="diagram-node__identifier-priority">P{identifier.priority}</span>
                       <span className="diagram-node__identifier-label">{identifier.label}</span>
                       <span className="diagram-node__identifier-value">{identifier.value}</span>
-                      <span className="diagram-node__identifier-priority">P{identifier.priority}</span>
                     </div>
                   );
                 })

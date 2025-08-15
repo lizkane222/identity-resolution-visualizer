@@ -35,6 +35,14 @@ body {
   width: 100%;
 }
 
+/* Right side container for main content and footer */
+.app__content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 /* Left Sidebar - Event List */
 .app__sidebar {
   width: 20vw;
@@ -130,14 +138,13 @@ body {
 }
 
 /* Floating Dark Mode Toggle */
-/* Floating Theme Buttons Container */
+/* Theme Buttons Container - Above Footer */
 .app__floating-theme-buttons {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
   display: flex;
   flex-direction: row;
   gap: 12px;
+  justify-content: flex-end;
+  padding: 12px 24px;
   z-index: 1000;
 }
 
@@ -352,13 +359,15 @@ body {
 
 /* Footer */
 .app__footer {
-  margin: auto 24px 0 24px;
-  padding: 8px 0;
+  width: 100%;
+  padding: 8px 24px;
   border-top: 1px solid #f3f4f6;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 40px;
+  margin-top: auto;
+  background-color: #ffffff;
 }
 
 .app__footer-text {
@@ -605,18 +614,23 @@ body {
 
 /* Manual dark mode - overrides system preference */
 .dark-mode body {
-  background-color: #0f172a;
-  color: #f1f5f9;
+  background-color: #191F36; /* blue-900 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .app {
+  background-color: #191F36; /* blue-900 */
 }
 
 .dark-mode .app__sidebar {
-  background-color: #1e293b;
+  background-color: #191F36; /* blue-900 */
   border-right-color: #334155;
 }
 
 .dark-mode .app__header {
-  background: #1e293b;
+  background: #191F36; /* grey-850 */
   border-bottom-color: #334155;
+  color: #F3F4F7; /* grey-50 */
 }
 
 .dark-mode .app__config-button,
@@ -624,7 +638,7 @@ body {
 .dark-mode .app__theme-button {
   background: #374151;
   border-color: #4b5563;
-  color: #f1f5f9;
+  color: #F3F4F7; /* grey-50 */
 }
 
 .dark-mode .app__config-button:hover,
@@ -669,11 +683,11 @@ body {
 }
 
 .dark-mode .app__title {
-  color: #f1f5f9;
+  color: #F3F4F7; /* grey-50 */
 }
 
 .dark-mode .app__subtitle {
-  color: #94a3b8;
+  color: #DDE0E6; /* grey-100 */
 }
 
 .dark-mode .app__stats {
@@ -696,10 +710,11 @@ body {
 
 .dark-mode .app__footer {
   border-top-color: #334155;
+  background-color: #191F36; /* blue-900 */
 }
 
 .dark-mode .app__footer-text {
-  color: #94a3b8;
+  color: #DDE0E6; /* grey-100 */
 }
 
 /* Custom scrollbar for webkit browsers */
@@ -892,11 +907,10 @@ body {
   box-shadow: 0 0 10px var(--glow-color) !important;
 }
 
-/* Mobile responsiveness for floating theme buttons */
+/* Mobile responsiveness for theme buttons */
 @media (max-width: 768px) {
   .app__floating-theme-buttons {
-    bottom: 15px;
-    right: 15px;
+    padding: 8px 15px;
     gap: 8px;
   }
   
@@ -909,8 +923,7 @@ body {
 
 @media (max-width: 480px) {
   .app__floating-theme-buttons {
-    bottom: 12px;
-    right: 12px;
+    padding: 6px 12px;
     gap: 6px;
   }
   

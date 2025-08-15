@@ -164,3 +164,26 @@
     background: #6b7280;
   }
 }
+
+/* Dark Mode Styles - Events Level 1 */
+.dark-mode .unique-users-list {
+  background: #081F47; /* blue-850 */
+  border-color: #191F36; /* blue-900 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .unique-users-list__title {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .unique-users-list__subtitle {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .unique-users-list__empty-message {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .unique-users-list__empty-subtitle {
+  color: #F3F4F7; /* grey-50 */
+}

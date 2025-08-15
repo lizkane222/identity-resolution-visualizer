@@ -270,6 +270,106 @@
   }
 }
 
+/* Dark Mode Styles - Modal Components (SegmentConfig) */
+.dark-mode .segment-config-overlay {
+  background-color: rgba(25, 31, 54, 0.8); /* blue-900 with opacity */
+}
+
+.dark-mode .segment-config-modal {
+  background: #191F36; /* grey-850 */
+  border: 1px solid #4D5777; /* grey-600 */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .segment-config__header {
+  border-bottom-color: #4D5777; /* grey-600 */
+}
+
+.dark-mode .segment-config__title {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .segment-config__close-button {
+  color: #DDE0E6; /* grey-100 */
+}
+
+.dark-mode .segment-config__close-button:hover {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .segment-config__label {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .segment-config__input {
+  background-color: #4D5777; /* grey-600 */
+  border-color: #4D5777; /* grey-600 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .segment-config__input:focus {
+  border-color: #1866EE; /* blue-500 */
+  box-shadow: 0 0 0 3px rgba(24, 102, 238, 0.1);
+}
+
+.dark-mode .segment-config__help {
+  color: #DDE0E6; /* grey-100 */
+}
+
+.dark-mode .segment-config__error {
+  background-color: rgba(67, 11, 18, 0.3); /* red-850 with opacity */
+  border: 1px solid #F77786; /* red-300 */
+  color: #F83D53; /* red-400 */
+}
+
+.dark-mode .segment-config__success {
+  background-color: rgba(8, 31, 71, 0.3); /* blue-850 with opacity */
+  border: 1px solid #1866EE; /* blue-500 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .segment-config__button--cancel {
+  background-color: #4D5777; /* grey-600 */
+  color: #F3F4F7; /* grey-50 */
+  border-color: #4D5777; /* grey-600 */
+}
+
+.dark-mode .segment-config__button--cancel:hover {
+  background-color: rgba(77, 87, 119, 0.8); /* grey-600 with opacity */
+  border-color: #1866EE; /* blue-500 */
+}
+
+.dark-mode .segment-config__button--save {
+  background-color: #1866EE; /* blue-500 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .segment-config__button--save:hover:not(:disabled) {
+  background-color: rgba(24, 102, 238, 0.9); /* blue-500 with opacity */
+}
+
+.dark-mode .segment-config__button--save:disabled {
+  background-color: rgba(77, 87, 119, 0.5); /* grey-600 with opacity */
+  color: rgba(243, 244, 247, 0.5); /* grey-50 with opacity */
+}
+
+.dark-mode .segment-config__info {
+  background-color: rgba(77, 87, 119, 0.3); /* grey-600 with opacity */
+  border-top-color: #4D5777; /* grey-600 */
+}
+
+.dark-mode .segment-config__info-title {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .segment-config__endpoints li {
+  color: #DDE0E6; /* grey-100 */
+}
+
+.dark-mode .segment-config__endpoints li:before {
+  color: #1866EE; /* blue-500 */
+}
+
 /* Responsive design */
 @media (max-width: 600px) {
   .segment-config-modal {

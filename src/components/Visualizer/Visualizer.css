@@ -30,6 +30,25 @@
   filter: var(--icon-filter);
 }
 
+@keyframes wave-horizontal {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.8;
+  }
+  25% {
+    transform: translateY(-6px) scale(1.1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(0) scale(0.9);
+    opacity: 0.9;
+  }
+  75% {
+    transform: translateY(6px) scale(1.05);
+    opacity: 1;
+  }
+}
+
 .visualizer__title {
   margin: 0;
   font-size: 1.5rem;
@@ -175,24 +194,28 @@
 }
 
 .visualizer__table-col--priority {
-  justify-content: center;
+  justify-content: flex-start;
   font-weight: 600;
   color: var(--color-accent);
 }
 
 .visualizer__table-col--identifier {
-  justify-content: center;
+  justify-content: flex-start;
   font-family: 'Monaco', 'Consolas', monospace;
   color: var(--color-text-primary);
+  overflow: visible;
+  min-width: 0;
 }
 
 .visualizer__table-col--identifier > span {
   text-align: left;
   width: 100%;
+  white-space: nowrap;
+  overflow: visible;
 }
 
 .visualizer__table-col--limit {
-  justify-content: center;
+  justify-content: flex-end;
   color: var(--color-text-primary);
   font-weight: 500;
 }
@@ -331,5 +354,89 @@
   .visualizer__back-button {
     font-size: 0.75rem;
     padding: 6px 12px;
+  }
+}
+
+/* Animated Separator */
+.visualizer__separator {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 16px;
+  gap: 0;
+}
+
+.separator-line {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  gap: 2px;
+  height: 12px;
+  align-items: center;
+}
+
+.dash-pixel {
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  animation: wave-horizontal 4s ease-in-out infinite;
+}
+
+/* Colors for each dash position (following pie chart clockwise order) */
+.dash-pixel-1 {
+  background-color: #FBCA54;
+  animation-delay: 0s;
+}
+
+.dash-pixel-2 {
+  background-color: #F3546D;
+  animation-delay: 0.2s;
+}
+
+.dash-pixel-3 {
+  background-color: #F086C7;
+  animation-delay: 0.4s;
+}
+
+.dash-pixel-4 {
+  background-color: #25A2D9;
+  animation-delay: 0.6s;
+}
+
+.dash-pixel-5 {
+  background-color: #336D92;
+  animation-delay: 0.8s;
+}
+
+.dash-pixel-6 {
+  background-color: #37CBA0;
+  animation-delay: 1s;
+}
+
+.dash-pixel-7 {
+  background-color: #A8DB62;
+  animation-delay: 1.2s;
+}
+
+@keyframes wave-horizontal {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.8;
+  }
+  25% {
+    transform: translateY(-6px) scale(1.1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(0) scale(0.9);
+    opacity: 0.9;
+  }
+  75% {
+    transform: translateY(6px) scale(1.05);
+    opacity: 1;
   }
 }
