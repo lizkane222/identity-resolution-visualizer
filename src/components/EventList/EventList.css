@@ -37,6 +37,152 @@
   width: 100%;
 }
 
+/* Checkpoint styles */
+.event-list__checkpoint {
+  position: relative;
+  margin: 8px 0;
+  padding: 4px 0;
+  cursor: grab;
+  user-select: none;
+  z-index: 2;
+}
+
+.event-list__checkpoint--dragging {
+  cursor: grabbing;
+  z-index: 10;
+}
+
+.event-list__checkpoint-line {
+  width: 100%;
+  height: 2px;
+  background: repeating-linear-gradient(
+    to right,
+    #f59e0b 0px,
+    #f59e0b 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  border-radius: 1px;
+  margin-bottom: 4px;
+}
+
+.event-list__checkpoint-handle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #92400e;
+  transition: all 0.2s ease;
+}
+
+.event-list__checkpoint:hover .event-list__checkpoint-handle {
+  background: #fde68a;
+  border-color: #d97706;
+  color: #78350f;
+}
+
+.event-list__checkpoint-icon {
+  font-size: 14px;
+  color: #f59e0b;
+  cursor: grab;
+}
+
+.event-list__checkpoint--dragging .event-list__checkpoint-icon {
+  cursor: grabbing;
+}
+
+.event-list__checkpoint-text {
+  flex: 1;
+  font-weight: 500;
+}
+
+/* Processed events styling */
+.event-list__event--processed {
+  opacity: 0.6;
+  position: relative;
+}
+
+.event-list__event--processed::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.event-list__event--processed .event-list__event-header {
+  position: relative;
+  z-index: 2;
+}
+
+/* Updated run button to show remaining events */
+.event-list__run-button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.event-list__run-button:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.event-list__run-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Dark mode support for checkpoint */
+@media (prefers-color-scheme: dark) {
+  .event-list__checkpoint-line {
+    background: repeating-linear-gradient(
+      to right,
+      #f59e0b 0px,
+      #f59e0b 8px,
+      transparent 8px,
+      transparent 16px
+    );
+  }
+  
+  .event-list__checkpoint-handle {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+    color: #fbbf24;
+  }
+  
+  .event-list__checkpoint:hover .event-list__checkpoint-handle {
+    background: rgba(245, 158, 11, 0.3);
+    border-color: #fbbf24;
+    color: #fde047;
+  }
+  
+  .event-list__event--processed::before {
+    background: rgba(34, 197, 94, 0.15);
+  }
+}
+
 .event-list__order-label {
   font-size: 14px;
   font-weight: 500;
@@ -889,4 +1035,35 @@
     border-color: #60a5fa !important;
     box-shadow: 0 0 12px rgba(96, 165, 250, 0.4);
   }
+}
+
+/* Additional styles for enhanced log display */
+.event-list__log-sources {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.event-list__log-source {
+  margin: 2px 0;
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.event-list__log-message--warning {
+  color: #d97706;
+  background-color: rgba(217, 119, 6, 0.1);
+  border-left: 3px solid #d97706;
+}
+
+/* Dark mode adjustments for new log styles */
+.dark-mode .event-list__log-source {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .event-list__log-message--warning {
+  color: #fbbf24;
+  background-color: rgba(251, 191, 36, 0.1);
+  border-left-color: #fbbf24;
 }

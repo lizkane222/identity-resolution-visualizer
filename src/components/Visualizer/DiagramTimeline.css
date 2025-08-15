@@ -1,0 +1,133 @@
+.diagram-timeline {
+  width: 100%;
+  min-height: 100%;
+  padding: 0;
+}
+
+.diagram-timeline__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.diagram-timeline__loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border);
+  border-top: 3px solid var(--color-accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.diagram-timeline__header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.diagram-timeline__header h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.diagram-timeline__header p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+/* Timeline Container */
+.diagram-timeline__timeline-container {
+  position: relative;
+  margin-top: 20px;
+  padding: 80px 40px 120px 40px;
+  overflow-x: auto;
+  min-height: 400px;
+}
+
+/* Horizontal Timeline Line */
+.diagram-timeline__timeline-line {
+  position: absolute;
+  top: 50%;
+  left: 40px;
+  right: 40px;
+  height: 3px;
+  background: linear-gradient(
+    to right,
+    var(--color-accent),
+    var(--color-accent-secondary)
+  );
+  border-radius: 2px;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+/* Events Container */
+.diagram-timeline__events {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  min-width: 800px; /* Minimum width to ensure proper spacing */
+  z-index: 2;
+}
+
+.diagram-timeline__flow {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: relative;
+}
+
+/* Timeline connector line */
+.diagram-timeline__flow::before {
+  content: '';
+  position: absolute;
+  left: 32px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    var(--color-accent),
+    var(--color-accent-secondary)
+  );
+  opacity: 0.3;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .diagram-timeline {
+    padding: 0;
+  }
+  
+  .diagram-timeline__header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+  }
+  
+  .diagram-timeline__header h3 {
+    font-size: 1.125rem;
+  }
+  
+  .diagram-timeline__flow {
+    gap: 16px;
+  }
+  
+  .diagram-timeline__flow::before {
+    left: 20px;
+  }
+}

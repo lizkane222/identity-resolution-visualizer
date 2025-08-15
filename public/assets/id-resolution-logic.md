@@ -6,7 +6,7 @@ This diagram represents the identity resolution decision logic for processing ev
 flowchart TD
     A[Event Payload with Identifiers] --> B{Does this event payload contain an identifier that already exists on another profile?}
     
-    B -->|No| C[Action: Create New Profile]
+    B -->|No| C[Action: Create a New Profile]
     
     B -->|Yes, 1 or more| D{Would adding any of the payload's identifiers to existing profile(s) conflict with identity resolution limits?}
     
@@ -20,7 +20,8 @@ flowchart TD
     
     D -->|No| G
     
-    G -->|No| H[Action: Add to Existing Profile]
+    G -->|No| H[Action : Create a New Profile]
+    <!-- [Action: Add to Existing Profile] -->
     
     G -->|Yes| I{Would the merge cause identifiers on existing profiles to conflict or exceed identity resolution limits?}
     

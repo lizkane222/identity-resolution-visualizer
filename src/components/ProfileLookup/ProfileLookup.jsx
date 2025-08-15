@@ -7,12 +7,13 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
   const [customIdentifiers, setCustomIdentifiers] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingValue, setEditingValue] = useState('');
-  const [endpoint, setEndpoint] = useState('external_ids');
+  const [selectedEndpoints, setSelectedEndpoints] = useState(['external_ids']);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState({});
   const [persistentResults, setPersistentResults] = useState({}); // Accumulate results across queries
   const [errors, setErrors] = useState({});
   const [isConfigured, setIsConfigured] = useState(false);
+  const [activeRequests, setActiveRequests] = useState(new Map()); // Track active requests per identifier
 
   // Query parameters for different endpoints
   const [queryParams, setQueryParams] = useState({
@@ -38,6 +39,48 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
     }
   };
 
+  // Cancel all requests for a specific identifier
+  const cancelRequestsForIdentifier = (identifier) => {
+    const requestsToCancel = [];
+    activeRequests.forEach((controller, key) => {
+      if (key.startsWith(identifier + '_')) {
+        controller.abort();
+        requestsToCancel.push(key);
+      }
+    });
+    
+    // Remove cancelled requests from activeRequests
+    setActiveRequests(prev => {
+      const updated = new Map(prev);
+      requestsToCancel.forEach(key => updated.delete(key));
+      return updated;
+    });
+
+    // Clear errors for cancelled requests
+    setErrors(prev => {
+      const updated = { ...prev };
+      requestsToCancel.forEach(key => {
+        delete updated[key];
+      });
+      return updated;
+    });
+
+    console.log(`🚫 [Profile API] Cancelled ${requestsToCancel.length} requests for identifier: ${identifier}`);
+  };
+
+  // Cancel all active requests
+  const cancelAllRequests = () => {
+    activeRequests.forEach((controller) => {
+      controller.abort();
+    });
+    
+    setActiveRequests(new Map());
+    setIsLoading(false);
+    setErrors({});
+    
+    console.log(`🚫 [Profile API] Cancelled all ${activeRequests.size} active requests`);
+  };
+
   const handleLookup = async () => {
     // Get all selected identifiers (both predefined and custom)
     const allIdentifiers = [...identifierOptions, ...customIdentifiers];
@@ -48,162 +91,272 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
       return;
     }
 
+    if (selectedEndpoints.length === 0) {
+      setErrors({ general: 'Please select at least one endpoint' });
+      return;
+    }
+
     setIsLoading(true);
     setErrors({});
     setResults({});
 
-    const params = new URLSearchParams();
-    // Add relevant query parameters based on endpoint
-    if (endpoint === 'traits' || endpoint === 'external_ids') {
-      if (queryParams.limit) params.append('limit', queryParams.limit);
-      if (queryParams.include) params.append('include', queryParams.include);
-      if (queryParams.verbose) params.append('verbose', 'true');
-      if (endpoint === 'traits' && queryParams.class) {
-        params.append('class', queryParams.class);
-      }
-    }
-    if (endpoint === 'events' || endpoint === 'links') {
-      if (queryParams.limit) params.append('limit', queryParams.limit);
-      if (queryParams.next) params.append('next', queryParams.next);
-    }
-
-    const queryString = params.toString() ? `?${params.toString()}` : '';
     const newResults = {};
     const newErrors = {};
 
-    // Make requests for each identifier
+    // Make requests for each identifier and each selected endpoint
     await Promise.all(
-      identifiersToProcess.map(async (identifier) => {
-        try {
-          // For identifiers with colons (like user_id:12345), we need to encode them properly
-          // encodeURIComponent encodes : as %3A, which Express will decode back to : 
-          // The server will then re-encode it for the Segment API
-          const literalUrl = `http://localhost:8888/api/profiles/${identifier}/${endpoint}${queryString}`;
-          const encodedIdentifier = encodeURIComponent(identifier);
-          const url = `http://localhost:8888/api/profiles/${encodedIdentifier}/${endpoint}${queryString}`;
-          
-          console.group(`🔍 [${endpoint.toUpperCase()}] Request for: ${identifier}`);
-          console.log(`� Literal endpoint: ${literalUrl}`);
-          console.log(`📡 Encoded URL: ${url}`);
-          console.log(`🕐 Request Time: ${new Date().toISOString()}`);
-          
-          // For traits endpoint, implement retry logic with delay
-          let response, data;
-          let retryCount = 0;
-          const maxRetries = endpoint === 'traits' ? 3 : 1;
-          const retryDelay = 2000; // 2 seconds
-          
-          do {
-            response = await fetch(url);
-            data = await response.json();
+      identifiersToProcess.flatMap(identifier =>
+        selectedEndpoints.map(async (endpoint) => {
+          try {
+            const params = new URLSearchParams();
+            // Add relevant query parameters based on endpoint
+            if (endpoint === 'traits' || endpoint === 'external_ids') {
+              if (queryParams.limit) params.append('limit', queryParams.limit);
+              if (queryParams.include) params.append('include', queryParams.include);
+              if (queryParams.verbose) params.append('verbose', 'true');
+              if (endpoint === 'traits' && queryParams.class) {
+                params.append('class', queryParams.class);
+              }
+            }
+            if (endpoint === 'events' || endpoint === 'links') {
+              if (queryParams.limit) params.append('limit', queryParams.limit);
+              if (queryParams.next) params.append('next', queryParams.next);
+            }
+
+            const queryString = params.toString() ? `?${params.toString()}` : '';
             
-            console.log(`📥 [${endpoint.toUpperCase()}] Response received for: ${identifier}`);
-            console.log(`📊 Status: ${response.status} ${response.statusText}`);
-            console.log(`� Response Time: ${new Date().toISOString()}`);
-            console.log(`�📋 Response Data:`, data);
+            // For identifiers with colons (like user_id:12345), we need to encode them properly
+            // encodeURIComponent encodes : as %3A, which Express will decode back to : 
+            // The server will then re-encode it for the Segment API
+            const encodedIdentifier = encodeURIComponent(identifier);
+            const url = `http://localhost:8888/api/profiles/${encodedIdentifier}/${endpoint}${queryString}`;
             
-            // If traits endpoint returns empty data but we know profiles exist from previous calls, retry
-            if (endpoint === 'traits' && response.ok && 
-                (!data.data || (typeof data.data === 'object' && Object.keys(data.data).length === 0)) &&
-                retryCount < maxRetries - 1) {
-              console.warn(`🔄 [${endpoint.toUpperCase()}] Empty response, retrying in ${retryDelay}ms... (${retryCount + 1}/${maxRetries})`);
-              await new Promise(resolve => setTimeout(resolve, retryDelay));
-              retryCount++;
+            // Create AbortController for this specific request
+            const controller = new AbortController();
+            const requestKey = `${identifier}_${endpoint}`;
+            
+            // Track this request
+            setActiveRequests(prev => new Map(prev).set(requestKey, controller));
+            
+            // Enhanced retry logic for both 404 (profile doesn't exist) and empty traits
+            let response, data;
+            let retryCount = 0;
+            let maxRetries, retryDelay;
+            
+            // Set retry parameters based on conditions
+            if (endpoint === 'traits') {
+              maxRetries = 3; // For empty traits response
+              retryDelay = 2000; // 2 seconds
             } else {
-              break;
+              maxRetries = 1; // Default for other endpoints
+              retryDelay = 0;
             }
-          } while (retryCount < maxRetries);
-          
-          if (response.ok) {
-            newResults[identifier] = data;
-            console.log(`✅ [${endpoint.toUpperCase()}] SUCCESS for: ${identifier}`);
-            console.log(`📊 Data Summary: ${data.data ? (Array.isArray(data.data) ? `${data.data.length} items` : `${Object.keys(data.data).length} properties`) : 'No data'}`);
             
-            // Special logging for traits endpoint
-            if (endpoint === 'traits' && data.data) {
-              console.log(`🏷️ TRAITS DATA DETAILS for ${identifier}:`);
-              console.log(`  - Traits object:`, data.data);
-              console.log(`  - Trait keys:`, Object.keys(data.data));
-              console.log(`  - Is empty?:`, Object.keys(data.data).length === 0);
+            // Special handling for 404 errors - retry every 15 seconds
+            let is404Retry = false;
+            let profileNotFoundStartTime = null;
+            const maxProfileWaitTime = 5 * 60 * 1000; // 5 minutes max wait for profile creation
+            const profileRetryDelay = 15000; // 15 seconds for 404 retries
+            
+            do {
+              response = await fetch(url, { signal: controller.signal });
+              data = await response.json();
+              
+              // Get the actual Segment API endpoint from the server response
+              const segmentEndpoint = data._segmentApiEndpoint || `https://profiles.segment.com/v1/spaces/{space_id}/collections/users/profiles/${identifier}/${endpoint}${queryString}`;
+              
+              // Single comprehensive log per request
+              console.log(`📡 [Profile API] ${endpoint.toUpperCase()} Request:`, {
+                identifier: identifier,
+                segmentEndpoint: segmentEndpoint,
+                status: `${response.status} ${response.statusText}`,
+                responseBody: data,
+                timestamp: new Date().toISOString()
+              });
+              
+              // Handle 404 errors - profile doesn't exist yet
+              if (response.status === 404) {
+                const errorKey = `${identifier}_${endpoint}`;
+                if (!profileNotFoundStartTime) {
+                  profileNotFoundStartTime = Date.now();
+                  console.warn(`⏳ [Profile API] Profile not found for: ${identifier}/${endpoint}. Starting 15-second retry cycle...`);
+                  // Set error message immediately for user feedback - this will show in UI
+                  newErrors[errorKey] = {
+                    type: 'profile_not_found',
+                    message: 'The profile does not yet exist. Unify can take time to create and resolve profiles. Please wait while we keep sending this request until the profile\'s data is received.',
+                    startTime: profileNotFoundStartTime,
+                    retryCount: 0,
+                    identifier: identifier,
+                    endpoint: endpoint
+                  };
+                  // Update the state immediately so user sees the message
+                  setErrors(prev => ({ ...prev, [errorKey]: newErrors[errorKey] }));
+                }
+                
+                const elapsedTime = Date.now() - profileNotFoundStartTime;
+                if (elapsedTime < maxProfileWaitTime) {
+                  // Update error message with retry count and show in UI
+                  const updatedError = {
+                    type: 'profile_not_found',
+                    message: 'The profile does not yet exist. Unify can take time to create and resolve profiles. Please wait while we keep sending this request until the profile\'s data is received.',
+                    startTime: profileNotFoundStartTime,
+                    retryCount: Math.floor(elapsedTime / profileRetryDelay) + 1,
+                    nextRetryIn: profileRetryDelay,
+                    identifier: identifier,
+                    endpoint: endpoint
+                  };
+                  newErrors[errorKey] = updatedError;
+                  setErrors(prev => ({ ...prev, [errorKey]: updatedError }));
+                  
+                  await new Promise(resolve => setTimeout(resolve, profileRetryDelay));
+                  is404Retry = true;
+                  continue;
+                } else {
+                  console.error(`⏰ [Profile API] Profile creation timeout for: ${identifier}/${endpoint} after ${Math.floor(maxProfileWaitTime/1000)} seconds`);
+                  newErrors[errorKey] = {
+                    type: 'profile_timeout',
+                    message: `Profile was not found after waiting ${Math.floor(maxProfileWaitTime/60000)} minutes. The profile may not exist or Unify may be experiencing delays.`,
+                    totalWaitTime: elapsedTime,
+                    identifier: identifier,
+                    endpoint: endpoint
+                  };
+                  break;
+                }
+              }
+              // Handle successful response
+              else if (response.ok) {
+                const errorKey = `${identifier}_${endpoint}`;
+                // Clear any previous 404 error for this identifier/endpoint immediately in UI
+                if (newErrors[errorKey]?.type === 'profile_not_found') {
+                  delete newErrors[errorKey];
+                  setErrors(prev => {
+                    const updated = { ...prev };
+                    delete updated[errorKey];
+                    return updated;
+                  });
+                }
+                
+                // If traits endpoint returns empty data but we know profiles exist from previous calls, retry
+                if (endpoint === 'traits' && 
+                    (!data.traits || (typeof data.traits === 'object' && Object.keys(data.traits).length === 0)) &&
+                    retryCount < maxRetries - 1 && !is404Retry) {
+                  console.warn(`🔄 [Profile API] Empty traits response for: ${identifier}, retrying in ${retryDelay}ms... (${retryCount + 1}/${maxRetries})`);
+                  await new Promise(resolve => setTimeout(resolve, retryDelay));
+                  retryCount++;
+                } else {
+                  // Structure the data in the format expected by UniqueProfilesList
+                  const resultKey = identifier; // Use identifier as key for merging
+                  if (!newResults[resultKey]) {
+                    newResults[resultKey] = {
+                      data: data,
+                      _endpoint: endpoint,
+                      _segmentApiEndpoint: data._segmentApiEndpoint,
+                      _endpoints: [endpoint],
+                      _combinedData: { [endpoint]: data }
+                    };
+                  } else {
+                    // Merge multiple endpoints for the same identifier
+                    newResults[resultKey]._endpoints.push(endpoint);
+                    newResults[resultKey]._combinedData[endpoint] = data;
+                  }
+                  break;
+                }
+              }
+              // Handle other HTTP errors (not 404)
+              else {
+                const errorKey = `${identifier}_${endpoint}`;
+                newErrors[errorKey] = {
+                  type: 'api_error',
+                  message: data.error?.message || `HTTP ${response.status}: ${response.statusText}`,
+                  status: response.status,
+                  statusText: response.statusText,
+                  identifier: identifier,
+                  endpoint: endpoint
+                };
+                break;
+              }
+              
+              is404Retry = false;
+            } while (retryCount < maxRetries || is404Retry);
+            
+            // Clean up this request from activeRequests when it completes
+            setActiveRequests(prev => {
+              const updated = new Map(prev);
+              updated.delete(requestKey);
+              return updated;
+            });
+            
+          } catch (error) {
+            const errorKey = `${identifier}_${endpoint}`;
+            
+            // Clean up this request from activeRequests
+            setActiveRequests(prev => {
+              const updated = new Map(prev);
+              updated.delete(errorKey);
+              return updated;
+            });
+            
+            // Handle AbortError (request was cancelled)
+            if (error.name === 'AbortError') {
+              console.log(`🚫 [Profile API] Request cancelled for: ${identifier}/${endpoint}`);
+              return; // Don't set error for cancelled requests
             }
-          } else {
-            newErrors[identifier] = data.error?.message || 'API request failed';
-            console.error(`❌ [${endpoint.toUpperCase()}] ERROR for: ${identifier}`);
-            console.error(`📋 Error Details:`, data.error?.message || 'API request failed');
+            
+            newErrors[errorKey] = {
+              type: 'connection_error',
+              message: `Failed to connect to server: ${error.message}`,
+              error: error.message,
+              identifier: identifier,
+              endpoint: endpoint
+            };
+            console.error(`💥 [Profile API] CONNECTION ERROR for: ${identifier}/${endpoint} - ${error.message}`);
           }
-          console.groupEnd(); // Close the group for this user/endpoint
-        } catch (error) {
-          newErrors[identifier] = 'Failed to connect to server';
-          console.error(`💥 [${endpoint.toUpperCase()}] CONNECTION ERROR for: ${identifier}`);
-          console.error(`📋 Error Details:`, error.message);
-          console.groupEnd(); // Close the group for this user/endpoint
-        }
-      })
+        })
+      )
     );
 
     setResults(newResults);
     setErrors(newErrors);
     setIsLoading(false);
     
+    // Clear all active requests since batch is complete
+    setActiveRequests(new Map());
+    
     // Merge into persistent results for cross-endpoint profile building
     setPersistentResults(prev => {
       const merged = { ...prev };
-      
-      console.group(`🔄 [CACHE MERGE] Processing ${Object.keys(newResults).length} new results`);
-      console.log(`📦 Cache Before: ${Object.keys(prev).length} entries`);
       
       Object.entries(newResults).forEach(([identifier, result]) => {
         // Use identifier as key, not identifier_endpoint, so data for same identifier merges
         if (merged[identifier]) {
           // If we already have data for this identifier, we need to merge carefully
-          console.group(`🔗 [MERGE] Combining data for: ${identifier}`);
-          console.log(`📊 Existing Endpoints:`, merged[identifier]._endpoints || [merged[identifier]._endpoint]);
-          console.log(`➕ Adding Endpoint: ${endpoint}`);
-          
-          // Special logging for traits merging
-          if (endpoint === 'traits') {
-            console.log(`🏷️ TRAITS MERGE DETAILS:`);
-            console.log(`  - New traits data:`, result.data);
-            console.log(`  - Existing combined data:`, merged[identifier]._combinedData);
-          }
-          
-          // Create a composite result that includes both endpoint types
           const existingResult = merged[identifier];
           const mergedResult = {
             ...result,
-            // Preserve additional endpoint metadata if needed
+            // Preserve and merge endpoint metadata
             _endpoints: [
-              ...(existingResult._endpoints || [existingResult._endpoint || endpoint]), 
-              endpoint
+              ...(existingResult._endpoints || [existingResult._endpoint || 'unknown']), 
+              ...(result._endpoints || [result._endpoint || 'unknown'])
             ].filter((ep, index, arr) => arr.indexOf(ep) === index), // dedupe
             _combinedData: {
               ...(existingResult._combinedData || { [existingResult._endpoint || 'unknown']: existingResult.data }),
-              [endpoint]: result.data
+              ...(result._combinedData || { [result._endpoint || 'unknown']: result.data })
             }
           };
           merged[identifier] = mergedResult;
-          console.log(`✅ Final Endpoints:`, mergedResult._endpoints);
-          console.groupEnd(); // Close merge group for this identifier
         } else {
           // First time seeing this identifier
-          console.log(`🆕 [NEW] Adding identifier: ${identifier} with ${endpoint} data`);
-          merged[identifier] = {
-            ...result,
-            _endpoint: endpoint,
-            _endpoints: [endpoint]
-          };
+          merged[identifier] = result;
         }
       });
-      console.log(`📊 Cache After: ${Object.keys(merged).length} entries`);
-      console.groupEnd(); // Close cache merge group
       return merged;
     });
   };
 
   // Get all available identifiers (predefined + custom)
-  const getAllIdentifiers = () => {
-    return [...identifierOptions, ...customIdentifiers];
-  };
+  // const getAllIdentifiers = () => {
+  //   return [...identifierOptions, ...customIdentifiers];
+  // };
 
   const handleAddNewIdentifier = () => {
     const newIndex = identifierOptions.length + customIdentifiers.length;
@@ -251,17 +404,21 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
   };
 
   const renderQueryParamInputs = () => {
+    const hasTraitsOrExternalIds = selectedEndpoints.includes('traits') || selectedEndpoints.includes('external_ids');
+    const hasEventsOrLinks = selectedEndpoints.includes('events') || selectedEndpoints.includes('links');
+    const hasTraits = selectedEndpoints.includes('traits');
+    
     return (
       <div className="profile-lookup__params">
         <h4 className="profile-lookup__params-title">Query Parameters</h4>
         
-        {(endpoint === 'traits' || endpoint === 'external_ids' || endpoint === 'events' || endpoint === 'links') && (
+        {(hasTraitsOrExternalIds || hasEventsOrLinks) && (
           <div className="profile-lookup__param">
             <label>Limit:</label>
             <input
               type="number"
               min="1"
-              max={endpoint === 'traits' ? 200 : endpoint === 'links' ? 20 : 100}
+              max={hasTraits ? 200 : selectedEndpoints.includes('links') ? 20 : 100}
               value={queryParams.limit}
               onChange={(e) => updateQueryParam('limit', e.target.value)}
               className="profile-lookup__param-input"
@@ -269,7 +426,7 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
           </div>
         )}
 
-        {(endpoint === 'traits' || endpoint === 'external_ids') && (
+        {hasTraitsOrExternalIds && (
           <div className="profile-lookup__param">
             <label>Include (comma-separated):</label>
             <input
@@ -282,7 +439,7 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
           </div>
         )}
 
-        {endpoint === 'traits' && (
+        {hasTraits && (
           <div className="profile-lookup__param">
             <label>Class:</label>
             <select
@@ -297,7 +454,7 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
           </div>
         )}
 
-        {(endpoint === 'traits' || endpoint === 'external_ids') && (
+        {hasTraitsOrExternalIds && (
           <div className="profile-lookup__param--checkbox">
             <label>
               <input
@@ -310,7 +467,7 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
           </div>
         )}
 
-        {(endpoint === 'events' || endpoint === 'links') && (
+        {hasEventsOrLinks && (
           <div className="profile-lookup__param">
             <label>Next cursor (pagination):</label>
             <input
@@ -364,6 +521,8 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
                       type="button"
                       onClick={() => {
                         if (isSelected) {
+                          // Cancel any active requests for this identifier before deselecting
+                          cancelRequestsForIdentifier(opt);
                           setSelectedIdentifiers(prev => prev.filter(id => id !== opt));
                         } else {
                           setSelectedIdentifiers(prev => [...prev, opt]);
@@ -382,7 +541,6 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
               {/* Custom identifiers */}
               {customIdentifiers.map((opt, index) => {
                 const isSelected = selectedIdentifiers.includes(opt);
-                const globalIndex = identifierOptions.length + index;
                 
                 return (
                   <div key={`custom-${opt}`} className="profile-lookup__identifier-option">
@@ -390,6 +548,8 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
                       type="button"
                       onClick={() => {
                         if (isSelected) {
+                          // Cancel any active requests for this identifier before deselecting
+                          cancelRequestsForIdentifier(opt);
                           setSelectedIdentifiers(prev => prev.filter(id => id !== opt));
                         } else {
                           setSelectedIdentifiers(prev => [...prev, opt]);
@@ -465,19 +625,36 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
           </div>
 
           <div className="profile-lookup__field">
-            <label className="profile-lookup__label">Endpoint</label>
-            <select
-              value={endpoint}
-              onChange={(e) => setEndpoint(e.target.value)}
-              className="profile-lookup__select"
-            >
-              <option value="traits">Traits</option>
-              <option value="external_ids">External IDs</option>
-              <option value="events">Events</option>
-              <option value="metadata">Metadata</option>
-              <option value="links">Links</option>
-            </select>
-            {endpoint === 'traits' && (
+            <label className="profile-lookup__label">Endpoints</label>
+            <div className="profile-lookup__endpoint-list">
+              {['traits', 'external_ids', 'events', 'metadata', 'links'].map(endpoint => {
+                const isSelected = selectedEndpoints.includes(endpoint);
+                return (
+                  <div key={endpoint} className="profile-lookup__endpoint-option">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedEndpoints(prev => prev.filter(e => e !== endpoint));
+                        } else {
+                          setSelectedEndpoints(prev => [...prev, endpoint]);
+                        }
+                      }}
+                      className={`profile-lookup__endpoint-toggle ${isSelected ? 'profile-lookup__endpoint-toggle--selected' : 'profile-lookup__endpoint-toggle--unselected'}`}
+                      title={`${isSelected ? 'Deselect' : 'Select'} ${endpoint}`}
+                    >
+                      {isSelected ? '✓' : '✗'}
+                    </button>
+                    <span className="profile-lookup__endpoint-text">{endpoint}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="profile-lookup__help">
+              Select which endpoints to query for each identifier.
+              {selectedEndpoints.length > 0 && ` (${selectedEndpoints.length} selected)`}
+            </p>
+            {selectedEndpoints.includes('traits') && (
               <p className="profile-lookup__help">
                 💡 <strong>Note:</strong> If you just sent identify events via simulation, traits may take 30-60 seconds to appear in Segment's Profile API. 
                 The system will automatically retry up to 3 times with delays if no traits are found initially.
@@ -490,11 +667,24 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
 
           <button
             onClick={handleLookup}
-            disabled={isLoading || selectedIdentifiers.length === 0}
+            disabled={isLoading || selectedIdentifiers.length === 0 || selectedEndpoints.length === 0}
             className="profile-lookup__button"
           >
-            {isLoading ? 'Looking up...' : `Lookup Profile${selectedIdentifiers.length > 1 ? 's' : ''}`}
+            {isLoading ? 'Looking up...' : 
+             `Lookup ${selectedEndpoints.length > 1 ? `${selectedEndpoints.length} Endpoints` : selectedEndpoints[0] || 'Endpoints'} for ${selectedIdentifiers.length} Profile${selectedIdentifiers.length > 1 ? 's' : ''}`
+            }
           </button>
+
+          {/* Stop Lookup button - only show when actively loading */}
+          {isLoading && (
+            <button
+              onClick={cancelAllRequests}
+              className="profile-lookup__button profile-lookup__button--stop"
+              style={{ marginLeft: '10px' }}
+            >
+              Stop Lookup
+            </button>
+          )}
 
           {/* {Object.keys(persistentResults).length > 0 && (
             <button
@@ -534,19 +724,49 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
                       {Object.keys(errors).length} failed request{Object.keys(errors).length > 1 ? 's' : ''}
                     </span>
                   </div>
-                  {Object.entries(errors).map(([identifier, errorMsg]) => (
-                    <div key={identifier} className="profile-lookup__error-item">
-                      <div className="profile-lookup__error-header">
-                        <h5 className="profile-lookup__error-identifier">{identifier}</h5>
-                        <span className="profile-lookup__error-status">
-                          ✗ Error
-                        </span>
+                  {Object.entries(errors).map(([errorKey, error]) => {
+                    const errorObj = typeof error === 'object' ? error : { type: 'unknown', message: error };
+                    const isProfileNotFound = errorObj.type === 'profile_not_found';
+                    const isProfileTimeout = errorObj.type === 'profile_timeout';
+                    
+                    // For errors with identifier_endpoint format, display both
+                    const displayTitle = errorObj.identifier && errorObj.endpoint 
+                      ? `${errorObj.identifier} (${errorObj.endpoint})`
+                      : errorKey;
+                    
+                    return (
+                      <div key={errorKey} className={`profile-lookup__error-item ${isProfileNotFound ? 'profile-lookup__error-item--waiting' : ''}`}>
+                        <div className="profile-lookup__error-header">
+                          <h5 className="profile-lookup__error-identifier">{displayTitle}</h5>
+                          <span className={`profile-lookup__error-status ${isProfileNotFound ? 'profile-lookup__error-status--waiting' : isProfileTimeout ? 'profile-lookup__error-status--timeout' : ''}`}>
+                            {isProfileNotFound ? '⏳ Waiting' : isProfileTimeout ? '⏰ Timeout' : '✗ Error'}
+                          </span>
+                        </div>
+                        <div className="profile-lookup__error-message">
+                          {errorObj.message}
+                          {isProfileNotFound && errorObj.retryCount && (
+                            <div className="profile-lookup__error-details">
+                              <small>
+                                Retry #{errorObj.retryCount} • Started {Math.floor((Date.now() - errorObj.startTime) / 1000)}s ago
+                              </small>
+                            </div>
+                          )}
+                          {isProfileTimeout && errorObj.totalWaitTime && (
+                            <div className="profile-lookup__error-details">
+                              <small>
+                                Waited {Math.floor(errorObj.totalWaitTime / 1000)} seconds total
+                              </small>
+                            </div>
+                          )}
+                          {errorObj.type === 'api_error' && errorObj.status && (
+                            <div className="profile-lookup__error-details">
+                              <small>HTTP {errorObj.status}: {errorObj.statusText}</small>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="profile-lookup__error-message">
-                        {errorMsg}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

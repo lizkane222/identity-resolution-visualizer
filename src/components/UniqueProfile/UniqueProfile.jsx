@@ -4,6 +4,7 @@ import './UniqueProfile.css';
 
 const UniqueProfile = ({ profile, onHighlightEvents }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [expandedEvents, setExpandedEvents] = useState(new Set());
 
   // Debug logging for profile data
   console.group(`🎭 [UNIQUE PROFILE] Rendering profile: ${profile.id}`);
@@ -79,6 +80,17 @@ const UniqueProfile = ({ profile, onHighlightEvents }) => {
 
   const handleCardClick = () => {
     setIsExpanded(!isExpanded);
+  };
+
+  const handleEventClick = (e, eventIndex) => {
+    e.stopPropagation(); // Prevent card expansion when clicking event
+    const newExpandedEvents = new Set(expandedEvents);
+    if (expandedEvents.has(eventIndex)) {
+      newExpandedEvents.delete(eventIndex);
+    } else {
+      newExpandedEvents.add(eventIndex);
+    }
+    setExpandedEvents(newExpandedEvents);
   };
 
   const formatDate = (dateString) => {
@@ -215,26 +227,75 @@ const UniqueProfile = ({ profile, onHighlightEvents }) => {
             Recent Events ({profile.events.length})
           </h5>
           <div className="unique-profile__events">
-            {profile.events.slice(0, 3).map((event, index) => (
-              <div key={index} className="unique-profile__event">
-                <span className="unique-profile__event-type">
-                  {event.event || event.type || 'Event'}
-                </span>
-                {event.timestamp && (
-                  <span className="unique-profile__event-time">
-                    {formatTime(event.timestamp)}
-                  </span>
-                )}
-                {event.properties && Object.keys(event.properties).length > 0 && (
-                  <span className="unique-profile__event-props">
-                    {Object.keys(event.properties).length} properties
-                  </span>
-                )}
-              </div>
-            ))}
-            {profile.events.length > 3 && (
+            {profile.events.slice(0, 5).map((event, index) => {
+              const isEventExpanded = expandedEvents.has(index);
+              return (
+                <div key={index} className="unique-profile__event-container">
+                  <div 
+                    className={`unique-profile__event ${isEventExpanded ? 'unique-profile__event--expanded' : ''}`}
+                    onClick={(e) => handleEventClick(e, index)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <span className="unique-profile__event-type">
+                      {event.event || event.type || 'Event'}
+                    </span>
+                    {event.timestamp && (
+                      <span className="unique-profile__event-time">
+                        {formatTime(event.timestamp)}
+                      </span>
+                    )}
+                    {event.properties && Object.keys(event.properties).length > 0 && (
+                      <span className="unique-profile__event-props">
+                        {Object.keys(event.properties).length} properties
+                      </span>
+                    )}
+                    <span className="unique-profile__event-expand">
+                      {isEventExpanded ? '▼' : '▶'}
+                    </span>
+                  </div>
+                  
+                  {isEventExpanded && (
+                    <div className="unique-profile__event-details">
+                      {/* Source ID */}
+                      {event.source_id && (
+                        <div className="unique-profile__event-detail">
+                          <span className="unique-profile__event-detail-key">Source ID:</span>
+                          <span className="unique-profile__event-detail-value">{event.source_id}</span>
+                        </div>
+                      )}
+                      
+                      {/* Message ID */}
+                      {event.message_id && (
+                        <div className="unique-profile__event-detail">
+                          <span className="unique-profile__event-detail-key">Message ID:</span>
+                          <span className="unique-profile__event-detail-value">{event.message_id}</span>
+                        </div>
+                      )}
+                      
+                      {/* Properties */}
+                      {event.properties && Object.keys(event.properties).length > 0 && (
+                        <div className="unique-profile__event-detail">
+                          <span className="unique-profile__event-detail-key">Properties:</span>
+                          <div className="unique-profile__event-properties">
+                            {Object.entries(event.properties).map(([propKey, propValue]) => (
+                              <div key={propKey} className="unique-profile__event-property">
+                                <span className="unique-profile__event-property-key">{propKey}:</span>
+                                <span className="unique-profile__event-property-value">
+                                  {typeof propValue === 'object' ? JSON.stringify(propValue) : String(propValue)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {profile.events.length > 5 && (
               <div className="unique-profile__event unique-profile__event--more">
-                +{profile.events.length - 3} more events
+                +{profile.events.length - 5} more events
               </div>
             )}
           </div>

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef, useCallback } from 'react';
 import { formatAsJSON, validateJSON } from '../../utils/jsonUtils';
 import { parseSegmentMethodCall } from '../../utils/EventBuilderSpecPayloads';
 
@@ -68,9 +68,43 @@ function reorderPayloadFields(payload) {
   return orderedPayload;
 }
 
+// Utility to move top-level messageId to context.messageId for Segment compatibility
+function processMessageIdForSegment(payload) {
+  try {
+    const payloadObj = typeof payload === 'string' ? JSON.parse(payload) : payload;
+    
+    // Check if there's a top-level messageId
+    if (payloadObj.messageId) {
+      // Create a copy to avoid mutating the original
+      const processedPayload = { ...payloadObj };
+      
+      // Store the messageId in context
+      if (!processedPayload.context) {
+        processedPayload.context = {};
+      }
+      
+      // Only move messageId if it's not already in context
+      if (!processedPayload.context.messageId) {
+        processedPayload.context.messageId = processedPayload.messageId;
+        console.log(`🔄 [EventBuilder] Moved messageId "${processedPayload.messageId}" to context.messageId to prevent Segment deduplication`);
+      }
+      
+      // Remove the top-level messageId
+      delete processedPayload.messageId;
+      
+      return processedPayload;
+    }
+    
+    return payloadObj;
+  } catch (error) {
+    console.warn('⚠️ [EventBuilder] Failed to process messageId:', error);
+    return payload;
+  }
+}
 
 
-const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, userUpdateTrigger, sourceConfigUpdateTrigger, onCurrentUserUpdate }) => {
+
+const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventInfoChange, userUpdateTrigger, sourceConfigUpdateTrigger, onCurrentUserUpdate }, ref) => {
   const [rawText, setRawText] = useState('');
   const [formattedText, setFormattedText] = useState('');
   const [isValid, setIsValid] = useState(true);
@@ -466,7 +500,7 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
   };
 
   // Save event to the list
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     const dataToSave = formattedText.trim() || rawText.trim();
     
     if (!dataToSave) {
@@ -480,6 +514,11 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
       return;
     }
 
+    // Process the payload to handle messageId before saving
+    const processedPayload = processMessageIdForSegment(dataToSave);
+    const processedDataString = JSON.stringify(processedPayload);
+    const formattedProcessedData = formatAsJSON(processedDataString);
+
     // If no source is selected, save one event with all configured sources
     // If a source is selected, save event for that source only
     if (!selectedSource && configuredSources.length > 0) {
@@ -487,8 +526,8 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
       const eventData = {
         id: Date.now() + Math.random(),
         timestamp: new Date().toISOString(),
-        rawData: dataToSave,
-        formattedData: formatAsJSON(dataToSave),
+        rawData: processedDataString,
+        formattedData: formattedProcessedData,
         // Store all sources in arrays for multi-source support
         writeKeys: configuredSources.map(source => source.settings?.writeKey).filter(Boolean),
         sourceNames: configuredSources.map(source => source.name).filter(Boolean),
@@ -506,8 +545,8 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
       const eventData = {
         id: Date.now() + Math.random(),
         timestamp: new Date().toISOString(),
-        rawData: dataToSave,
-        formattedData: formatAsJSON(dataToSave),
+        rawData: processedDataString,
+        formattedData: formattedProcessedData,
         writeKey: sourceToUse?.settings?.writeKey || null,
         sourceName: sourceToUse?.name || null,
         sourceType: sourceToUse?.type || null
@@ -534,7 +573,7 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
-  };
+  }, [formattedText, rawText, onSave, selectedSource, configuredSources]);
 
   // Format display text for the textarea
   // const displayText = rawText ? formatAsJSON(rawText) : '';
@@ -563,7 +602,9 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
         
         // Only use fields that were actually present in the CSV
         // Don't add timestamp if it wasn't in the original data
-        const rawData = JSON.stringify(row);
+        // Process the row to move messageId to context if present
+        const processedRow = processMessageIdForSegment(row);
+        const rawData = JSON.stringify(processedRow);
         
         if (!selectedSource && configuredSources.length > 0) {
           // Create a single event with all configured sources
@@ -602,6 +643,11 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
     };
     reader.readAsText(file);
   };
+
+  // Expose handleSave function to parent components
+  useImperativeHandle(ref, () => ({
+    saveEvent: handleSave
+  }), [handleSave]);
 
   return (
     <div className="event-builder">
@@ -785,6 +831,6 @@ const EventBuilder = ({ onSave, selectedEvent, currentUser, onEventInfoChange, u
       </div>
     </div>
   );
-};
+});
 
 export default EventBuilder;

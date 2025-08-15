@@ -439,6 +439,38 @@
   font-style: italic;
 }
 
+.idres-config__restore-section {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.idres-config__restore-label {
+  font-weight: bold;
+  font-size: 0.95em;
+  margin-right: 8px;
+  color: #374151;
+}
+
+.idres-config__restore-bubble {
+  background: #e0e7ff;
+  color: #4338ca;
+  border-radius: 16px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 0.95em;
+  border: 1px solid #6366f1;
+  transition: all 0.2s ease;
+}
+
+.idres-config__restore-bubble:hover {
+  background: #c7d2fe;
+  border-color: #4f46e5;
+  transform: translateY(-1px);
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .idres-config__section {
@@ -630,5 +662,20 @@
 
   .idres-config__frequency-select:hover {
     border-color: #6b7280;
+  }
+
+  .idres-config__restore-label {
+    color: #d1d5db;
+  }
+
+  .idres-config__restore-bubble {
+    background: #1e3a8a;
+    color: #ddd6fe;
+    border-color: #3730a3;
+  }
+
+  .idres-config__restore-bubble:hover {
+    background: #1e40af;
+    border-color: #4338ca;
   }
 }

@@ -6,7 +6,7 @@ const IdResConfig = forwardRef((props, ref) => {
   const defaultIdentifiers = [
     { id: 'user_id', name: 'User ID', enabled: true, isCustom: false, limit: 1, frequency: 'Ever' },
     { id: 'email', name: 'Email', enabled: true, isCustom: false, limit: 3, frequency: 'Ever' },
-    { id: 'phone', name: 'Phone', enabled: true, isCustom: false, limit: 2, frequency: 'Ever' },
+    { id: 'phone', name: 'Phone', enabled: true, isCustom: true, limit: 2, frequency: 'Ever' },
     { id: 'android.id', name: 'Android ID', enabled: true, isCustom: false, limit: 1, frequency: 'Ever' },
     { id: 'android.idfa', name: 'Android IDFA', enabled: true, isCustom: false, limit: 1, frequency: 'Monthly' },
     { id: 'android.push_token', name: 'Android Push Token', enabled: true, isCustom: false, limit: 5, frequency: 'Monthly' },
@@ -17,24 +17,44 @@ const IdResConfig = forwardRef((props, ref) => {
     { id: 'ios.push_token', name: 'iOS Push Token', enabled: true, isCustom: false, limit: 5, frequency: 'Monthly' },
   ];
 
+  // Special identifiers that should always be available for restoration (like phone)
+  const alwaysRestorableIdentifiers = ['phone'];
+
   const [identifiers, setIdentifiers] = useState(() => {
     const saved = localStorage.getItem('idres_config_identifiers');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // Migrate existing data: ensure phone is marked as custom
+        const migrated = parsed.map(identifier => {
+          if (identifier.id === 'phone') {
+            return { ...identifier, isCustom: true };
+          }
+          return identifier;
+        });
+        return migrated;
       } catch {}
     }
     return [...defaultIdentifiers];
   });
 
-  // Track deleted identifiers for restoration
-  const [deletedIdentifiers, setDeletedIdentifiers] = useState([]);
+  // Track deleted identifiers for restoration - load from localStorage
+  const [deletedIdentifiers, setDeletedIdentifiers] = useState(() => {
+    const savedDeleted = localStorage.getItem('idres_config_deleted_identifiers');
+    if (savedDeleted) {
+      try {
+        return JSON.parse(savedDeleted);
+      } catch {}
+    }
+    return [];
+  });
   // Expose saveConfig method to parent
   useImperativeHandle(ref, () => ({
     saveConfig: () => {
       localStorage.setItem('idres_config_identifiers', JSON.stringify(identifiers));
+      localStorage.setItem('idres_config_deleted_identifiers', JSON.stringify(deletedIdentifiers));
     }
-  }), [identifiers]);
+  }), [identifiers, deletedIdentifiers]);
   const [newCustomId, setNewCustomId] = useState('');
   const [draggedItem, setDraggedItem] = useState(null);
   const [expandedIdentifier, setExpandedIdentifier] = useState(null);
@@ -198,9 +218,16 @@ const IdResConfig = forwardRef((props, ref) => {
   const removeIdentifier = (index) => {
     setIdentifiers(prev => {
       const removed = prev[index];
-      // Only add to deleted if not custom
-      if (!removed.isCustom) {
-        setDeletedIdentifiers(dels => [...dels, removed]);
+      
+      // Add identifiers to deleted list for restoration if they are:
+      // 1. Default (non-custom) identifiers, OR
+      // 2. Special always-restorable custom identifiers (like phone)
+      if (!removed.isCustom || alwaysRestorableIdentifiers.includes(removed.id)) {
+        setDeletedIdentifiers(dels => {
+          // Avoid duplicates - only add if not already in deleted list
+          const alreadyDeleted = dels.some(d => d.id === removed.id);
+          return alreadyDeleted ? dels : [...dels, removed];
+        });
       }
       return prev.filter((_, i) => i !== index);
     });
@@ -208,19 +235,25 @@ const IdResConfig = forwardRef((props, ref) => {
 
   // Restore a deleted identifier from bubble
   const restoreDeletedIdentifier = (identifier) => {
-    setIdentifiers(prev => [...prev, identifier]);
+    setIdentifiers(prev => {
+      // Avoid duplicates - only add if not already in active list
+      const alreadyActive = prev.some(id => id.id === identifier.id);
+      return alreadyActive ? prev : [...prev, identifier];
+    });
     setDeletedIdentifiers(dels => dels.filter(d => d.id !== identifier.id));
   };
 
-  // Restore default IDs, preserving custom ones
+  // Restore default IDs, preserving current order and adding restored ones to the bottom
   const handleRestoreDefaultIDs = () => {
     setIdentifiers(prev => {
-      const custom = prev.filter(id => id.isCustom);
-      // Only add defaults not already present
+      // Get current IDs to avoid duplicates
       const currentIds = prev.map(id => id.id);
-      const restored = defaultIdentifiers.filter(def => !currentIds.includes(def.id));
-      return [...custom, ...defaultIdentifiers];
+      // Find default identifiers that are missing (not currently active)
+      const missingDefaults = defaultIdentifiers.filter(def => !currentIds.includes(def.id));
+      // Keep current identifiers in their existing order and append missing defaults to the bottom
+      return [...prev, ...missingDefaults];
     });
+    // Clear the deleted identifiers list since we're restoring all defaults
     setDeletedIdentifiers([]);
   };
 
@@ -235,12 +268,23 @@ const IdResConfig = forwardRef((props, ref) => {
     'Context traits: { "context": { "traits": { "custom_field": "value" } } }'
   ];
 
+  // Save identifiers to localStorage whenever they change (including Limit and Frequency changes)
+  useEffect(() => {
+    localStorage.setItem('idres_config_identifiers', JSON.stringify(identifiers));
+  }, [identifiers]);
+
+  // Save deleted identifiers to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('idres_config_deleted_identifiers', JSON.stringify(deletedIdentifiers));
+  }, [deletedIdentifiers]);
+
   // Optionally, save on unmount (in case modal is closed by other means)
   useEffect(() => {
     return () => {
       localStorage.setItem('idres_config_identifiers', JSON.stringify(identifiers));
+      localStorage.setItem('idres_config_deleted_identifiers', JSON.stringify(deletedIdentifiers));
     };
-  }, [identifiers]);
+  }, [identifiers, deletedIdentifiers]);
 
   return (
     <div className="idres-config">
@@ -296,10 +340,10 @@ const IdResConfig = forwardRef((props, ref) => {
                   </div>
                   <div className="idres-config__identifier-info">
                     <span className="idres-config__identifier-name" style={{ flex: 1, textAlign: 'left' }}>{normalizeIdentifier(identifier.id)}</span>
-                    <span className="idres-config__identifier-flag-wrapper">
-                      {!identifier.isCustom && <span className="idres-config__default-badge">DEFAULT</span>}
-                      {identifier.isCustom && <span className="idres-config__custom-badge">CUSTOM</span>}
-                    </span>
+                  </div>
+                  <div className="idres-config__identifier-flag">
+                    {!identifier.isCustom && <span className="idres-config__default-badge" style={{ fontSize: '10px', fontStyle: 'italic', opacity: 0.7, marginRight: '8px' }}>default</span>}
+                    {identifier.isCustom && <span className="idres-config__custom-badge" style={{ fontSize: '10px', fontStyle: 'italic', opacity: 0.7, marginRight: '8px' }}>custom</span>}
                   </div>
                   <div className="idres-config__identifier-controls">
                     <div className="idres-config__control-group">
@@ -413,19 +457,18 @@ const IdResConfig = forwardRef((props, ref) => {
             </button>
           </div>
           <p className="idres-config__add-custom-help">
-            Custom identifiers follow the same event payload patterns as email and phone fields
+            Custom identifiers follow the same event payload location pattern as the email field.
           </p>
         </div>
 
         {/* Deleted identifiers bubbles for restoration */}
         {deletedIdentifiers.length > 0 && (
-          <div className="idres-config__restore-list" style={{ marginTop: '18px', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-            <span style={{ fontWeight: 'bold', fontSize: '0.95em', marginRight: '8px' }}>Restore:</span>
+          <div className="idres-config__restore-section">
+            <span className="idres-config__restore-label">Restore:</span>
             {deletedIdentifiers.map(identifier => (
               <span
                 key={identifier.id}
                 className="idres-config__restore-bubble"
-                style={{ background: '#e0e7ff', borderRadius: '16px', padding: '4px 12px', cursor: 'pointer', fontSize: '0.95em', border: '1px solid #6366f1' }}
                 onClick={() => restoreDeletedIdentifier(identifier)}
                 title={`Restore ${identifier.name}`}
               >

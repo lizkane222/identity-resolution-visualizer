@@ -86,9 +86,22 @@
   gap: 15px;
   max-width: 100%;
   overflow: hidden; /* Prevent overflow */
+  align-items: flex-start; /* Align items at the start */
+  justify-content: flex-start; /* Start alignment */
 }
 
 /* Responsive design */
+/* Additional responsive breakpoint for when screen gets narrower */
+@media (max-width: 1350px) {
+  .unique-profiles-list {
+    padding: 12px;
+  }
+  
+  .unique-profiles-list__profiles {
+    gap: 12px;
+  }
+}
+
 @media (max-width: 1200px) {
   .unique-profiles-list {
     padding: 14px;

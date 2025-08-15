@@ -59,6 +59,11 @@ body {
   min-width: 0; /* Prevents flex item from overflowing */
 }
 
+.app__main--full-width {
+  width: 100%;
+  margin-left: 0;
+}
+
 /* Navigation Header */
 .app__header {
   background: #ffffff;
@@ -195,6 +200,34 @@ body {
   color: #1e40af;
 }
 
+.app__visualize-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: white;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.app__visualize-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.app__visualize-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .app__title {
   font-family: var(--twilio-font-family);
   font-weight: var(--twilio-font-weight-heavy);
@@ -221,6 +254,8 @@ body {
   overflow: hidden;
   position: relative;
   z-index: 1;
+  flex-shrink: 0; /* Prevent section from shrinking and causing overlap */
+  min-width: 0; /* Allow content to shrink properly */
 }
 
 @keyframes slideDown {
@@ -240,17 +275,21 @@ body {
   gap: 24px;
   margin: 24px;
   align-items: stretch;
+  flex-wrap: wrap; /* Allow wrapping when space is limited */
+  min-width: 0; /* Allow flex items to shrink */
 }
 
 .app__user-container {
   flex: 0 0 auto;
   min-width: 450px;
   max-width: 520px;
+  flex-shrink: 1; /* Allow shrinking when needed */
 }
 
 .app__unique-users-container {
   flex: 1;
   min-width: 0; /* Allow flex item to shrink */
+  min-width: 400px; /* Ensure minimum width for functionality */
 }
 
 /* Main Builder Section - EventBuilder, Core Events, and Product Events in a single row */
@@ -344,6 +383,32 @@ body {
   .app__builder-container {
     min-width: 350px;
     max-width: 450px;
+  }
+}
+
+/* Additional breakpoint for when dev tools are open or narrow viewports */
+@media (max-width: 1350px) {
+  .app__user-section {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .app__user-container {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+  }
+  
+  .app__unique-users-container {
+    width: 100%;
+    min-width: 100%;
+    min-height: 200px;
+    max-height: 300px;
+  }
+  
+  .app__profile-lookup-section {
+    width: calc(100% - 32px);
+    margin: 16px;
   }
 }
 
@@ -589,6 +654,18 @@ body {
   background: #1e3a8a;
   border-color: #3b82f6;
   color: #dbeafe;
+}
+
+.dark-mode .app__visualize-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.dark-mode .app__visualize-button:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
+}
+
+.dark-mode .app__visualize-button:disabled {
+  background: #4b5563;
 }
 
 .dark-mode .app__title {

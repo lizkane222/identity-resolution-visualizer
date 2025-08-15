@@ -1,0 +1,432 @@
+.diagram-node {
+  position: relative;
+  display: flex;
+  margin-bottom: 24px;
+}
+
+/* Timeline marker */
+.diagram-node__marker {
+  position: relative;
+  flex-shrink: 0;
+  margin-right: 20px;
+  z-index: 2;
+}
+
+.diagram-node__marker-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 3px solid var(--color-bg-primary);
+}
+
+/* Main content area */
+.diagram-node__content {
+  flex: 1;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+}
+
+.diagram-node__content:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  border-color: var(--color-accent);
+}
+
+/* Header */
+.diagram-node__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  cursor: pointer;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.diagram-node__header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.diagram-node__event-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.diagram-node__event-type {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.diagram-node__timestamp {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  font-family: 'Monaco', 'Consolas', monospace;
+}
+
+.diagram-node__expand-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.diagram-node__expand-btn:hover {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+/* Identifiers section */
+.diagram-node__identifiers {
+  margin-bottom: 16px;
+}
+
+.diagram-node__identifiers h4 {
+  margin: 0 0 12px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.diagram-node__identifier-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.diagram-node__no-identifiers {
+  color: var(--color-text-secondary);
+  font-style: italic;
+  padding: 8px 12px;
+  background: var(--color-bg-secondary);
+  border-radius: 6px;
+}
+
+.diagram-node__identifier {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.diagram-node__identifier--dropped {
+  background: #ffebee;
+  border-color: #c62828;
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+
+.diagram-node__identifier--conflicting {
+  background: #fff3e0;
+  border-color: #e65100;
+}
+
+.diagram-node__identifier-label {
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.diagram-node__identifier-value {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-family: 'Monaco', 'Consolas', monospace;
+}
+
+.diagram-node__identifier-priority {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: var(--color-bg-primary);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.diagram-node__identifier-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.diagram-node__identifier--dropped .diagram-node__identifier-status {
+  background: #c62828;
+  color: white;
+}
+
+.diagram-node__identifier--conflicting .diagram-node__identifier-status {
+  background: #e65100;
+  color: white;
+}
+
+/* Action section */
+.diagram-node__action {
+  margin-bottom: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+}
+
+.diagram-node__action-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.diagram-node__action-icon {
+  font-size: 1.25rem;
+}
+
+.diagram-node__action-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.diagram-node__action-description {
+  margin-bottom: 8px;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
+.diagram-node__action-reason {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+/* Profiles section */
+.diagram-node__profiles {
+  margin-bottom: 16px;
+}
+
+.diagram-node__profiles h4 {
+  margin: 0 0 12px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.diagram-node__profile-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.diagram-node__profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.diagram-node__profile-id {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.diagram-node__profile-events {
+  color: var(--color-text-secondary);
+}
+
+/* Details section (expandable) */
+.diagram-node__details {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.diagram-node__details-section {
+  margin-bottom: 16px;
+}
+
+.diagram-node__details-section:last-child {
+  margin-bottom: 0;
+}
+
+.diagram-node__details-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.diagram-node__event-payload {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 0.75rem;
+  color: var(--color-text-primary);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.diagram-node__dropped-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.diagram-node__dropped-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #ffebee;
+  border: 1px solid #c62828;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.diagram-node__dropped-label {
+  font-weight: 500;
+  color: #c62828;
+}
+
+.diagram-node__dropped-value {
+  font-weight: 600;
+  color: #c62828;
+  font-family: 'Monaco', 'Consolas', monospace;
+}
+
+.diagram-node__dropped-reason {
+  flex: 1;
+  text-align: right;
+  font-size: 0.75rem;
+  color: #8d4e4e;
+}
+
+.diagram-node__logic-explanation {
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.diagram-node__logic-explanation ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.diagram-node__logic-result {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+/* Next steps section */
+.diagram-node__next-steps {
+  padding: 12px;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.diagram-node__next-steps h4 {
+  margin: 0 0 8px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.diagram-node__next-steps p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  font-size: 0.875rem;
+}
+
+/* Connector */
+.diagram-node__connector {
+  position: absolute;
+  left: 32px;
+  bottom: -24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1;
+}
+
+.diagram-node__connector-line {
+  width: 2px;
+  height: 16px;
+  background: var(--color-accent);
+  opacity: 0.5;
+}
+
+.diagram-node__connector-arrow {
+  color: var(--color-accent);
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-top: -4px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .diagram-node {
+    margin-bottom: 16px;
+  }
+  
+  .diagram-node__marker {
+    margin-right: 12px;
+  }
+  
+  .diagram-node__marker-circle {
+    width: 48px;
+    height: 48px;
+    font-size: 0.875rem;
+  }
+  
+  .diagram-node__content {
+    padding: 16px;
+  }
+  
+  .diagram-node__identifier-list {
+    flex-direction: column;
+  }
+  
+  .diagram-node__profile-list {
+    flex-direction: column;
+  }
+  
+  .diagram-node__connector {
+    left: 24px;
+  }
+}

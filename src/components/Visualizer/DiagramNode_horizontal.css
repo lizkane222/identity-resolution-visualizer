@@ -1,0 +1,487 @@
+/* DiagramNode - Horizontal Timeline Layout */
+.diagram-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  width: 300px;
+  height: 100%;
+  margin: 0 20px;
+}
+
+/* Above Timeline Section */
+.diagram-node__above {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+  min-height: 380px; /* Fixed height to ensure consistent spacing */
+}
+
+/* Event Payload Container - maintains consistent space at top */
+.diagram-node__payload-container {
+  width: 280px;
+  min-height: 150px; /* Fixed height to accommodate largest payload */
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start; /* Align payloads to top of container */
+  justify-content: center;
+}
+
+.diagram-node__payload-card {
+  background: white;
+  border: 2px solid #1976d2;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.15);
+  width: 100%;
+  animation: slideDown 0.3s ease;
+}
+
+.diagram-node__payload-card h5 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+/* JSON Display in Payload Card */
+.diagram-node__payload-card .diagram-node__json-display {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 10px;
+  line-height: 1.3;
+  overflow-x: auto;
+  max-height: 100px;
+  color: #333;
+  margin: 0;
+}
+
+@keyframes slideDown {
+  from { 
+    opacity: 0; 
+    transform: translateY(-10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes slideDownFromTop {
+  from { 
+    opacity: 0; 
+    transform: translateX(-50%) translateY(-20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateX(-50%) translateY(0); 
+  }
+}
+
+.diagram-node__event-card,
+.diagram-node__profiles-card {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 280px;
+  font-size: 13px;
+}
+
+.diagram-node__event-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.diagram-node__event-card:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+  transform: translateY(-2px);
+}
+
+.diagram-node__event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.diagram-node__event-type {
+  font-weight: bold;
+  color: #1976d2;
+  font-size: 14px;
+}
+
+.diagram-node__event-time {
+  font-size: 11px;
+  color: #666;
+}
+
+.diagram-node__event-identifiers h5,
+.diagram-node__profiles-card h5 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+.diagram-node__identifier-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.diagram-node__identifier-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 16px;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.diagram-node__identifier-chip--dropped {
+  background: #ffebee;
+  border-color: #f44336;
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+
+.diagram-node__identifier-chip--conflict {
+  background: #fff3e0;
+  border-color: #ff9800;
+}
+
+.diagram-node__identifier-label {
+  font-weight: 600;
+  color: #333;
+}
+
+.diagram-node__identifier-value {
+  color: #666;
+}
+
+.diagram-node__identifier-priority {
+  background: #e3f2fd;
+  color: #1976d2;
+  border-radius: 8px;
+  padding: 1px 4px;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.diagram-node__no-identifiers {
+  color: #999;
+  font-style: italic;
+  font-size: 11px;
+}
+
+.diagram-node__profiles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.diagram-node__profile-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.diagram-node__profile-id {
+  font-weight: 600;
+  color: #333;
+  font-size: 11px;
+}
+
+.diagram-node__profile-meta {
+  color: #666;
+  font-size: 10px;
+}
+
+/* Connection Lines */
+.diagram-node__connection-line {
+  width: 2px;
+  background: linear-gradient(to bottom, #ddd, #999);
+  position: relative;
+}
+
+.diagram-node__connection-line--above {
+  height: 20px;
+  margin-bottom: 10px;
+}
+
+.diagram-node__connection-line--below {
+  height: 20px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+/* Timeline Node Circle */
+.diagram-node__timeline-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+  position: relative;
+  /* Ensure all timeline nodes are vertically aligned */
+  align-self: center;
+}
+
+.diagram-node__node-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1976d2, #42a5f5);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+  transition: all 0.3s ease;
+}
+
+.diagram-node__node-circle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(25, 118, 210, 0.4);
+}
+
+.diagram-node__sequence {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.diagram-node__node-label {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #666;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Below Timeline Section */
+.diagram-node__below {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  min-height: 250px;
+}
+
+.diagram-node__action-card,
+.diagram-node__logic-card,
+.diagram-node__details-card,
+.diagram-node__next-steps-card {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 280px;
+  font-size: 13px;
+}
+
+.diagram-node__action-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.diagram-node__action-icon {
+  font-size: 18px;
+}
+
+.diagram-node__action-title {
+  font-weight: bold;
+  color: #333;
+  font-size: 14px;
+}
+
+.diagram-node__action-description {
+  color: #666;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.diagram-node__logic-card h5 {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+.diagram-node__logic-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.diagram-node__logic-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.diagram-node__step-number {
+  background: #e3f2fd;
+  color: #1976d2;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.diagram-node__step-text {
+  font-size: 11px;
+  color: #666;
+  line-height: 1.3;
+  margin-top: 1px;
+}
+
+.diagram-node__logic-step--dropped .diagram-node__step-number {
+  background: #ffebee;
+  color: #f44336;
+}
+
+.diagram-node__logic-step--result .diagram-node__step-number {
+  background: #e8f5e8;
+  color: #4caf50;
+}
+
+.diagram-node__logic-step--result .diagram-node__step-text {
+  font-weight: 600;
+  color: #333;
+}
+
+/* Expandable Details */
+.diagram-node__details-card {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.diagram-node__details-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.diagram-node__detail-section h6 {
+  margin: 0 0 6px 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #333;
+}
+
+.diagram-node__json-display {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 10px;
+  line-height: 1.3;
+  overflow-x: auto;
+  max-height: 120px;
+  color: #333;
+}
+
+.diagram-node__dropped-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.diagram-node__dropped-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  background: #ffebee;
+  border-radius: 6px;
+  border: 1px solid #f44336;
+  opacity: 0.8;
+}
+
+.diagram-node__dropped-item small {
+  color: #666;
+  font-size: 10px;
+}
+
+.diagram-node__next-steps-card {
+  border: 2px dashed #ddd;
+  background: #fafafa;
+  text-align: center;
+}
+
+.diagram-node__next-steps-card h5 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+}
+
+.diagram-node__next-steps-card p {
+  margin: 0;
+  font-size: 11px;
+  color: #999;
+  font-style: italic;
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .diagram-node {
+    width: 250px;
+    margin: 0 10px;
+  }
+
+  .diagram-node__above {
+    min-height: 280px; /* Adjusted for mobile */
+  }
+
+  .diagram-node__payload-container {
+    width: 230px;
+    min-height: 100px; /* Slightly smaller on mobile */
+  }
+  
+  .diagram-node__event-card,
+  .diagram-node__profiles-card,
+  .diagram-node__action-card,
+  .diagram-node__logic-card,
+  .diagram-node__details-card,
+  .diagram-node__next-steps-card {
+    width: 230px;
+    padding: 12px;
+  }
+  
+  .diagram-node__node-circle {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+}

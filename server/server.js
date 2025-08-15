@@ -307,7 +307,13 @@ app.get('/api/profiles/:identifier/traits', async (req, res) => {
     console.log(`� Full Response:`, JSON.stringify(response.data, null, 2));
     console.groupEnd();
     
-    res.json(response.data);
+    // Add the actual Segment API endpoint to the response for frontend logging
+    const responseData = {
+      ...response.data,
+      _segmentApiEndpoint: url + (Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '')
+    };
+    
+    res.json(responseData);
   } catch (error) {
     console.error(`❌ [SERVER TRAITS] Request failed for: ${identifier}`);
     console.error(`📋 Error Details:`, error.message);
@@ -358,7 +364,13 @@ app.get('/api/profiles/:identifier/external_ids', async (req, res) => {
     console.log(`� Full Response:`, JSON.stringify(response.data, null, 2));
     console.groupEnd();
     
-    res.json(response.data);
+    // Add the actual Segment API endpoint to the response for frontend logging
+    const responseData = {
+      ...response.data,
+      _segmentApiEndpoint: url + (Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '')
+    };
+    
+    res.json(responseData);
   } catch (error) {
     console.error(`❌ [SERVER EXTERNAL_IDS] Request failed for: ${identifier}`);
     console.error(`📋 Error Details:`, error.message);
@@ -408,7 +420,13 @@ app.get('/api/profiles/:identifier/events', async (req, res) => {
     console.log(`📄 Full Response:`, JSON.stringify(response.data, null, 2));
     console.groupEnd();
     
-    res.json(response.data);
+    // Add the actual Segment API endpoint to the response for frontend logging
+    const responseData = {
+      ...response.data,
+      _segmentApiEndpoint: url + (Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '')
+    };
+    
+    res.json(responseData);
   } catch (error) {
     console.error(`❌ [SERVER EVENTS] Request failed for: ${identifier}`);
     console.error(`📋 Error Details:`, error.message);
@@ -450,7 +468,13 @@ app.get('/api/profiles/:identifier/metadata', async (req, res) => {
     console.log(`📄 Full Response:`, JSON.stringify(response.data, null, 2));
     console.groupEnd();
     
-    res.json(response.data);
+    // Add the actual Segment API endpoint to the response for frontend logging
+    const responseData = {
+      ...response.data,
+      _segmentApiEndpoint: url
+    };
+    
+    res.json(responseData);
   } catch (error) {
     console.error(`❌ [SERVER METADATA] Request failed for: ${identifier}`);
     console.error(`📋 Error Details:`, error.message);
@@ -492,8 +516,24 @@ app.get('/api/profiles/:identifier/links', async (req, res) => {
       params
     });
     
-    res.json(response.data);
+    console.log(`📥 [SERVER LINKS] Response received for: ${identifier}`);
+    console.log(`📊 Status: ${response.status}`);
+    console.log(`🕐 Response Time: ${new Date().toISOString()}`);
+    console.log(`📋 Data Summary: ${Array.isArray(response.data.data) ? `${response.data.data.length} links` : 'Non-array data'}`);
+    console.log(`📄 Full Response:`, JSON.stringify(response.data, null, 2));
+    console.groupEnd();
+    
+    // Add the actual Segment API endpoint to the response for frontend logging
+    const responseData = {
+      ...response.data,
+      _segmentApiEndpoint: url + (Object.keys(params).length > 0 ? '?' + new URLSearchParams(params).toString() : '')
+    };
+    
+    res.json(responseData);
   } catch (error) {
+    console.error(`❌ [SERVER LINKS] Request failed for: ${identifier}`);
+    console.error(`📋 Error Details:`, error.message);
+    console.groupEnd();
     handleApiError(error, res);
   }
 });

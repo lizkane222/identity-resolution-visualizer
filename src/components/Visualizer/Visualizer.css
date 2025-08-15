@@ -1,0 +1,335 @@
+.visualizer {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-primary);
+  overflow: hidden;
+}
+
+/* Header */
+.visualizer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.visualizer__header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.visualizer__header-icon {
+  width: 24px;
+  height: 24px;
+  filter: var(--icon-filter);
+}
+
+.visualizer__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.visualizer__header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.visualizer__config-toggle {
+  padding: 8px 16px;
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.visualizer__config-toggle:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+.visualizer__close {
+  padding: 8px 12px;
+  background: var(--color-danger);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.visualizer__close:hover {
+  background: var(--color-danger-hover);
+  transform: translateY(-1px);
+}
+
+.visualizer__back-button {
+  padding: 8px 16px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.visualizer__back-button:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+}
+
+/* Content Area */
+.visualizer__content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.visualizer__sidebar {
+  width: 320px;
+  background: var(--color-bg-tertiary);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.visualizer__sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.visualizer__sidebar-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.visualizer__sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.visualizer__config-section {
+  margin-bottom: 24px;
+}
+
+.visualizer__config-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.visualizer__identifier-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  font-size: 0.75rem;
+}
+
+.visualizer__table-header,
+.visualizer__table-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.visualizer__table-row:last-child {
+  border-radius: 0 0 6px 6px;
+}
+
+.visualizer__table-row:nth-child(even) {
+  background: var(--color-bg-secondary);
+}
+
+.visualizer__table-col {
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+}
+
+.visualizer__table-col--priority {
+  justify-content: center;
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.visualizer__table-col--identifier {
+  justify-content: center;
+  font-family: 'Monaco', 'Consolas', monospace;
+  color: var(--color-text-primary);
+}
+
+.visualizer__table-col--identifier > span {
+  text-align: left;
+  width: 100%;
+}
+
+.visualizer__table-col--limit {
+  justify-content: center;
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.visualizer__custom-indicator {
+  color: var(--color-accent);
+  font-weight: bold;
+  margin-left: 4px;
+  font-size: 0.8em;
+}
+
+.visualizer__identifier-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Legacy styles - can be removed in future cleanup */
+.visualizer__identifier-item {
+  display: none; /* Hide old layout */
+}
+
+.visualizer__identifier-key {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  font-family: 'Monaco', 'Consolas', monospace;
+}
+
+.visualizer__setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.visualizer__setting-item:last-child {
+  border-bottom: none;
+}
+
+.visualizer__setting-label {
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.visualizer__setting-value {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 0.875rem;
+}
+
+/* Diagram Container */
+.visualizer__diagram-container {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.visualizer__diagram-container--with-sidebar {
+  width: calc(100% - 320px);
+}
+
+/* Empty State */
+.visualizer__empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.visualizer__empty-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.visualizer__empty-state h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.visualizer__empty-state p {
+  margin: 0;
+  font-size: 1rem;
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .visualizer__sidebar {
+    width: 280px;
+  }
+  
+  .visualizer__diagram-container--with-sidebar {
+    width: calc(100% - 280px);
+  }
+}
+
+@media (max-width: 768px) {
+  .visualizer__header {
+    padding: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .visualizer__header-left {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .visualizer__title {
+    font-size: 1.25rem;
+  }
+  
+  .visualizer__sidebar {
+    display: none; /* Hide sidebar on mobile, implement toggle later */
+  }
+  
+  .visualizer__diagram-container--with-sidebar {
+    width: 100%;
+  }
+  
+  .visualizer__config-toggle {
+    font-size: 0.75rem;
+    padding: 6px 12px;
+  }
+  
+  .visualizer__back-button {
+    font-size: 0.75rem;
+    padding: 6px 12px;
+  }
+}

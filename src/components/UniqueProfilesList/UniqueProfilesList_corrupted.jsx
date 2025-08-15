@@ -1,6 +1,32 @@
 import React, { useMemo } from 'react';
 import UniqueProfile from '../UniqueProfile/UniqueProfile.jsx';
 import './UniqueProfilesList.css';
+          const eventsArray = Array.isArray(data) ? data : (data.data || []);
+          const eventWithUserId = eventsArray.find(event => event.userId || event.user_id);
+          if (eventWithUserId) {
+            userId = eventWithUserId.userId || eventWithUserId.user_id;
+            profileKey = userId;
+          } else {
+            // If no userId in event, look in external_ids within each event
+            const eventWithExternalIds = eventsArray.find(event => 
+              event.external_ids && Array.isArray(event.external_ids)
+            );
+            if (eventWithExternalIds) {
+              const userIdExternal = eventWithExternalIds.external_ids.find(extId => extId.type === 'user_id');
+              if (userIdExternal) {
+                userId = userIdExternal.id;
+                profileKey = userId;
+              } else {
+                // Try to match with any other external_id that might correspond to existing profiles
+                const emailExternal = eventWithExternalIds.external_ids.find(extId => extId.type === 'email');
+                if (emailExternal) {
+                  profileKey = `email:${emailExternal.id}`;
+                }
+              }
+            }
+          }
+        }rofile.jsx';
+import './UniqueProfilesList.css';
 
 const UniqueProfilesList = ({ profileApiResults, events, onHighlightEvents }) => {
   // Add debugging for incoming data
@@ -231,7 +257,7 @@ const UniqueProfilesList = ({ profileApiResults, events, onHighlightEvents }) =>
           const eventsArray = Array.isArray(data) ? data : (data.data || []);
           eventsArray.forEach(event => {
             const exists = profile.events.some(existing => 
-              existing.message_id === event.message_id || 
+              existing.messageId === event.messageId || 
               (existing.timestamp === event.timestamp && existing.event === event.event)
             );
             if (!exists) {
@@ -278,7 +304,7 @@ const UniqueProfilesList = ({ profileApiResults, events, onHighlightEvents }) =>
         profile.events.forEach(profileEvent => {
           const matchingIndices = events.map((event, index) => {
             // Match by messageId if available
-            if (profileEvent.message_id && event.messageId === profileEvent.message_id) {
+            if (profileEvent.messageId && event.messageId === profileEvent.messageId) {
               return index;
             }
             

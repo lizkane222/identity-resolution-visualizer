@@ -87,24 +87,6 @@ const UniqueProfilesList = ({ profileApiResults, events, onHighlightEvents }) =>
           if (eventWithUserId) {
             userId = eventWithUserId.userId || eventWithUserId.user_id;
             profileKey = userId;
-          } else {
-            // If no userId in event, look in external_ids within each event
-            const eventWithExternalIds = eventsArray.find(event => 
-              event.external_ids && Array.isArray(event.external_ids)
-            );
-            if (eventWithExternalIds) {
-              const userIdExternal = eventWithExternalIds.external_ids.find(extId => extId.type === 'user_id');
-              if (userIdExternal) {
-                userId = userIdExternal.id;
-                profileKey = userId;
-              } else {
-                // Try to match with any other external_id that might correspond to existing profiles
-                const emailExternal = eventWithExternalIds.external_ids.find(extId => extId.type === 'email');
-                if (emailExternal) {
-                  profileKey = `email:${emailExternal.id}`;
-                }
-              }
-            }
           }
         }
 
@@ -113,35 +95,6 @@ const UniqueProfilesList = ({ profileApiResults, events, onHighlightEvents }) =>
         console.log(`  - Endpoint: ${endpointType}`);
         console.log(`  - Found userId: ${userId}`);
         console.log(`  - Profile key: ${profileKey}`);
-
-        // For events endpoint, try to find existing profile by matching external_ids
-        if (endpointType === 'events' && !profilesMap.has(profileKey)) {
-          const eventsArray = Array.isArray(data) ? data : (data.data || []);
-          const eventWithExternalIds = eventsArray.find(event => 
-            event.external_ids && Array.isArray(event.external_ids)
-          );
-          
-          if (eventWithExternalIds && eventWithExternalIds.external_ids) {
-            // Try to find an existing profile that has matching external_ids
-            for (const [existingKey, existingProfile] of profilesMap.entries()) {
-              if (existingProfile.externalIds && existingProfile.externalIds.length > 0) {
-                // Check if any external_id from the event matches any external_id from existing profile
-                const hasMatchingId = eventWithExternalIds.external_ids.some(eventExtId => 
-                  existingProfile.externalIds.some(profileExtId => 
-                    profileExtId.type === eventExtId.type && profileExtId.id === eventExtId.id
-                  )
-                );
-                
-                if (hasMatchingId) {
-                  profileKey = existingKey;
-                  userId = existingProfile.userId || userId;
-                  console.log(`🔗 Matched event to existing profile: ${existingKey}`);
-                  break;
-                }
-              }
-            }
-          }
-        }
 
         // Get or create profile
         if (!profilesMap.has(profileKey)) {
@@ -231,7 +184,7 @@ const UniqueProfilesList = ({ profileApiResults, events, onHighlightEvents }) =>
           const eventsArray = Array.isArray(data) ? data : (data.data || []);
           eventsArray.forEach(event => {
             const exists = profile.events.some(existing => 
-              existing.message_id === event.message_id || 
+              existing.messageId === event.messageId || 
               (existing.timestamp === event.timestamp && existing.event === event.event)
             );
             if (!exists) {
@@ -278,7 +231,7 @@ const UniqueProfilesList = ({ profileApiResults, events, onHighlightEvents }) =>
         profile.events.forEach(profileEvent => {
           const matchingIndices = events.map((event, index) => {
             // Match by messageId if available
-            if (profileEvent.message_id && event.messageId === profileEvent.message_id) {
+            if (profileEvent.messageId && event.messageId === profileEvent.messageId) {
               return index;
             }
             

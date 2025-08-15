@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import EventBuilder from './components/EventBuilder/EventBuilder.jsx';
 import EventList from './components/EventList/EventList.jsx';
 import EventButtons from './components/EventButtons/EventButtons.jsx';
@@ -8,6 +8,7 @@ import UnifySpaceConfig from './components/UnifySpaceConfig/UnifySpaceConfig.jsx
 import SourceConfig from './components/SourceConfig/SourceConfig.jsx';
 import ProfileLookup from './components/ProfileLookup/ProfileLookup.jsx';
 import GlowModesList from './components/GlowModesList/GlowModesList.jsx';
+import Visualizer from './components/Visualizer/Visualizer.jsx';
 import { useEffect, useMemo } from 'react';
 import './App.css';
 
@@ -22,9 +23,13 @@ function App() {
   const [currentEventInfo, setCurrentEventInfo] = useState(null);
   const [userUpdateTrigger, setUserUpdateTrigger] = useState(0);
   const [sourceConfigUpdateTrigger, setSourceConfigUpdateTrigger] = useState(0);
+  
+  // Ref to access EventBuilder's save function
+  const eventBuilderRef = useRef();
   const [showUnifySpaceConfig, setShowUnifySpaceConfig] = useState(false);
   const [showSourceConfig, setShowSourceConfig] = useState(false);
   const [showProfileLookup, setShowProfileLookup] = useState(false);
+  const [currentPage, setCurrentPage] = useState('main'); // 'main' or 'visualizer'
   const [highlightedEventIndices, setHighlightedEventIndices] = useState([]);
   const [unifySpaceSlug, setUnifySpaceSlug] = useState('');
   
@@ -339,6 +344,13 @@ function App() {
     });
   }, []);
 
+  // Handle save request from EventButtons
+  const handleSaveFromEventButtons = useCallback(() => {
+    if (eventBuilderRef.current) {
+      eventBuilderRef.current.saveEvent();
+    }
+  }, []);
+
   // Handle editing an event in the EventList
   const handleEditEvent = (eventId, newPayload) => {
     setEvents(prevEvents => prevEvents.map(event =>
@@ -350,25 +362,27 @@ function App() {
 
   return (
     <div className="app">
-      {/* Left Sidebar - Event List */}
-      <aside className="app__sidebar">
-        <EventList 
-          events={events}
-          onRemoveEvent={handleRemoveEvent}
-          onClearEvents={handleClearEvents}
-          highlightedEventIndices={highlightedEventIndices}
-          onEditEvent={handleEditEvent}
-        />
-      </aside>
+      {/* Left Sidebar - Event List (Hidden in Visualizer) */}
+      {currentPage === 'main' && (
+        <aside className="app__sidebar">
+          <EventList 
+            events={events}
+            onRemoveEvent={handleRemoveEvent}
+            onClearEvents={handleClearEvents}
+            highlightedEventIndices={highlightedEventIndices}
+            onEditEvent={handleEditEvent}
+          />
+        </aside>
+      )}
 
       {/* Main Content Area */}
-      <main className="app__main">
+      <main className={`app__main ${currentPage === 'visualizer' ? 'app__main--full-width' : ''}`}>
         {/* Header */}
         <header className="app__header">
           <div className="app__header-content">
             <div className="app__title-section">
               <h1 className="app__title">
-                <img src="/SegmentLogo.svg" alt="Segment" className="app__title-icon" />
+                <img src="/assets/SegmentLogo.svg" alt="Segment" className="app__title-icon" />
                 Identity Resolution Visualizer
               </h1>
               <p className="app__subtitle">
@@ -377,42 +391,63 @@ function App() {
             </div>
             <div className="app__header-actions">
               <button 
-                onClick={() => setShowSourceConfig(true)}
+                onClick={() => {
+                  setCurrentPage('main');
+                  setShowSourceConfig(true);
+                }}
                 className="app__config-button"
                 title="Configure Segment Source & Tracking Settings"
               >
-                <img src="/Connections.svg" alt="Connections" className="app__button-icon" />
+                <img src="/assets/Connections.svg" alt="Connections" className="app__button-icon" />
                 Source Config
               </button>
               <button 
-                onClick={() => setShowUnifySpaceConfig(true)}
+                onClick={() => {
+                  setCurrentPage('main');
+                  setShowUnifySpaceConfig(true);
+                }}
                 className="app__config-button"
                 title="Configure Unify Space & Identity Resolution"
               >
-                <img src="/Unify.svg" alt="Unify" className="app__button-icon" />
+                <img src="/assets/Unify.svg" alt="Unify" className="app__button-icon" />
                 Unify Config
               </button>
               <button 
-                onClick={() => setShowProfileLookup(!showProfileLookup)}
+                onClick={() => {
+                  setCurrentPage('main');
+                  setShowProfileLookup(!showProfileLookup);
+                }}
                 className={`app__lookup-button ${showProfileLookup ? 'app__lookup-button--active' : ''}`}
                 title="Profile Lookup Tool"
               >
                 🔍 Lookup
               </button>
+              <button 
+                onClick={() => setCurrentPage('visualizer')}
+                className="app__visualize-button"
+                title="Open Identity Resolution Visualizer"
+                disabled={events.length === 0}
+              >
+                <img src="/assets/pie-chart.svg" alt="Visualize" className="app__button-icon" />
+                Visualize
+              </button>
             </div>
           </div>
         </header>
 
-        {/* Profile Lookup Section (Collapsible) */}
-        {showProfileLookup && (
-          <section className="app__profile-lookup-section">
-            <ProfileLookup 
-              identifierOptions={identifierOptions}
-              events={events}
-              onHighlightEvents={handleHighlightEvents}
-            />
-          </section>
-        )}
+        {/* Conditional Page Rendering */}
+        {currentPage === 'main' && (
+          <>
+            {/* Profile Lookup Section (Collapsible) */}
+            {showProfileLookup && (
+              <section className="app__profile-lookup-section">
+                <ProfileLookup 
+                  identifierOptions={identifierOptions}
+                  events={events}
+                  onHighlightEvents={handleHighlightEvents}
+                />
+              </section>
+            )}
 
         {/* Top Section - Current User */}
         <section className="app__user-section">
@@ -437,6 +472,7 @@ function App() {
           {/* Event Builder */}
           <div className="app__builder-container">
             <EventBuilder 
+              ref={eventBuilderRef}
               onSave={handleSaveEvent} 
               selectedEvent={selectedEvent}
               currentUser={currentUser}
@@ -449,12 +485,24 @@ function App() {
 
           {/* Core Events */}
           <div className="app__core-events-container">
-            <EventButtons onLoadEvent={handleLoadEvent} eventType="core" currentUser={currentUser} />
+            <EventButtons 
+              onLoadEvent={handleLoadEvent} 
+              eventType="core" 
+              currentUser={currentUser}
+              currentLoadedEvent={selectedEvent}
+              onSaveEvent={handleSaveFromEventButtons}
+            />
           </div>
 
           {/* Product Events */}
           <div className="app__product-events-container">
-            <EventButtons onLoadEvent={handleLoadEvent} eventType="product" currentUser={currentUser} />
+            <EventButtons 
+              onLoadEvent={handleLoadEvent} 
+              eventType="product" 
+              currentUser={currentUser}
+              currentLoadedEvent={selectedEvent}
+              onSaveEvent={handleSaveFromEventButtons}
+            />
           </div>
         </section>
 
@@ -465,6 +513,18 @@ function App() {
             Events are processed in sequence with configurable timeouts to simulate real-world scenarios and to allow time for profiles to be resolved within Unify.
           </p>
         </footer>
+          </>
+        )}
+
+        {/* Identity Resolution Visualizer Page */}
+        {currentPage === 'visualizer' && (
+          <Visualizer 
+            events={events}
+            identifierOptions={identifierOptions}
+            unifySpaceSlug={unifySpaceSlug}
+            onClose={() => setCurrentPage('main')}
+          />
+        )}
       </main>
 
       {/* Modals */}
