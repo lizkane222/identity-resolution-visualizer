@@ -164,7 +164,56 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
     if (events.length > 0) {
       processEventsForSimulation();
     } else {
-      setProcessedEvents([]);
+      // TEMPORARY: Add mock events for testing hover functionality
+      const mockEvents = [
+        {
+          id: 'mock-event-1',
+          type: 'track',
+          event: 'User Signed Up',
+          rawData: '{"userId":"e008f654-fb71-42e6-8b54-bf860be436d8","event":"User Signed Up","properties":{"plan":"Premium"}}',
+          eventData: { userId: 'e008f654-fb71-42e6-8b54-bf860be436d8', event: 'User Signed Up', properties: { plan: 'Premium' } },
+          identifiers: { user_id: 'e008f654-fb71-42e6-8b54-bf860be436d8' },
+          simulationResult: {
+            profile: { id: 'use_6I5NAh59RKCr7AtQkuW31M0ivGD' },
+            action: 'merge',
+            description: 'Merged with existing profile'
+          },
+          sequenceNumber: 1,
+          timestamp: Date.now() - 3000
+        },
+        {
+          id: 'mock-event-2',
+          type: 'identify',
+          event: 'identify',
+          rawData: '{"userId":"5c34d557-cdae-46a5-a9dc-eedc09058258","traits":{"email":"test@example.com"}}',
+          eventData: { userId: '5c34d557-cdae-46a5-a9dc-eedc09058258', traits: { email: 'test@example.com' } },
+          identifiers: { user_id: '5c34d557-cdae-46a5-a9dc-eedc09058258' },
+          simulationResult: {
+            profile: { id: 'use_1iZoENvV1HqJBXva20a31MWDM6z' },
+            action: 'create',
+            description: 'Created new profile'
+          },
+          sequenceNumber: 2,
+          timestamp: Date.now() - 1000
+        },
+        {
+          id: 'mock-event-3',
+          type: 'track',
+          event: 'Page Viewed',
+          rawData: '{"userId":"e008f654-fb71-42e6-8b54-bf860be436d8","event":"Page Viewed","properties":{"url":"/dashboard"}}',
+          eventData: { userId: 'e008f654-fb71-42e6-8b54-bf860be436d8', event: 'Page Viewed', properties: { url: '/dashboard' } },
+          identifiers: { user_id: 'e008f654-fb71-42e6-8b54-bf860be436d8' },
+          simulationResult: {
+            profile: { id: 'use_6I5NAh59RKCr7AtQkuW31M0ivGD' },
+            action: 'update',
+            description: 'Updated existing profile'
+          },
+          sequenceNumber: 3,
+          timestamp: Date.now()
+        }
+      ];
+      
+      setProcessedEvents(mockEvents);
       setSimulation(null);
       setLoading(false);
       
@@ -195,14 +244,53 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
           {/* Profile Cards Above Event Nodes */}
           {(() => {
             const profiles = convertProfileApiResultsToProfiles(profileApiResults);
-            return profiles.length > 0 && (
+            
+            // TEMPORARY: Add mock profiles for testing hover functionality
+            const mockProfiles = [
+              {
+                id: 'use_6I5NAh59RKCr7AtQkuW31M0ivGD',
+                segmentId: 'use_6I5NAh59RKCr7AtQkuW31M0ivGD',
+                userId: 'e008f654-fb71-42e6-8b54-bf860be436d8',
+                lookupIdentifier: 'user_id:e008f654-fb71-42e6-8b54-bf860be436d8',
+                identifiers: { user_id: 'e008f654-fb71-42e6-8b54-bf860be436d8' },
+                events: [],
+                metadata: null,
+              },
+              {
+                id: 'use_1iZoENvV1HqJBXva20a31MWDM6z',
+                segmentId: 'use_1iZoENvV1HqJBXva20a31MWDM6z',
+                userId: '5c34d557-cdae-46a5-a9dc-eedc09058258',
+                lookupIdentifier: 'user_id:5c34d557-cdae-46a5-a9dc-eedc09058258',
+                identifiers: { user_id: '5c34d557-cdae-46a5-a9dc-eedc09058258' },
+                events: [],
+                metadata: null,
+              }
+            ];
+            
+            const displayProfiles = profiles.length > 0 ? profiles : mockProfiles;
+            
+            return displayProfiles.length > 0 && (
               <div className="diagram-timeline2__profiles-list">
-                {profiles.map((profile, idx) => (
+                <div style={{ padding: '10px', backgroundColor: '#f0f9ff', border: '1px solid #3b82f6', borderRadius: '8px', marginBottom: '20px' }}>
+                  <strong style={{ color: '#1d4ed8' }}>🧪 Testing Mode:</strong> {profiles.length === 0 ? 'Using mock profiles for hover testing' : `${profiles.length} real profiles loaded`}
+                </div>
+                {displayProfiles.map((profile, idx) => (
                   <div 
                     key={profile.id || idx} 
                     className="visualizer2__profile-card"
                     onMouseEnter={() => {
-                      console.log('Profile hover enter:', profile.id);
+                      console.log('=== PROFILE HOVER ENTER ===');
+                      console.log('Profile object:', profile);
+                      console.log('Profile ID being set:', profile.id);
+                      console.log('All events simulation results:');
+                      processedEvents.forEach((event, idx) => {
+                        console.log(`Event ${idx}:`, {
+                          eventId: event.id,
+                          profileId: event.simulationResult?.profile?.id,
+                          matches: event.simulationResult?.profile?.id === profile.id
+                        });
+                      });
+                      console.log('===============================');
                       setHoveredProfileId(profile.id);
                     }}
                     onMouseLeave={() => {

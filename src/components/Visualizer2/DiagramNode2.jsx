@@ -78,11 +78,12 @@ const DiagramNode2 = ({
 
   // Debug logging
   if (hoveredProfileId) {
-    console.log('Debug DiagramNode2:', {
+    console.log(`🔍 DiagramNode2 #${sequenceNumber}:`, {
       hoveredProfileId,
       eventProfileId: event.simulationResult?.profile?.id,
       isHighlighted: isProfileHighlighted,
-      sequenceNumber
+      sequenceNumber,
+      willGlow: isProfileHighlighted ? 'YES! 🌟' : 'no'
     });
   }
 
