@@ -1,16 +1,18 @@
 /* Visualizer2 Styles */
 .visualizer2 {
   min-height: 100vh;
+  min-width: 100vh;
   background: #ffffff;
   display: flex;
   flex-direction: column;
+  /* Allow the page to extend beyond viewport height for natural scrolling */
 }
 
 /* Header */
 .visualizer2__header {
   display: flex;
   flex-direction: column;
-  padding: 1.5rem 2rem;
+  padding: .5rem 1rem;
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
   position: sticky;
@@ -22,7 +24,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: .2rem;
 }
 
 .visualizer2__header-left {
@@ -37,7 +39,7 @@
 }
 
 .visualizer2__title {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: #111827;
   margin: 0;
@@ -139,14 +141,14 @@
 .visualizer2__description {
   margin: 0;
   color: #6b7280;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
 }
 
 /* Main Content Layout */
 .visualizer2__content {
   display: flex;
   flex: 1;
-  min-height: 0;
+  min-height: calc(100vh - 80px); /* Ensure enough height for footer */
 }
 
 /* Sidebar */
@@ -156,8 +158,7 @@
   border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  max-height: calc(100vh - 140px);
+  /* Remove overflow-y and max-height to prevent nested scrolling */
 }
 
 .visualizer2__sidebar-header {
@@ -176,7 +177,7 @@
 
 .visualizer2__sidebar-content {
   flex: 1;
-  overflow-y: auto;
+  /* Remove overflow-y to let the parent page handle scrolling */
 }
 
 .visualizer2__config-section {
@@ -354,9 +355,10 @@
 
 /* Profiles Section */
 .visualizer2__profiles-section {
+  height: 100%;
   flex: 1;
   padding: 1.5rem;
-  overflow-y: auto;
+  /* overflow-y: auto; */
 }
 
 .visualizer2__profiles-section h3 {
@@ -456,9 +458,9 @@
 /* Main Content */
 .visualizer2__main-content {
   flex: 1;
-  padding: 1.5rem;
-  overflow-y: auto;
+  /* Remove overflow-y to let the parent page handle scrolling */
   background: #fafafa;
+  min-height: calc(100vh - 80px); /* Ensure enough height */
 }
 
 .visualizer2__empty-state {
@@ -1061,4 +1063,35 @@
 
 .twilio-mode .visualizer2__empty-state p {
   color: #94a3b8;
+}
+
+/* Floating Back Button */
+.visualizer2__back-button-floating {
+  position: absolute;
+  top: 5.8rem;
+  right: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-family: var(--twilio-font-family);
+  white-space: nowrap;
+}
+
+.visualizer2__back-button-floating:hover {
+  background: linear-gradient(135deg, #7c7ce6 0%, #8a5bb8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.visualizer2__back-button-floating:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }

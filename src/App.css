@@ -123,6 +123,12 @@ body {
   white-space: nowrap;
 }
 
+.app__lookup-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
 .app__config-button:hover,
 .app__lookup-button:hover {
   background: #f9fafb;
@@ -144,15 +150,61 @@ body {
   font-size: 16px;
 }
 
-/* Floating Dark Mode Toggle */
-/* Theme Buttons Container - Above Footer */
-.app__floating-theme-buttons {
+/* Theme Buttons Container - In Footer */
+.app__footer-theme-buttons {
   display: flex;
   flex-direction: row;
   gap: 12px;
-  justify-content: flex-end;
-  padding: 12px 24px;
-  z-index: 1000;
+  align-items: center;
+}
+
+.app__footer-theme-button {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+
+.app__footer-theme-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.app__footer-theme-button--clear {
+  background: #ffffff;
+  border-color: #d1d5db;
+  color: #6b7280;
+}
+
+.app__footer-theme-button--brand {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+}
+
+.app__footer-theme-button--segment {
+  background: #4fb58b;
+  border: none;
+  color: white;
+}
+
+.app__footer-theme-button--twilio {
+  background: #dc2626;
+  border: none;
+  color: white;
+}
+
+/* Legacy floating theme buttons - hide them */
+.app__floating-theme-buttons {
+  display: none;
 }
 
 /* Twilio Glow Button Wrapper */
@@ -218,6 +270,7 @@ body {
   height: 16px;
   flex-shrink: 0;
   display: block;
+  color:white;
 }
 
 /* Default icon colors - apply consistent grey color to all config and lookup icons */
@@ -321,6 +374,109 @@ body {
   color: #6b7280;
   margin: 0;
   line-height: 1.3;
+}
+
+/* Visualizer2 Header Styles */
+.app__visualizer2-header {
+  display: flex;
+  flex-direction: column;
+}
+
+.app__visualizer2-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: .2rem;
+}
+
+.app__header-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.app__visualizer2-header .app__separator {
+  display: flex;
+  align-items: center;
+  margin: 0 0.75rem;
+}
+
+.app__visualizer2-header .separator-line {
+  display: flex;
+  gap: 2px;
+}
+
+.app__visualizer2-header .dash-pixel {
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  animation: wave-horizontal 4s ease-in-out infinite;
+}
+
+.app__visualizer2-header .dash-pixel-1 { 
+  background-color: #FBCA54;
+  animation-delay: 0s; 
+}
+.app__visualizer2-header .dash-pixel-2 { 
+  background-color: #F3546D;
+  animation-delay: 0.2s; 
+}
+.app__visualizer2-header .dash-pixel-3 { 
+  background-color: #F086C7;
+  animation-delay: 0.4s; 
+}
+.app__visualizer2-header .dash-pixel-4 { 
+  background-color: #25A2D9;
+  animation-delay: 0.6s; 
+}
+.app__visualizer2-header .dash-pixel-5 { 
+  background-color: #336D92;
+  animation-delay: 0.8s; 
+}
+.app__visualizer2-header .dash-pixel-6 { 
+  background-color: #37CBA0;
+  animation-delay: 1s; 
+}
+.app__visualizer2-header .dash-pixel-7 { 
+  background-color: #A8DB62;
+  animation-delay: 1.2s; 
+}
+
+@keyframes pixelPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes wave-horizontal {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.8;
+  }
+  25% {
+    transform: translateY(-6px) scale(1.1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(0) scale(0.9);
+    opacity: 0.9;
+  }
+  75% {
+    transform: translateY(6px) scale(1.05);
+    opacity: 1;
+  }
+}
+
+/* Update title for visualizer2 mode */
+.app__visualizer2-header .app__title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 /* Profile Lookup Section */
@@ -456,14 +612,21 @@ body {
 /* Footer */
 .app__footer {
   width: 100%;
-  padding: 8px 24px;
+  padding: 16px 24px;
   border-top: 1px solid #f3f4f6;
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 40px;
+  justify-content: space-between;
+  min-height: 80px;
   margin-top: auto;
   background-color: #f8fafc;
+}
+
+.app__footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .app__footer-text {
@@ -472,9 +635,15 @@ body {
   text-align: center;
   margin: 0;
   line-height: 1.4;
-  max-width: none;
-  margin-left: auto;
-  margin-right: auto;
+  flex: 1;
+}
+
+/* Footer Theme Buttons */
+.app__footer-theme-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  align-items: center;
 }
 
 /* Responsive Design */
@@ -731,7 +900,6 @@ body {
 }
 
 .dark-mode .app__config-button,
-.dark-mode .app__lookup-button,
 .dark-mode .app__theme-button
 .dark-mode .app__visualize-button {
   background: #374151;
@@ -743,11 +911,26 @@ body {
   line-height: 90%;
 }
 
-.dark-mode .app__config-button:hover,
-.dark-mode .app__lookup-button:hover {
+.dark-mode .app__lookup-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  display: flex;            /* turn the button into a flex container */
+  align-items: center;      /* vertical alignment */
+  justify-content: baseline; /* align items to the baseline */
+  line-height: 90%;
+}
+
+.dark-mode .app__config-button:hover {
   background: #4b5563;
   border-color: rgb(48, 172, 130); /* segment-green */
   color: rgb(48, 172, 130); /* segment-green */
+}
+
+.dark-mode .app__lookup-button:hover {
+  background: linear-gradient(135deg, #7c7ce6 0%, #8a5bb8 100%);
+  border: none;
+  color: white;
 }
 
 .dark-mode .app__theme-button:hover {
@@ -871,6 +1054,41 @@ body {
 
 .dark-mode .app__footer-text {
   color: #DDE0E6; /* grey-100 */
+}
+
+.dark-mode .app__footer-theme-button {
+  background: #374151;
+  border-color: #4b5563;
+  color: #d1d5db;
+}
+
+.dark-mode .app__footer-theme-button:hover {
+  background: #4b5563;
+  transform: scale(1.1);
+}
+
+.dark-mode .app__footer-theme-button--clear {
+  background: #374151;
+  border-color: #6b7280;
+  color: #d1d5db;
+}
+
+.dark-mode .app__footer-theme-button--brand {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+}
+
+.dark-mode .app__footer-theme-button--segment {
+  background: #4fb58b;
+  border: none;
+  color: white;
+}
+
+.dark-mode .app__footer-theme-button--twilio {
+  background: #dc2626;
+  border: none;
+  color: white;
 }
 
 /* Custom scrollbar for webkit browsers */
@@ -1114,11 +1332,16 @@ body {
   border-bottom: 1px solid #e5e7eb;
 }
 
-.segment-mode .app__config-button,
-.segment-mode .app__lookup-button {
+.segment-mode .app__config-button {
   background: #ffffff;
   border-color: #e5e7eb;
   color: #1f2937;
+}
+
+.segment-mode .app__lookup-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
 }
 
 .segment-mode .app__config-button:hover,
@@ -1173,11 +1396,16 @@ body {
   border-bottom: 1px solid #334155;
 }
 
-.twilio-mode .app__config-button,
-.twilio-mode .app__lookup-button {
+.twilio-mode .app__config-button {
   background: #0f172a;
   border-color: #334155;
   color: #f1f5f9;
+}
+
+.twilio-mode .app__lookup-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
 }
 
 /* Make icons match text color in twilio mode */

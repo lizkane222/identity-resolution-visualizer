@@ -3,10 +3,103 @@ import DiagramNode2 from './DiagramNode2';
 import { IdentitySimulation } from '../../utils/identitySimulation.js';
 import './DiagramTimeline2.css';
 
-const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, onSimulationUpdate }) => {
+const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileApiResults = {}, onSimulationUpdate }) => {
   const [processedEvents, setProcessedEvents] = useState([]);
   const [simulation, setSimulation] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Helper function to convert Profile API results to display format
+  const convertProfileApiResultsToProfiles = (profileApiResults) => {
+    if (!profileApiResults || Object.keys(profileApiResults).length === 0) {
+      return [];
+    }
+
+    const profilesMap = new Map();
+
+    // Process each API result
+    Object.entries(profileApiResults).forEach(([identifier, result]) => {
+      if (!result) return;
+
+      let segmentId = null;
+      let userId = null;
+      let profileKey = identifier; // Default to lookup identifier
+
+      // Handle both old format and new merged format
+      const endpointsToProcess = [];
+      
+      if (result._combinedData) {
+        // New merged format - process all endpoints
+        Object.entries(result._combinedData).forEach(([endpoint, data]) => {
+          endpointsToProcess.push({ endpoint, data, identifier });
+        });
+      } else if (result.data) {
+        // Old format - single endpoint
+        const endpoint = result._endpoint || 'unknown';
+        endpointsToProcess.push({ endpoint, data: result.data, identifier });
+      }
+
+      // First pass: look for segment_id in metadata
+      endpointsToProcess.forEach(({ endpoint: endpointType, data }) => {
+        if (endpointType === 'metadata' && data && data.segment_id) {
+          segmentId = data.segment_id;
+          profileKey = segmentId; // Use segment_id as primary key
+        }
+      });
+
+      // Get or create profile
+      if (!profilesMap.has(profileKey)) {
+        profilesMap.set(profileKey, {
+          id: profileKey,
+          segmentId: segmentId,
+          userId: userId,
+          lookupIdentifier: identifier,
+          identifiers: {},
+          events: [],
+          metadata: null,
+        });
+      }
+
+      const profile = profilesMap.get(profileKey);
+
+      // Process each endpoint's data
+      endpointsToProcess.forEach(({ endpoint: endpointType, data }) => {
+        if (!data) return;
+
+        if (endpointType === 'metadata') {
+          profile.metadata = data;
+          if (data.segment_id && !profile.segmentId) {
+            profile.segmentId = data.segment_id;
+          }
+        } else if (endpointType === 'external_ids') {
+          // Process external IDs
+          const externalIdsArray = Array.isArray(data) ? data : (data.data || []);
+          externalIdsArray.forEach(extId => {
+            if (extId.type && extId.id) {
+              if (!profile.identifiers[extId.type]) {
+                profile.identifiers[extId.type] = [];
+              }
+              if (!profile.identifiers[extId.type].includes(extId.id)) {
+                profile.identifiers[extId.type].push(extId.id);
+              }
+            }
+          });
+        } else if (endpointType === 'traits') {
+          // Process traits data - look for user_id
+          if (data && typeof data === 'object') {
+            // Handle nested traits structure
+            const traitsData = data.traits || data;
+            
+            // Look for user_id in traits
+            if (traitsData.user_id && !profile.userId) {
+              profile.userId = traitsData.user_id;
+            }
+          }
+        }
+      });
+    });
+
+    return Array.from(profilesMap.values());
+  };
 
   useEffect(() => {
     // Process events through the identity simulation
@@ -95,21 +188,66 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, onSimulat
       <div className="diagram-timeline2__timeline-container">
         {/* Horizontal Timeline */}
         <div className="diagram-timeline2__timeline-line"></div>
-        
-        {/* Event Nodes */}
+
+        {/* Events and Profiles */}
         <div className="diagram-timeline2__events">
-          {processedEvents.map((event, index) => (
-            <DiagramNode2
-              key={event.id}
-              event={event}
-              sequenceNumber={index + 1}
-              isLast={index === processedEvents.length - 1}
-              identifierOptions={identifierOptions}
-              position={index}
-              totalEvents={processedEvents.length}
-              simulation={simulation}
-            />
-          ))}
+          {/* Profile Cards Above Event Nodes */}
+          {(() => {
+            const profiles = convertProfileApiResultsToProfiles(profileApiResults);
+            return profiles.length > 0 && (
+              <div className="diagram-timeline2__profiles-list">
+                {profiles.map((profile, idx) => (
+                  <div key={profile.id || idx} className="visualizer2__profile-card">
+                    <div className="visualizer2__profile-header">
+                      <div className="visualizer2__profile-avatar">👤</div>
+                      <div className="visualizer2__profile-info">
+                        <h4>{profile.id}</h4>
+                        <div className="visualizer2__profile-id">Profile ID: {profile.id}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="visualizer2__profile-stats">
+                      <div className="visualizer2__profile-stat">
+                        <div className="visualizer2__profile-stat-value">{Object.keys(profile.identifiers).length}</div>
+                        <div className="visualizer2__profile-stat-label">Identifiers</div>
+                      </div>
+                      <div className="visualizer2__profile-stat">
+                        <div className="visualizer2__profile-stat-value">{profile.events ? profile.events.length : 0}</div>
+                        <div className="visualizer2__profile-stat-label">Events</div>
+                      </div>
+                    </div>
+                    
+                    <div className="visualizer2__profile-identifiers">
+                      <div className="visualizer2__identifiers-label">Identifiers</div>
+                      {Object.entries(profile.identifiers).map(([type, value]) => (
+                        <div key={type} className={`visualizer2__identifier-row ${type === 'email' ? 'visualizer2__identifier-row--email' : ''}`}>
+                          <span className="visualizer2__identifier-type">{type}:</span>
+                          <span className="visualizer2__identifier-values">
+                            {Array.isArray(value) ? value.join(', ') : value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+          {/* Event Nodes */}
+          <div className="diagram-timeline2__event-nodes">
+            {processedEvents.map((event, index) => (
+              <DiagramNode2
+                key={event.id}
+                event={event}
+                sequenceNumber={index + 1}
+                isLast={index === processedEvents.length - 1}
+                identifierOptions={identifierOptions}
+                position={index}
+                totalEvents={processedEvents.length}
+                simulation={simulation}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -463,13 +463,42 @@ function App() {
         <header className="app__header">
           <div className="app__header-content">
             <div className="app__title-section">
-              <h1 className="app__title">
-                <img src="/assets/SegmentLogo.svg" alt="Segment" className="app__title-icon" />
-                Identity Resolution Visualizer
-              </h1>
-              <p className="app__subtitle">
-                Build and simulate event processing workflows using Segment's API specifications
-              </p>
+              {currentPage === 'visualizer2' ? (
+                <div className="app__visualizer2-header">
+                  <div className="app__visualizer2-header-left">
+                    <img src="/assets/pie-chart.svg" alt="Visualizer" className="app__header-icon" />
+                    <h1 className="app__title">
+                      Identity Resolution Visualizer
+                      <div className="app__separator">
+                        <div className="separator-line">
+                          <div className="dash-pixel dash-pixel-1"></div>
+                          <div className="dash-pixel dash-pixel-2"></div>
+                          <div className="dash-pixel dash-pixel-3"></div>
+                          <div className="dash-pixel dash-pixel-4"></div>
+                          <div className="dash-pixel dash-pixel-5"></div>
+                          <div className="dash-pixel dash-pixel-6"></div>
+                          <div className="dash-pixel dash-pixel-7"></div>
+                        </div>
+                      </div>
+                      Event Flow 
+                    </h1>
+                  </div>
+                  <p className="app__subtitle">
+                    This visualizer shows how events flow through Segment's identity resolution algorithm, 
+                    highlighting how profiles are created, merged, and updated based on incoming identifiers.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <h1 className="app__title">
+                    <img src="/assets/SegmentLogo.svg" alt="Segment" className="app__title-icon" />
+                    Identity Resolution Visualizer
+                  </h1>
+                  <p className="app__subtitle">
+                    Build and simulate event processing workflows using Segment's API specifications
+                  </p>
+                </>
+              )}
             </div>
             <div className="app__header-actions">
               <button 
@@ -516,7 +545,7 @@ function App() {
                 <img src="/assets/compass.svg" alt="Compass" className="app__button-icon" />
                 Lookup
               </button>
-              <button 
+              {/* <button 
                 onClick={() => setCurrentPage('visualizer')}
                 className="app__visualize-button"
                 title="Open Identity Resolution Visualizer"
@@ -524,7 +553,7 @@ function App() {
               >
                 <img src="/assets/pie-chart.svg" alt="Visualize" className="app__button-icon app__button-icon--color" />
                 Visualize
-              </button>
+              </button> */}
               <button 
                 onClick={() => setCurrentPage('visualizer2')}
                 className="app__visualize2-button"
@@ -532,7 +561,7 @@ function App() {
                 disabled={events.length === 0}
               >
                 <img src="/assets/pie-chart.svg" alt="Simulate" className="app__button-icon app__button-icon--color" />
-                Simulate
+                Visualize
               </button>
             </div>
           </div>
@@ -641,58 +670,50 @@ function App() {
         )}
       </main>
 
-      {/* Theme Buttons - Above Footer */}
-      <div className="app__floating-theme-buttons">
-        {/* Brand Mode Toggle (Segment/Twilio) */}
-        <button 
-          onClick={() => setBrandMode(brandMode === 'segment' ? 'twilio' : 'segment')}
-          className={`app__floating-theme-button app__floating-theme-button--brand ${brandMode === 'twilio' ? 'app__floating-theme-button--twilio' : 'app__floating-theme-button--segment'}`}
-          title={`Switch to ${brandMode === 'segment' ? 'Twilio' : 'Segment'} Mode`}
-        >
-          {brandMode === 'segment' ? (
-            <img src="/assets/SegmentLogo.svg" alt="Segment" className="app__brand-icon" />
-          ) : (
-            <img src="/assets/TwilioButtonLogo.png" alt="Twilio" className="app__brand-icon" />
-          )}
-        </button>
-        
-        {/* Light/Dark Mode Toggle - Temporarily disabled */}
-        {/*
-        <button 
-          onClick={handleToggleDarkMode}
-          className="app__floating-theme-button app__floating-theme-button--primary"
-          title={isDarkMode ? "Light Mode" : "Dark Mode"}
-        >
-          {isDarkMode ? '☀️' : '🌙'}
-        </button>
-        */}
-        
-        {/* Clear Glow Mode Button (only show when glow mode is active) */}
-        {currentGlowMode && (
-          <button 
-            onClick={() => setCurrentGlowMode(null)}
-            className="app__floating-theme-button app__floating-theme-button--clear"
-            title="Exit Glow Mode"
-          >
-            ✨
-          </button>
-        )}
-        
-        {/* Twilio Glow Button - positioned on the right */}
-        <div className="app__twilio-glow-button-wrapper">
-          <GlowModesList
-            currentGlowMode={currentGlowMode}
-            onGlowModeChange={handleGlowModeChange}
-          />
-        </div>
-      </div>
-
       {/* Footer - Full width excluding EventList sidebar */}
       <footer className="app__footer">
-        <p className="app__footer-text">
-          This tool simulates event processing for identity resolution systems using Segment's API specifications.
-          Events are processed in sequence with configurable timeouts to simulate real-world scenarios and to allow time for profiles to be resolved within Unify.
-        </p>
+        <div className="app__footer-content">
+          <div></div> {/* Left spacer */}
+          <p className="app__footer-text">
+            This tool simulates event processing for identity resolution systems using Segment's API specifications.
+            Events are processed in sequence with configurable timeouts to simulate real-world scenarios and to allow time for profiles to be resolved within Unify.
+          </p>
+          
+          {/* Theme Buttons in Footer */}
+          <div className="app__footer-theme-buttons">
+            {/* Brand Mode Toggle (Segment/Twilio) */}
+            <button 
+              onClick={() => setBrandMode(brandMode === 'segment' ? 'twilio' : 'segment')}
+              className={`app__footer-theme-button ${brandMode === 'twilio' ? 'app__footer-theme-button--twilio' : 'app__footer-theme-button--segment'}`}
+              title={`Switch to ${brandMode === 'segment' ? 'Twilio' : 'Segment'} Mode`}
+            >
+              {brandMode === 'segment' ? (
+                <img src="/assets/SegmentLogo.svg" alt="Segment" className="app__brand-icon" />
+              ) : (
+                <img src="/assets/TwilioButtonLogo.png" alt="Twilio" className="app__brand-icon" />
+              )}
+            </button>
+            
+            {/* Clear Glow Mode Button (only show when glow mode is active) */}
+            {currentGlowMode && (
+              <button 
+                onClick={() => setCurrentGlowMode(null)}
+                className="app__footer-theme-button app__footer-theme-button--clear"
+                title="Exit Glow Mode"
+              >
+                ✨
+              </button>
+            )}
+            
+            {/* Glow Modes List */}
+            <div className="app__twilio-glow-button-wrapper">
+              <GlowModesList
+                currentGlowMode={currentGlowMode}
+                onGlowModeChange={handleGlowModeChange}
+              />
+            </div>
+          </div>
+        </div>
       </footer>
       </div>
 

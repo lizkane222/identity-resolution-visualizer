@@ -5,7 +5,6 @@
   align-items: center;
   position: relative;
   width: 300px;
-  height: 100%;
   margin: 0 20px;
 }
 
@@ -15,7 +14,8 @@
   flex-direction: column;
   align-items: center;
   margin-bottom: 20px;
-  min-height: 400px; /* Fixed height to ensure consistent spacing */
+  height: 420px; /* Height to position timeline node at 450px (420 + 20 + 25) */
+  justify-content: flex-end; /* Push content to bottom to meet timeline */
 }
 
 /* Event Payload Container - maintains consistent space at top */
@@ -207,10 +207,11 @@
   width: 2px;
   background: linear-gradient(to bottom, #ddd, #999);
   position: relative;
+  border-radius: 2px;
 }
 
 .diagram-node2__connection-line--above {
-  height: 20px;
+  height: 30px;
   margin-bottom: 10px;
 }
 
@@ -227,7 +228,8 @@
   align-items: center;
   z-index: 10;
   position: relative;
-  align-self: center;
+  margin: 0;
+  padding: 0;
 }
 
 .diagram-node2__node-circle {
@@ -244,6 +246,8 @@
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
   transition: all 0.3s ease;
+  /* Position the circle to align with timeline line */
+  transform: translateY(-15px);
 }
 
 .diagram-node2__node-circle:hover {
@@ -257,7 +261,7 @@
 }
 
 .diagram-node2__node-label {
-  margin-top: 8px;
+  margin-top: -7px; /* Adjust for the circle's translateY(-15px) */
   font-size: 11px;
   color: #666;
   font-weight: 500;

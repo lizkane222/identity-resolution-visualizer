@@ -33,16 +33,18 @@
 /* Timeline Container */
 .diagram-timeline2__timeline-container {
   position: relative;
-  margin-top: 20px;
-  padding: 80px 40px 120px 40px;
+  /* margin-top: 20px; */
+  /* padding: 80px 40px 120px 40px; */
   overflow-x: auto;
-  min-height: 400px;
+  min-height: 1600px; /* Increased height to ensure page is tall enough for smooth scrolling */
+  display: flex;
+  flex-direction: column;
 }
 
 /* Horizontal Timeline Line */
 .diagram-timeline2__timeline-line {
   position: absolute;
-  top: 50%;
+  top: 850px; /* Adjusted position: 450px + 400px offset for event nodes */
   left: 40px;
   right: 40px;
   height: 3px;
@@ -52,7 +54,6 @@
     #7c3aed
   ) !important;
   border-radius: 2px;
-  transform: translateY(-50%);
   z-index: 1;
 }
 
@@ -60,11 +61,215 @@
 .diagram-timeline2__events {
   position: relative;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
   height: 100%;
   min-width: 800px; /* Minimum width to ensure proper spacing */
   z-index: 2;
+}
+
+/* Profile Cards Container - Above Event Nodes */
+.diagram-timeline2__profiles-list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 15px;
+  width: 100vw; 
+  /* Full viewport width */
+  position: relative;
+  /* left: 50%; */
+  /* right: 50%; */
+  /* margin-left: -50vw; */
+  /* margin-right: -50vw; */
+  overflow: hidden;
+  align-items: flex-start;
+  justify-content: center; /* Center the profiles */
+  /* margin-bottom: 40px; */
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 0; /* Remove border radius for full width */
+  border: none;
+   /* Remove border for full width */
+  /* border-top: 1px solid #e5e7eb; */
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Individual Profile Card Styling (based on UniqueUser - expanded by default) */
+.diagram-timeline2__events .visualizer2__profile-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  flex: 0 0 auto;
+  width: 400px; /* Default expanded width */
+  min-width: 400px;
+  position: relative;
+}
+
+.diagram-timeline2__events .visualizer2__profile-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
+}
+
+.diagram-timeline2__events .visualizer2__profile-card--active {
+  border-color: #10b981;
+  background-color: #f0fdf4;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+/* Profile Header */
+.diagram-timeline2__events .visualizer2__profile-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.diagram-timeline2__events .visualizer2__profile-header h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  white-space: normal; /* Expanded state - show full text */
+  overflow: visible;
+  text-overflow: initial;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Profile Avatar */
+.diagram-timeline2__events .visualizer2__profile-avatar {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.diagram-timeline2__events .visualizer2__profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Profile ID */
+.diagram-timeline2__events .visualizer2__profile-id {
+  font-size: 11px;
+  color: #6b7280;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  white-space: normal; /* Expanded state */
+  overflow: visible;
+  text-overflow: initial;
+  word-break: break-all;
+  margin-bottom: 8px;
+}
+
+/* Profile Stats */
+.diagram-timeline2__events .visualizer2__profile-stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.diagram-timeline2__events .visualizer2__profile-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.diagram-timeline2__events .visualizer2__profile-stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.diagram-timeline2__events .visualizer2__profile-stat-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+/* Profile Identifiers Section */
+.diagram-timeline2__events .visualizer2__profile-identifiers {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.diagram-timeline2__events .visualizer2__identifiers-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 6px;
+}
+
+.diagram-timeline2__events .visualizer2__identifier-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 2px;
+  font-size: 11px;
+}
+
+.diagram-timeline2__events .visualizer2__identifier-type {
+  color: #6b7280;
+  font-weight: 500;
+  min-width: 60px;
+  font-size: 10px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.diagram-timeline2__events .visualizer2__identifier-values {
+  color: #374151;
+  font-size: 10px;
+  flex: 1;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  white-space: normal; /* Expanded state - show full values */
+  overflow: visible;
+  text-overflow: initial;
+  word-break: break-all;
+  min-width: 0;
+}
+
+/* Special styling for email identifiers */
+.diagram-timeline2__events .visualizer2__identifier-row--email .visualizer2__identifier-values {
+  color: #3b82f6;
+  background-color: #eff6ff;
+  border-radius: 4px;
+  border: 1px solid #bfdbfe;
+  padding: 2px 6px;
+}
+
+/* Event Nodes Container */
+.diagram-timeline2__event-nodes {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  position: absolute;
+  top: 400px; /* Moved further down to avoid overlapping with profiles list */
+  left: 0;
+  right: 0;
 }
 
 /* Dark mode support */
@@ -77,6 +282,68 @@
   border-top-color: #6366f1;
 }
 
+.dark-mode .diagram-timeline2__profiles-list {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+.dark-mode .diagram-timeline2__events .visualizer2__profile-card {
+  background: #081F47; /* blue-850 */
+  border-color: #1866EE; /* blue-500 */
+  color: #F3F4F7; /* grey-50 */
+  box-shadow: 0 0 10px rgba(24, 102, 238, 0.4), 0 0 40px rgba(24, 102, 238, 0.2);
+}
+
+.dark-mode .diagram-timeline2__events .visualizer2__profile-card:hover {
+  border-color: #1866EE; /* blue-500 */
+  background: rgba(8, 31, 71, 0.9); /* blue-850 with opacity */
+  box-shadow: 0 2px 8px rgba(24, 102, 238, 0.2);
+}
+
+.dark-mode .diagram-timeline2__events .visualizer2__profile-card--active {
+  border-color: #1866EE; /* blue-500 */
+  background: rgba(8, 31, 71, 1); /* blue-850 */
+  box-shadow: 0 2px 8px rgba(24, 102, 238, 0.3);
+}
+
+.dark-mode .diagram-timeline2__events .visualizer2__profile-header h4 {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .diagram-timeline2__events .visualizer2__profile-id {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .diagram-timeline2__events .visualizer2__profile-stat-value {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .diagram-timeline2__events .visualizer2__profile-stat-label {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .diagram-timeline2__events .visualizer2__profile-identifiers {
+  border-top-color: rgba(24, 102, 238, 0.3); /* blue-500 with opacity */
+}
+
+.dark-mode .diagram-timeline2__events .visualizer2__identifiers-label {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .diagram-timeline2__events .visualizer2__identifier-type {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .diagram-timeline2__events .visualizer2__identifier-values {
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .diagram-timeline2__events .visualizer2__identifier-row--email .visualizer2__identifier-values {
+  color: #1866EE; /* blue-500 */
+  background-color: rgba(8, 31, 71, 0.5); /* blue-850 with opacity */
+  border-color: #1866EE; /* blue-500 */
+}
+
 /* Brand mode support */
 .segment-mode .diagram-timeline2__timeline-line {
   background: linear-gradient(to right, #4fb58b, #36a378) !important;
@@ -84,6 +351,23 @@
 
 .segment-mode .diagram-timeline2__loading-spinner {
   border-top-color: #4fb58b;
+}
+
+.segment-mode .diagram-timeline2__events .visualizer2__profile-card:hover {
+  border-color: #4fb58b;
+  box-shadow: 0 2px 8px rgba(79, 181, 139, 0.1);
+}
+
+.segment-mode .diagram-timeline2__events .visualizer2__profile-card--active {
+  border-color: #4fb58b;
+  background-color: #f0fdf4;
+  box-shadow: 0 2px 8px rgba(79, 181, 139, 0.15);
+}
+
+.segment-mode .diagram-timeline2__events .visualizer2__identifier-row--email .visualizer2__identifier-values {
+  color: #4fb58b;
+  background-color: #f0fdf4;
+  border-color: #4fb58b;
 }
 
 .twilio-mode .diagram-timeline2 {
@@ -101,6 +385,65 @@
 .twilio-mode .diagram-timeline2__loading-spinner {
   border-color: #1e293b;
   border-top-color: #dc2626;
+}
+
+.twilio-mode .diagram-timeline2__profiles-list {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+.twilio-mode .diagram-timeline2__events .visualizer2__profile-card {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+.twilio-mode .diagram-timeline2__events .visualizer2__profile-card:hover {
+  border-color: #dc2626;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+}
+
+.twilio-mode .diagram-timeline2__events .visualizer2__profile-card--active {
+  border-color: #dc2626;
+  background-color: #fef2f2;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
+}
+
+.twilio-mode .diagram-timeline2__events .visualizer2__profile-header h4 {
+  color: #f1f5f9;
+}
+
+.twilio-mode .diagram-timeline2__events .visualizer2__profile-id {
+  color: #94a3b8;
+}
+
+.twilio-mode .diagram-timeline2__events .visualizer2__profile-stat-value {
+  color: #f1f5f9;
+}
+
+.twilio-mode .diagram-timeline2__events .visualizer2__profile-stat-label {
+  color: #94a3b8;
+}
+
+.twilio-mode .diagram-timeline2__events .visualizer2__profile-identifiers {
+  border-top-color: #334155;
+}
+
+.twilio-mode .diagram-timeline2__events .visualizer2__identifiers-label {
+  color: #f1f5f9;
+}
+
+.twilio-mode .diagram-timeline2__events .visualizer2__identifier-type {
+  color: #94a3b8;
+}
+
+.twilio-mode .diagram-timeline2__events .visualizer2__identifier-values {
+  color: #cbd5e1;
+}
+
+.twilio-mode .diagram-timeline2__events .visualizer2__identifier-row--email .visualizer2__identifier-values {
+  color: #dc2626;
+  background-color: #fef2f2;
+  border-color: #dc2626;
 }
 
 /* Responsive adjustments */
