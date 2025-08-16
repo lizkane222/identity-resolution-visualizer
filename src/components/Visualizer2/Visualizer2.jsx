@@ -76,35 +76,6 @@ const Visualizer2 = ({
     ));
   };
 
-  // Render individual profile card for timeline display
-  const renderProfileCardForTimeline = (profileId) => {
-    if (!currentSimulation || !profileId) return null;
-    
-    const profile = currentSimulation.profiles.find(p => p.id === profileId);
-    if (!profile) return null;
-
-    return (
-      <div className="visualizer2__profile-card visualizer2__profile-card--timeline">
-        <div className="visualizer2__profile-header">
-          <h4>{profile.id}</h4>
-          <span className="visualizer2__profile-actions">
-            {profile.history.length} action{profile.history.length !== 1 ? 's' : ''}
-          </span>
-        </div>
-        <div className="visualizer2__profile-identifiers">
-          {Object.entries(profile.identifiers).map(([type, values]) => (
-            <div key={type} className="visualizer2__identifier-row">
-              <span className="visualizer2__identifier-type">{type}:</span>
-              <span className="visualizer2__identifier-values">
-                {Array.from(values).join(', ')}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="visualizer2">
       {/* Header */}
@@ -215,8 +186,13 @@ const Visualizer2 = ({
               </div>
             </div>
 
-            {/* Profiles Section - Removed, now showing above events in timeline */}
-            {/* Profile cards are now displayed above their corresponding events */}
+            {/* Profiles Section */}
+            <div className="visualizer2__profiles-section">
+              <h3>Created Profiles</h3>
+              <div className="visualizer2__profiles-container">
+                {renderSimulationProfiles()}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -241,8 +217,6 @@ const Visualizer2 = ({
               }))}
               unifySpaceSlug={unifySpaceSlug}
               onSimulationUpdate={handleSimulationUpdate}
-              currentSimulation={currentSimulation}
-              renderProfileCard={renderProfileCardForTimeline}
             />
           )}
         </div>
