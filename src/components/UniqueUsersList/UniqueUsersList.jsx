@@ -170,6 +170,7 @@ const UniqueUsersList = ({ events, currentUser, onHighlightEvents }) => {
     <div className="unique-users-list">
       <div className="unique-users-list__header">
         <h3 className="unique-users-list__title">
+          <img src="/assets/user.svg" alt="Users" className="unique-users-list__header-icon" />
           Unique Users ({uniqueUsers.length})
         </h3>
         <p className="unique-users-list__subtitle">

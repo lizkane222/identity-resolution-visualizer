@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DiagramNode2 from './DiagramNode2';
 import { IdentitySimulation } from '../../utils/identitySimulation.js';
 import './DiagramTimeline2.css';
@@ -8,6 +8,10 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
   const [simulation, setSimulation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [hoveredProfileId, setHoveredProfileId] = useState(null);
+  const [hoveredEventProfileId, setHoveredEventProfileId] = useState(null);
+
+  // Create stable reference for identifierOptions to prevent infinite re-renders
+  const stableIdentifierOptionsString = JSON.stringify(identifierOptions);
 
   // Helper function to convert Profile API results to display format
   const convertProfileApiResultsToProfiles = (profileApiResults) => {
@@ -164,56 +168,8 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
     if (events.length > 0) {
       processEventsForSimulation();
     } else {
-      // TEMPORARY: Add mock events for testing hover functionality
-      const mockEvents = [
-        {
-          id: 'mock-event-1',
-          type: 'track',
-          event: 'User Signed Up',
-          rawData: '{"userId":"e008f654-fb71-42e6-8b54-bf860be436d8","event":"User Signed Up","properties":{"plan":"Premium"}}',
-          eventData: { userId: 'e008f654-fb71-42e6-8b54-bf860be436d8', event: 'User Signed Up', properties: { plan: 'Premium' } },
-          identifiers: { user_id: 'e008f654-fb71-42e6-8b54-bf860be436d8' },
-          simulationResult: {
-            profile: { id: 'use_6I5NAh59RKCr7AtQkuW31M0ivGD' },
-            action: 'merge',
-            description: 'Merged with existing profile'
-          },
-          sequenceNumber: 1,
-          timestamp: Date.now() - 3000
-        },
-        {
-          id: 'mock-event-2',
-          type: 'identify',
-          event: 'identify',
-          rawData: '{"userId":"5c34d557-cdae-46a5-a9dc-eedc09058258","traits":{"email":"test@example.com"}}',
-          eventData: { userId: '5c34d557-cdae-46a5-a9dc-eedc09058258', traits: { email: 'test@example.com' } },
-          identifiers: { user_id: '5c34d557-cdae-46a5-a9dc-eedc09058258' },
-          simulationResult: {
-            profile: { id: 'use_1iZoENvV1HqJBXva20a31MWDM6z' },
-            action: 'create',
-            description: 'Created new profile'
-          },
-          sequenceNumber: 2,
-          timestamp: Date.now() - 1000
-        },
-        {
-          id: 'mock-event-3',
-          type: 'track',
-          event: 'Page Viewed',
-          rawData: '{"userId":"e008f654-fb71-42e6-8b54-bf860be436d8","event":"Page Viewed","properties":{"url":"/dashboard"}}',
-          eventData: { userId: 'e008f654-fb71-42e6-8b54-bf860be436d8', event: 'Page Viewed', properties: { url: '/dashboard' } },
-          identifiers: { user_id: 'e008f654-fb71-42e6-8b54-bf860be436d8' },
-          simulationResult: {
-            profile: { id: 'use_6I5NAh59RKCr7AtQkuW31M0ivGD' },
-            action: 'update',
-            description: 'Updated existing profile'
-          },
-          sequenceNumber: 3,
-          timestamp: Date.now()
-        }
-      ];
-      
-      setProcessedEvents(mockEvents);
+      // No events to process
+      setProcessedEvents([]);
       setSimulation(null);
       setLoading(false);
       
@@ -222,7 +178,7 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
         onSimulationUpdate(null);
       }
     }
-  }, [events, identifierOptions]);
+  }, [events, stableIdentifierOptionsString]);
 
   if (loading) {
     return (
@@ -245,105 +201,115 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
           {(() => {
             const profiles = convertProfileApiResultsToProfiles(profileApiResults);
             
-            // TEMPORARY: Add mock profiles for testing hover functionality
-            const mockProfiles = [
-              {
-                id: 'use_6I5NAh59RKCr7AtQkuW31M0ivGD',
-                segmentId: 'use_6I5NAh59RKCr7AtQkuW31M0ivGD',
-                userId: 'e008f654-fb71-42e6-8b54-bf860be436d8',
-                lookupIdentifier: 'user_id:e008f654-fb71-42e6-8b54-bf860be436d8',
-                identifiers: { user_id: 'e008f654-fb71-42e6-8b54-bf860be436d8' },
-                events: [],
-                metadata: null,
-              },
-              {
-                id: 'use_1iZoENvV1HqJBXva20a31MWDM6z',
-                segmentId: 'use_1iZoENvV1HqJBXva20a31MWDM6z',
-                userId: '5c34d557-cdae-46a5-a9dc-eedc09058258',
-                lookupIdentifier: 'user_id:5c34d557-cdae-46a5-a9dc-eedc09058258',
-                identifiers: { user_id: '5c34d557-cdae-46a5-a9dc-eedc09058258' },
-                events: [],
-                metadata: null,
+            // Create profile cards based on actual event targets for perfect ID matching
+            const eventTargetProfiles = processedEvents.reduce((profilesMap, event) => {
+              if (event.simulationResult?.profile?.id) {
+                const profileId = event.simulationResult.profile.id;
+                
+                // Try to find the corresponding real profile with segmentId
+                const realProfile = profiles.find(p => p.id === profileId || p.segmentId === profileId);
+                
+                // Determine what to display - prefer segmentId from real profile data
+                let displayName, segmentId;
+                if (realProfile?.segmentId) {
+                  // We have real segment data
+                  segmentId = realProfile.segmentId;
+                  displayName = segmentId;
+                } else {
+                  // No real segment data, create a cleaner display name
+                  segmentId = null;
+                  displayName = profileId.replace(/^profile_/, 'Profile '); // Convert profile_1 to Profile 1
+                }
+                
+                profilesMap.set(profileId, {
+                  id: profileId, // Keep for internal referencing
+                  segmentId: segmentId, // Use for display when available
+                  identities: event.identifiers ? Object.keys(event.identifiers).length : 0,
+                  events: 1,
+                  first_seen: event.timestamp || Date.now(),
+                  last_seen: event.timestamp || Date.now(),
+                  identifiers: event.identifiers || {},
+                  displayName: displayName, // Show segmentId or cleaned up profile name
+                  initials: displayName.slice(-2).toUpperCase() // Use last 2 chars for initials
+                });
               }
-            ];
+              return profilesMap;
+            }, new Map());
             
-            const displayProfiles = profiles.length > 0 ? profiles : mockProfiles;
+            // Use event-generated profiles for perfect ID matching, fall back to real profiles if no events
+            const displayProfiles = eventTargetProfiles.size > 0 ? Array.from(eventTargetProfiles.values()) : profiles;
             
             return displayProfiles.length > 0 && (
               <div className="diagram-timeline2__profiles-list">
-                <div style={{ padding: '10px', backgroundColor: '#f0f9ff', border: '1px solid #3b82f6', borderRadius: '8px', marginBottom: '20px' }}>
-                  <strong style={{ color: '#1d4ed8' }}>🧪 Testing Mode:</strong> {profiles.length === 0 ? 'Using mock profiles for hover testing' : `${profiles.length} real profiles loaded`}
-                </div>
-                {displayProfiles.map((profile, idx) => (
+                {displayProfiles.map((profile, idx) => {
+                  // Check if this profile should be highlighted due to event node hover
+                  const isEventHighlighted = hoveredEventProfileId && hoveredEventProfileId === profile.id;
+                  
+                  return (
                   <div 
                     key={profile.id || idx} 
-                    className="visualizer2__profile-card"
+                    className={`visualizer2__profile-card ${isEventHighlighted ? 'visualizer2__profile-card--highlighted' : ''}`}
                     onMouseEnter={() => {
-                      console.log('=== PROFILE HOVER ENTER ===');
-                      console.log('Profile object:', profile);
-                      console.log('Profile ID being set:', profile.id);
-                      console.log('All events simulation results:');
-                      processedEvents.forEach((event, idx) => {
-                        console.log(`Event ${idx}:`, {
-                          eventId: event.id,
-                          profileId: event.simulationResult?.profile?.id,
-                          matches: event.simulationResult?.profile?.id === profile.id
-                        });
-                      });
-                      console.log('===============================');
                       setHoveredProfileId(profile.id);
                     }}
                     onMouseLeave={() => {
-                      console.log('Profile hover leave');
                       setHoveredProfileId(null);
                     }}
                   >
                     <div className="visualizer2__profile-header">
                       <div className="visualizer2__profile-avatar">👤</div>
                       <div className="visualizer2__profile-info">
-                        <h4>{profile.id}</h4>
-                        <div className="visualizer2__profile-id">Profile ID: {profile.id}</div>
+                        <h4>{profile.displayName || profile.segmentId || profile.id}</h4>
+                        <div className="visualizer2__profile-id" style={{ display: 'none' }}>Profile ID: {profile.id}</div>
+                        {profile.segmentId && (
+                          <div className="visualizer2__segment-id">Segment ID: {profile.segmentId}</div>
+                        )}
                       </div>
                     </div>
                     
                     <div className="visualizer2__profile-stats">
                       <div className="visualizer2__profile-stat">
-                        <div className="visualizer2__profile-stat-value">{Object.keys(profile.identifiers).length}</div>
+                        <div className="visualizer2__profile-stat-value">
+                          {profile.identifiers ? Object.keys(profile.identifiers).length : (profile.firstIdentifier ? 1 : 0)}
+                        </div>
                         <div className="visualizer2__profile-stat-label">Identifiers</div>
                       </div>
                       <div className="visualizer2__profile-stat">
-                        <div className="visualizer2__profile-stat-value">{profile.events ? profile.events.length : 0}</div>
+                        <div className="visualizer2__profile-stat-value">
+                          {profile.events ? profile.events.length : (profile.eventCount || 0)}
+                        </div>
                         <div className="visualizer2__profile-stat-label">Events</div>
                       </div>
                     </div>
                     
                     <div className="visualizer2__profile-identifiers">
                       <div className="visualizer2__identifiers-label">Identifiers</div>
-                      {Object.entries(profile.identifiers).map(([type, value]) => (
-                        <div key={type} className={`visualizer2__identifier-row ${type === 'email' ? 'visualizer2__identifier-row--email' : ''}`}>
-                          <span className="visualizer2__identifier-type">{type}:</span>
-                          <span className="visualizer2__identifier-values">
-                            {Array.isArray(value) ? value.join(', ') : value}
-                          </span>
-                        </div>
-                      ))}
+                      {profile.identifiers ? 
+                        Object.entries(profile.identifiers).map(([type, value]) => (
+                          <div key={type} className={`visualizer2__identifier-row ${type === 'email' ? 'visualizer2__identifier-row--email' : ''}`}>
+                            <span className="visualizer2__identifier-type">{type}:</span>
+                            <span className="visualizer2__identifier-values">
+                              {Array.isArray(value) ? value.join(', ') : value}
+                            </span>
+                          </div>
+                        )) : 
+                        profile.firstIdentifier && (
+                          <div className="visualizer2__identifier-row">
+                            <span className="visualizer2__identifier-type">{profile.firstIdentifier[0]}:</span>
+                            <span className="visualizer2__identifier-values">{profile.firstIdentifier[1]}</span>
+                          </div>
+                        )
+                      }
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             );
           })()}
           {/* Event Nodes */}
           <div className="diagram-timeline2__event-nodes">
             {processedEvents.map((event, index) => {
-              if (hoveredProfileId) {
-                console.log('Event simulation result:', {
-                  eventIndex: index,
-                  eventId: event.id,
-                  simulationResult: event.simulationResult,
-                  profileId: event.simulationResult?.profile?.id
-                });
-              }
               return (
                 <DiagramNode2
                   key={event.id}
@@ -355,6 +321,12 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                   totalEvents={processedEvents.length}
                   simulation={simulation}
                   hoveredProfileId={hoveredProfileId}
+                  onEventHover={(profileId) => {
+                    setHoveredEventProfileId(profileId);
+                  }}
+                  onEventHoverLeave={() => {
+                    setHoveredEventProfileId(null);
+                  }}
                 />
               );
             })}

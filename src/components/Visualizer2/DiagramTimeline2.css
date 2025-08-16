@@ -114,14 +114,44 @@
 
 .diagram-timeline2__events .visualizer2__profile-card:hover {
   border-color: #3b82f6;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 0 20px rgba(59, 130, 246, 0.4),
+    0 0 40px rgba(59, 130, 246, 0.2),
+    0 4px 12px rgba(59, 130, 246, 0.3);
+  animation: profileCardGlow 2s ease-in-out infinite;
 }
 
 .diagram-timeline2__events .visualizer2__profile-card--active {
   border-color: #10b981;
   background-color: #f0fdf4;
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+/* Highlighted state when corresponding event node is hovered */
+.diagram-timeline2__events .visualizer2__profile-card--highlighted {
+  border-color: #3b82f6;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 0 20px rgba(59, 130, 246, 0.4),
+    0 0 40px rgba(59, 130, 246, 0.2),
+    0 4px 12px rgba(59, 130, 246, 0.3);
+  animation: profileCardGlow 2s ease-in-out infinite;
+}
+
+@keyframes profileCardGlow {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(59, 130, 246, 0.4),
+      0 0 40px rgba(59, 130, 246, 0.2),
+      0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(59, 130, 246, 0.6),
+      0 0 60px rgba(59, 130, 246, 0.4),
+      0 6px 16px rgba(59, 130, 246, 0.4);
+  }
 }
 
 /* Profile Header */
@@ -361,13 +391,43 @@
 
 .segment-mode .diagram-timeline2__events .visualizer2__profile-card:hover {
   border-color: #4fb58b;
-  box-shadow: 0 2px 8px rgba(79, 181, 139, 0.1);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 0 20px rgba(79, 181, 139, 0.4),
+    0 0 40px rgba(79, 181, 139, 0.2),
+    0 4px 12px rgba(79, 181, 139, 0.3);
+  animation: profileCardGlowSegment 2s ease-in-out infinite;
 }
 
 .segment-mode .diagram-timeline2__events .visualizer2__profile-card--active {
   border-color: #4fb58b;
   background-color: #f0fdf4;
   box-shadow: 0 2px 8px rgba(79, 181, 139, 0.15);
+}
+
+.segment-mode .diagram-timeline2__events .visualizer2__profile-card--highlighted {
+  border-color: #4fb58b;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 0 20px rgba(79, 181, 139, 0.4),
+    0 0 40px rgba(79, 181, 139, 0.2),
+    0 4px 12px rgba(79, 181, 139, 0.3);
+  animation: profileCardGlowSegment 2s ease-in-out infinite;
+}
+
+@keyframes profileCardGlowSegment {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(79, 181, 139, 0.4),
+      0 0 40px rgba(79, 181, 139, 0.2),
+      0 4px 12px rgba(79, 181, 139, 0.3);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(79, 181, 139, 0.6),
+      0 0 60px rgba(79, 181, 139, 0.4),
+      0 6px 16px rgba(79, 181, 139, 0.4);
+  }
 }
 
 .segment-mode .diagram-timeline2__events .visualizer2__identifier-row--email .visualizer2__identifier-values {
@@ -405,13 +465,43 @@
 
 .twilio-mode .diagram-timeline2__events .visualizer2__profile-card:hover {
   border-color: #dc2626;
-  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 0 20px rgba(220, 38, 38, 0.4),
+    0 0 40px rgba(220, 38, 38, 0.2),
+    0 4px 12px rgba(220, 38, 38, 0.3);
+  animation: profileCardGlowTwilio 2s ease-in-out infinite;
 }
 
 .twilio-mode .diagram-timeline2__events .visualizer2__profile-card--active {
   border-color: #dc2626;
   background-color: #fef2f2;
   box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
+}
+
+.twilio-mode .diagram-timeline2__events .visualizer2__profile-card--highlighted {
+  border-color: #dc2626;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 0 20px rgba(220, 38, 38, 0.4),
+    0 0 40px rgba(220, 38, 38, 0.2),
+    0 4px 12px rgba(220, 38, 38, 0.3);
+  animation: profileCardGlowTwilio 2s ease-in-out infinite;
+}
+
+@keyframes profileCardGlowTwilio {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(220, 38, 38, 0.4),
+      0 0 40px rgba(220, 38, 38, 0.2),
+      0 4px 12px rgba(220, 38, 38, 0.3);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(220, 38, 38, 0.6),
+      0 0 60px rgba(220, 38, 38, 0.4),
+      0 6px 16px rgba(220, 38, 38, 0.4);
+  }
 }
 
 .twilio-mode .diagram-timeline2__events .visualizer2__profile-header h4 {

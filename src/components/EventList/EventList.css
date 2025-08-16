@@ -196,7 +196,7 @@
 .event-list__order-select {
   padding: 6px 12px;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border-radius: 20px;
   background-color: #fff;
   color: #374151;
   font-size: 13px;
@@ -211,7 +211,7 @@
 .event-list__order-input {
   padding: 6px 12px;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border-radius: 20px;
   background-color: #fafafa;
   color: #374151;
   font-size: 13px;
@@ -644,7 +644,7 @@
   width: 80px;
   padding: 8px 12px;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border-radius: 20px;
   font-size: 14px;
   color: #111827;
   background-color: #fff; /* Match order-select background */

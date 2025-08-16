@@ -28,6 +28,15 @@
   color: #111827;
   margin: 0 0 4px 0;
   letter-spacing: -0.025em;
+  display: flex;
+  align-items: center;
+}
+
+.unique-users-list__header-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  display: inline-block;
 }
 
 .unique-users-list__subtitle {
@@ -187,4 +196,14 @@
 
 .dark-mode .unique-users-list__empty-subtitle {
   color: #F3F4F7; /* grey-50 */
+}
+
+/* Segment Mode Styles */
+.segment-mode .unique-users-list__header-icon {
+  filter: brightness(0) saturate(100%) invert(34%) sepia(32%) saturate(1094%) hue-rotate(116deg) brightness(93%) contrast(88%);
+}
+
+/* Twilio Mode Styles */
+.twilio-mode .unique-users-list__header-icon {
+  filter: brightness(0) saturate(100%) invert(17%) sepia(74%) saturate(3580%) hue-rotate(351deg) brightness(88%) contrast(98%);
 }

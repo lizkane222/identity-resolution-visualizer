@@ -717,7 +717,10 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
   return (
     <div className="event-builder">
       <div className="event-builder__header">
-        <h2 className="event-builder__title">Event Builder</h2>
+        <h2 className="event-builder__title">
+          {/* <img src="/assets/Tetris.svg" alt="Event Builder" className="event-builder__header-icon" /> */}
+          Event Builder
+        </h2>
         
         {/* Source status info */}
         {configuredSources.length > 0 && selectedSource && (

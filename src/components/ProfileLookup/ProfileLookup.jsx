@@ -542,7 +542,10 @@ const ProfileLookup = ({
   return (
     <div className="profile-lookup">
       <div className="profile-lookup__header">
-        <h3 className="profile-lookup__title">Profile Lookup</h3>
+        <h3 className="profile-lookup__title">
+          <img src="/assets/compass.svg" alt="Profile Lookup" className="profile-lookup__header-icon" />
+          Profile Lookup
+        </h3>
         <p className="profile-lookup__subtitle">
           Query Segment Profile API endpoints
         </p>
@@ -680,47 +683,52 @@ const ProfileLookup = ({
             </p>
           </div>
 
-          <div className="profile-lookup__field">
-            <label className="profile-lookup__label">Endpoints</label>
-            <div className="profile-lookup__endpoint-list">
-              {['traits', 'external_ids', 'events', 'metadata', 'links'].map(endpoint => {
-                const isSelected = selectedEndpoints.includes(endpoint);
-                return (
-                  <div key={endpoint} className="profile-lookup__endpoint-option">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (isSelected) {
-                          setSelectedEndpoints(prev => prev.filter(e => e !== endpoint));
-                        } else {
-                          setSelectedEndpoints(prev => [...prev, endpoint]);
-                        }
-                      }}
-                      className={`profile-lookup__endpoint-toggle ${isSelected ? 'profile-lookup__endpoint-toggle--selected' : 'profile-lookup__endpoint-toggle--unselected'}`}
-                      title={`${isSelected ? 'Deselect' : 'Select'} ${endpoint}`}
-                    >
-                      {isSelected ? '✓' : '✗'}
-                    </button>
-                    <span className="profile-lookup__endpoint-text">{endpoint}</span>
-                  </div>
-                );
-              })}
-            </div>
-            <p className="profile-lookup__help">
-              Select which endpoints to query for each identifier.
-              <br /> Multiple endpoints may be selected.
-              {selectedEndpoints.length > 0 && ` (${selectedEndpoints.length} selected)`}
-            </p>
-            {selectedEndpoints.includes('traits') && (
+          {/* Endpoints and Query Parameters Side by Side */}
+          <div className="profile-lookup__endpoints-params-container">
+            <div className="profile-lookup__field profile-lookup__field--endpoints">
+              <label className="profile-lookup__label">Endpoints</label>
+              <div className="profile-lookup__endpoint-list">
+                {['traits', 'external_ids', 'events', 'metadata', 'links'].map(endpoint => {
+                  const isSelected = selectedEndpoints.includes(endpoint);
+                  return (
+                    <div key={endpoint} className="profile-lookup__endpoint-option">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedEndpoints(prev => prev.filter(e => e !== endpoint));
+                          } else {
+                            setSelectedEndpoints(prev => [...prev, endpoint]);
+                          }
+                        }}
+                        className={`profile-lookup__endpoint-toggle ${isSelected ? 'profile-lookup__endpoint-toggle--selected' : 'profile-lookup__endpoint-toggle--unselected'}`}
+                        title={`${isSelected ? 'Deselect' : 'Select'} ${endpoint}`}
+                      >
+                        {isSelected ? '✓' : '✗'}
+                      </button>
+                      <span className="profile-lookup__endpoint-text">{endpoint}</span>
+                    </div>
+                  );
+                })}
+              </div>
               <p className="profile-lookup__help">
-                💡 <strong>Note:</strong> If you just sent identify events via simulation, traits may take 30-60 seconds to appear in Segment's Profile API. 
-                The system will automatically retry up to 3 times with delays if no traits are found initially.
+                Select which endpoints to query for each identifier.
+                <br /> Multiple endpoints may be selected.
+                {selectedEndpoints.length > 0 && ` (${selectedEndpoints.length} selected)`}
               </p>
-            )}
-          </div>
+              {selectedEndpoints.includes('traits') && (
+                <p className="profile-lookup__help">
+                  💡 <strong>Note:</strong> If you just sent identify events via simulation, traits may take 30-60 seconds to appear in Segment's Profile API. 
+                  The system will automatically retry up to 3 times with delays if no traits are found initially.
+                </p>
+              )}
+            </div>
 
-          {/* Query Parameters Section - moved above button */}
-          {renderQueryParamInputs()}
+            {/* Query Parameters Section */}
+            <div className="profile-lookup__field profile-lookup__field--params">
+              {renderQueryParamInputs()}
+            </div>
+          </div>
 
           <button
             onClick={handleLookup}

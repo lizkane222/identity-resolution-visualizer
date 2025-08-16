@@ -9,18 +9,20 @@ const DiagramNode2 = ({
   position, 
   totalEvents, 
   simulation,
-  hoveredProfileId
+  hoveredProfileId,
+  onEventHover,
+  onEventHoverLeave
 }) => {
   const [expanded, setExpanded] = useState(false);
 
   const getActionIcon = (actionType) => {
     switch (actionType) {
       case 'create':
-        return '🆕';
+        return <img src="/assets/User-plus.svg" alt="Create" className="diagram-node2__action-icon-svg" />;
       case 'add':
-        return '➕';
+        return <img src="/assets/User-Checkmark.svg" alt="Add" className="diagram-node2__action-icon-svg" />;
       case 'merge':
-        return '🔀';
+        return <img src="/assets/Unified-profiles.svg" alt="Merge" className="diagram-node2__action-icon-svg" />;
       default:
         return '❓';
     }
@@ -76,17 +78,6 @@ const DiagramNode2 = ({
     event.simulationResult.profile && 
     event.simulationResult.profile.id === hoveredProfileId;
 
-  // Debug logging
-  if (hoveredProfileId) {
-    console.log(`🔍 DiagramNode2 #${sequenceNumber}:`, {
-      hoveredProfileId,
-      eventProfileId: event.simulationResult?.profile?.id,
-      isHighlighted: isProfileHighlighted,
-      sequenceNumber,
-      willGlow: isProfileHighlighted ? 'YES! 🌟' : 'no'
-    });
-  }
-
   return (
     <div className="diagram-node2">
       {/* Above Timeline: Event Input Data */}
@@ -137,7 +128,9 @@ const DiagramNode2 = ({
             <div className="diagram-node2__profiles-list">
               {simulation.profiles.map((profile, index) => (
                 <div key={profile.id || index} className="diagram-node2__profile-item">
-                  <span className="diagram-node2__profile-id">{profile.id}</span>
+                  <span className="diagram-node2__profile-id">
+                    {profile.segmentId || profile.id.replace(/^profile_/, 'Profile ')}
+                  </span>
                   <span className="diagram-node2__profile-meta">
                     {Object.keys(profile.identifiers).length} identifier types
                   </span>
@@ -156,6 +149,16 @@ const DiagramNode2 = ({
         <div 
           className={`diagram-node2__node-circle ${isProfileHighlighted ? 'diagram-node2__node-circle--highlighted' : ''}`} 
           onClick={() => setExpanded(!expanded)}
+          onMouseEnter={() => {
+            if (onEventHover && event.simulationResult?.profile?.id) {
+              onEventHover(event.simulationResult.profile.id);
+            }
+          }}
+          onMouseLeave={() => {
+            if (onEventHoverLeave) {
+              onEventHoverLeave();
+            }
+          }}
         >
           <span className="diagram-node2__sequence">{sequenceNumber}</span>
         </div>
@@ -183,7 +186,8 @@ const DiagramNode2 = ({
             </span>
           </div>
           <div className="diagram-node2__action-description">
-            Result: {event.simulationResult.profile.id}
+            Result: {event.simulationResult.profile.segmentId || 
+                     event.simulationResult.profile.id.replace(/^profile_/, 'Profile ')}
           </div>
           {event.simulationResult.dropped.length > 0 && (
             <div className="diagram-node2__action-dropped">
@@ -195,7 +199,10 @@ const DiagramNode2 = ({
         {/* Dropped Identifiers Section */}
         {event.simulationResult.dropped.length > 0 && (
           <div className="diagram-node2__dropped-card">
-            <h5>Dropped Identifiers</h5>
+            <h5>
+              <img src="/assets/User-warning.svg" alt="Warning" className="diagram-node2__header-icon" />
+              Dropped Identifiers
+            </h5>
             <div className="diagram-node2__dropped-items">
               {event.simulationResult.dropped.map((droppedKey) => {
                 const identifierDetail = identifierDetails.find(id => id.key === droppedKey);
@@ -232,7 +239,10 @@ const DiagramNode2 = ({
           <h5>Profile Target</h5>
           <div className="diagram-node2__profile-target">
             <span className="diagram-node2__target-arrow">→</span>
-            <span className="diagram-node2__target-profile">{event.simulationResult.profile.id}</span>
+            <span className="diagram-node2__target-profile">
+              {event.simulationResult.profile.segmentId || 
+               event.simulationResult.profile.id.replace(/^profile_/, 'Profile ')}
+            </span>
           </div>
         </div>
       </div>

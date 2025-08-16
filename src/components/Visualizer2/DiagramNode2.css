@@ -132,8 +132,8 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
+  background: #4a5568;
+  border: 1px solid #2d3748;
   border-radius: 16px;
   padding: 4px 8px;
   font-size: 11px;
@@ -150,12 +150,12 @@
 
 .diagram-node2__identifier-label {
   font-weight: 600;
-  color: #333;
+  color: #ffffff;
   flex-shrink: 0;
 }
 
 .diagram-node2__identifier-value {
-  color: #666;
+  color: #ffffff;
   word-break: break-all;
   overflow-wrap: break-word;
   min-width: 0;
@@ -188,18 +188,18 @@
   justify-content: space-between;
   align-items: center;
   padding: 4px 8px;
-  background: #f8f9fa;
+  background: #4a5568;
   border-radius: 6px;
 }
 
 .diagram-node2__profile-id {
   font-weight: 600;
-  color: #333;
+  color: #ffffff;
   font-size: 11px;
 }
 
 .diagram-node2__profile-meta {
-  color: #666;
+  color: #ffffff;
   font-size: 10px;
 }
 
@@ -252,8 +252,12 @@
 }
 
 .diagram-node2__node-circle:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+  transform: translateY(-15px) scale(1.15);
+  box-shadow: 
+    0 0 20px rgba(59, 130, 246, 0.6),  /* #3b82f6 - blue-500 */
+    0 0 40px rgba(59, 130, 246, 0.4),
+    0 6px 16px rgba(79, 70, 229, 0.4);
+  border: 2px solid rgba(59, 130, 246, 0.8);
 }
 
 /* Highlighted state when profile is hovered */
@@ -315,7 +319,7 @@
   margin-bottom: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   width: 280px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .diagram-node2__action-header {
@@ -327,6 +331,20 @@
 
 .diagram-node2__action-icon {
   font-size: 18px;
+}
+
+.diagram-node2__action-icon-svg {
+  width: 28px;
+  height: 28px;
+  display: inline-block;
+}
+
+.diagram-node2__header-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .diagram-node2__action-title {
@@ -343,7 +361,7 @@
 
 .diagram-node2__action-dropped {
   color: #f44336;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 
@@ -355,7 +373,7 @@
 
 .diagram-node2__dropped-card h5 {
   margin: 0 0 12px 0;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: #f44336;
 }
@@ -515,7 +533,12 @@
 }
 
 .segment-mode .diagram-node2__node-circle:hover {
-  box-shadow: 0 6px 16px rgba(79, 181, 139, 0.4);
+  transform: translateY(-15px) scale(1.15);
+  box-shadow: 
+    0 0 20px rgba(79, 181, 139, 0.6),  /* #4fb58b - segment green */
+    0 0 40px rgba(79, 181, 139, 0.4),
+    0 6px 16px rgba(79, 181, 139, 0.4);
+  border: 2px solid rgba(79, 181, 139, 0.8);
 }
 
 .segment-mode .diagram-node2__node-circle--highlighted {
@@ -572,6 +595,31 @@
   border-color: #bbf7d0;
 }
 
+.segment-mode .diagram-node2__identifier-chip {
+  background: #f0fdf4;
+  border-color: #4fb58b;
+}
+
+.segment-mode .diagram-node2__identifier-label {
+  color: #065f46;
+}
+
+.segment-mode .diagram-node2__identifier-value {
+  color: #047857;
+}
+
+.segment-mode .diagram-node2__profile-item {
+  background: #f0fdf4;
+}
+
+.segment-mode .diagram-node2__profile-id {
+  color: #065f46;
+}
+
+.segment-mode .diagram-node2__profile-meta {
+  color: #047857;
+}
+
 .twilio-mode .diagram-node2__event-card,
 .twilio-mode .diagram-node2__profiles-card,
 .twilio-mode .diagram-node2__action-card,
@@ -589,7 +637,12 @@
 }
 
 .twilio-mode .diagram-node2__node-circle:hover {
-  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+  transform: translateY(-15px) scale(1.15);
+  box-shadow: 
+    0 0 20px rgba(220, 38, 38, 0.6),  /* #dc2626 - twilio red */
+    0 0 40px rgba(220, 38, 38, 0.4),
+    0 6px 16px rgba(220, 38, 38, 0.4);
+  border: 2px solid rgba(220, 38, 38, 0.8);
 }
 
 .twilio-mode .diagram-node2__node-circle--highlighted {

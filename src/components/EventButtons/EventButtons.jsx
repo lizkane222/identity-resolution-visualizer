@@ -88,7 +88,7 @@ const EventButtons = ({ onLoadEvent, eventType = 'both', currentUser, currentLoa
                         className="event-buttons__send-button"
                         title="Save this event to the event list"
                       >
-                        ⚡
+                        <img src="/assets/send.svg" alt="Send" className="event-buttons__send-icon" />
                       </button>
                     )}
                     <button
@@ -131,7 +131,7 @@ const EventButtons = ({ onLoadEvent, eventType = 'both', currentUser, currentLoa
                         className="event-buttons__send-button"
                         title="Save this event to the event list"
                       >
-                        ⚡
+                        <img src="/assets/send.svg" alt="Send" className="event-buttons__send-icon" />
                       </button>
                     )}
                     <button
@@ -176,7 +176,7 @@ const EventButtons = ({ onLoadEvent, eventType = 'both', currentUser, currentLoa
                       className="event-buttons__send-button"
                       title="Save this event to the event list"
                     >
-                      ⚡
+                      <img src="/assets/send.svg" alt="Send" className="event-buttons__send-icon" />
                     </button>
                   )}
                   <button
@@ -205,7 +205,7 @@ const EventButtons = ({ onLoadEvent, eventType = 'both', currentUser, currentLoa
                       className="event-buttons__send-button"
                       title="Save this event to the event list"
                     >
-                      ⚡
+                      <img src="/assets/send.svg" alt="Send" className="event-buttons__send-icon" />
                     </button>
                   )}
                   <button

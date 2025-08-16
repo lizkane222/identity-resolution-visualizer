@@ -99,6 +99,12 @@
   box-shadow: 0 0 0 3px rgba(48, 172, 130, 0.3); /* segment-green focus */
 }
 
+.event-buttons__send-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
 .event-buttons__button {
   padding: 6px 10px;
   border: 1px solid #3b82f6; /* blue-500 border */

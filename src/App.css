@@ -273,10 +273,13 @@ body {
   color:white;
 }
 
-/* Default icon colors - apply consistent grey color to all config and lookup icons */
-.app__config-button .app__button-icon:not(.app__button-icon--color),
-.app__lookup-button .app__button-icon:not(.app__button-icon--color) {
+/* Default icon colors - apply white to lookup, grey to config icons */
+.app__config-button .app__button-icon:not(.app__button-icon--color) {
   filter: brightness(0) saturate(100%) invert(34%) sepia(3%) saturate(469%) hue-rotate(185deg) brightness(97%) contrast(92%);
+}
+
+.app__lookup-button .app__button-icon:not(.app__button-icon--color) {
+  filter: brightness(0) saturate(100%) invert(100%);
 }
 
 .app__brand-icon {
@@ -491,7 +494,7 @@ body {
 
 /* Profile Lookup Section */
 .app__profile-lookup-section {
-  margin: 24px 24px 24px 24px;
+  margin: 24px 24px 0px 24px;
   animation: slideDown 0.3s ease-out;
   width: calc(100% - 48px);
   box-sizing: border-box;
@@ -692,7 +695,7 @@ body {
   
   .app__profile-lookup-section {
     width: calc(100% - 32px);
-    margin: 16px;
+    /* margin: 16px; */
   }
 }
 
@@ -948,21 +951,30 @@ body {
   border-color: #6b7280;
 }
 
-/* Dark mode icon colors - apply grey-50 filter to config icons but not colored icons */
-.dark-mode .app__config-button .app__button-icon:not(.app__button-icon--color),
-.dark-mode .app__lookup-button .app__button-icon:not(.app__button-icon--color) {
+/* Dark mode icon colors - apply grey-50 filter to config icons, white to lookup */
+.dark-mode .app__config-button .app__button-icon:not(.app__button-icon--color) {
   filter: brightness(0) saturate(100%) invert(98%) sepia(3%) saturate(312%) hue-rotate(198deg) brightness(99%) contrast(92%);
 }
 
-/* Hover states for icons - change to Segment green */
-.app__config-button:hover .app__button-icon:not(.app__button-icon--color),
-.app__lookup-button:hover .app__button-icon:not(.app__button-icon--color) {
+.dark-mode .app__lookup-button .app__button-icon:not(.app__button-icon--color) {
+  filter: brightness(0) saturate(100%) invert(100%);
+}
+
+/* Hover states for icons - config changes to Segment green, lookup stays white */
+.app__config-button:hover .app__button-icon:not(.app__button-icon--color) {
   filter: brightness(0) saturate(100%) invert(57%) sepia(18%) saturate(1094%) hue-rotate(116deg) brightness(93%) contrast(88%);
 }
 
-.dark-mode .app__config-button:hover .app__button-icon:not(.app__button-icon--color),
-.dark-mode .app__lookup-button:hover .app__button-icon:not(.app__button-icon--color) {
+.app__lookup-button:hover .app__button-icon:not(.app__button-icon--color) {
+  filter: brightness(0) saturate(100%) invert(100%);
+}
+
+.dark-mode .app__config-button:hover .app__button-icon:not(.app__button-icon--color) {
   filter: brightness(0) saturate(100%) invert(57%) sepia(18%) saturate(1094%) hue-rotate(116deg) brightness(93%) contrast(88%);
+}
+
+.dark-mode .app__lookup-button:hover .app__button-icon:not(.app__button-icon--color) {
+  filter: brightness(0) saturate(100%) invert(100%);
 }
 
 .dark-mode .app__floating-theme-button {
@@ -1428,10 +1440,13 @@ body {
   color: white;
 }
 
-/* Make icons match text color in twilio mode */
-.twilio-mode .app__config-button .app__button-icon:not(.app__button-icon--color),
-.twilio-mode .app__lookup-button .app__button-icon:not(.app__button-icon--color) {
+/* Make icons match text color in twilio mode - config light grey, lookup white */
+.twilio-mode .app__config-button .app__button-icon:not(.app__button-icon--color) {
   filter: brightness(0) saturate(100%) invert(96%) sepia(3%) saturate(305%) hue-rotate(179deg) brightness(106%) contrast(94%);
+}
+
+.twilio-mode .app__lookup-button .app__button-icon:not(.app__button-icon--color) {
+  filter: brightness(0) saturate(100%) invert(100%);
 }
 
 .twilio-mode .app__config-button:hover,

@@ -36,6 +36,15 @@
   margin: 0;
   letter-spacing: -0.025em;
   line-height: 1.2; /* Tighter line height */
+  display: flex;
+  align-items: center;
+}
+
+.event-builder__header-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  display: inline-block;
 }
 
 /* Source Selection Buttons */
