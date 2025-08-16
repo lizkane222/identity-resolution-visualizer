@@ -202,18 +202,6 @@
   font-size: 10px;
 }
 
-/* Profile Section - For timeline profile cards */
-.diagram-node2__profile-section {
-  width: 100%;
-  margin-bottom: 16px;
-  display: flex;
-  justify-content: center;
-}
-
-.diagram-node2__profile-section .visualizer2__profile-card--timeline {
-  margin: 0;
-}
-
 /* Connection Lines */
 .diagram-node2__connection-line {
   width: 2px;
