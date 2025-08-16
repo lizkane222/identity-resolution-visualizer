@@ -732,7 +732,7 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
         {configuredSources.length > 0 && !selectedSource && (
           <div className="event-builder__source-status">
             <span className="event-builder__source-status-text">
-              Events will be sent to: <strong>All configured sources listed below : </strong>
+              Events will be sent to: All configured sources listed below 
               {/* Events will be sent to: <strong>All configured sources</strong> ({configuredSources.map(s => s.name).join(', ')}) */}
             </span>
           </div>

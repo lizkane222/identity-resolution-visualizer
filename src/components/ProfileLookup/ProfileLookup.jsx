@@ -20,6 +20,7 @@ const ProfileLookup = ({
   const [errors, setErrors] = useState({});
   const [isConfigured, setIsConfigured] = useState(false);
   const [activeRequests, setActiveRequests] = useState(new Map()); // Track active requests per identifier
+  const [copyAnimation, setCopyAnimation] = useState({ show: false, x: 0, y: 0 }); // Copy animation state
 
   // Query parameters for different endpoints
   const [queryParams, setQueryParams] = useState({
@@ -344,6 +345,55 @@ const ProfileLookup = ({
     }
   };
 
+  // Copy identifier to clipboard
+  const handleCopyIdentifier = async (identifier, event) => {
+    try {
+      await navigator.clipboard.writeText(identifier);
+      
+      // Show copy animation at cursor position
+      const rect = event.target.getBoundingClientRect();
+      setCopyAnimation({
+        show: true,
+        x: rect.left + rect.width / 2,
+        y: rect.top - 10
+      });
+      
+      // Hide animation after 1.5 seconds
+      setTimeout(() => {
+        setCopyAnimation({ show: false, x: 0, y: 0 });
+      }, 1500);
+      
+      console.log(`Copied "${identifier}" to clipboard`);
+    } catch (err) {
+      console.error('Failed to copy identifier to clipboard:', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = identifier;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        
+        // Show copy animation for fallback too
+        const rect = event.target.getBoundingClientRect();
+        setCopyAnimation({
+          show: true,
+          x: rect.left + rect.width / 2,
+          y: rect.top - 10
+        });
+        
+        setTimeout(() => {
+          setCopyAnimation({ show: false, x: 0, y: 0 });
+        }, 1500);
+        
+        console.log(`Copied "${identifier}" to clipboard (fallback)`);
+      } catch (fallbackErr) {
+        console.error('Fallback copy also failed:', fallbackErr);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
   // Get all available identifiers (predefined + custom)
   // const getAllIdentifiers = () => {
   //   return [...identifierOptions, ...customIdentifiers];
@@ -404,16 +454,30 @@ const ProfileLookup = ({
         <h4 className="profile-lookup__params-title">Query Parameters</h4>
         
         {(hasTraitsOrExternalIds || hasEventsOrLinks) && (
-          <div className="profile-lookup__param">
-            <label>Limit:</label>
-            <input
-              type="number"
-              min="1"
-              max={hasTraits ? 200 : selectedEndpoints.includes('links') ? 20 : 100}
-              value={queryParams.limit}
-              onChange={(e) => updateQueryParam('limit', e.target.value)}
-              className="profile-lookup__param-input"
-            />
+          <div className="profile-lookup__param profile-lookup__param--inline">
+            <div className="profile-lookup__param-group">
+              <label>Limit:</label>
+              <input
+                type="number"
+                min="1"
+                max={hasTraits ? 200 : selectedEndpoints.includes('links') ? 20 : 100}
+                value={queryParams.limit}
+                onChange={(e) => updateQueryParam('limit', e.target.value)}
+                className="profile-lookup__param-input"
+              />
+            </div>
+            {hasTraitsOrExternalIds && (
+              <div className="profile-lookup__param-group profile-lookup__param-group--checkbox">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={queryParams.verbose}
+                    onChange={(e) => updateQueryParam('verbose', e.target.checked)}
+                  />
+                  Verbose output
+                </label>
+              </div>
+            )}
           </div>
         )}
 
@@ -442,19 +506,6 @@ const ProfileLookup = ({
               <option value="audience">Audience</option>
               <option value="computed_trait">Computed Trait</option>
             </select>
-          </div>
-        )}
-
-        {hasTraitsOrExternalIds && (
-          <div className="profile-lookup__param--checkbox">
-            <label>
-              <input
-                type="checkbox"
-                checked={queryParams.verbose}
-                onChange={(e) => updateQueryParam('verbose', e.target.checked)}
-              />
-              Verbose output
-            </label>
           </div>
         )}
 
@@ -524,7 +575,14 @@ const ProfileLookup = ({
                     >
                       {isSelected ? '✓' : '✗'}
                     </button>
-                    <span className="profile-lookup__identifier-text">{opt}</span>
+                    <span 
+                      className="profile-lookup__identifier-text"
+                      onClick={(e) => handleCopyIdentifier(opt, e)}
+                      title={`Click to copy "${opt}" to clipboard`}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {opt}
+                    </span>
                   </div>
                 );
               })}
@@ -551,7 +609,12 @@ const ProfileLookup = ({
                     >
                       {isSelected ? '✓' : '✗'}
                     </button>
-                    <span className="profile-lookup__identifier-text profile-lookup__identifier-text--custom">
+                    <span 
+                      className="profile-lookup__identifier-text profile-lookup__identifier-text--custom"
+                      onClick={(e) => handleCopyIdentifier(opt, e)}
+                      title={`Click to copy "${opt}" to clipboard`}
+                      style={{ cursor: 'pointer' }}
+                    >
                       {opt}
                     </span>
                     <button
@@ -610,7 +673,9 @@ const ProfileLookup = ({
             </div>
             
             <p className="profile-lookup__help">
-              Click the + to add custom identifiers. Use checkmarks to select which ones to look up.
+              Select the identifier(s) for the Profile API to look up.
+              <br />
+              Click the + to add custom identifiers. 
               {selectedIdentifiers.length > 0 && ` (${selectedIdentifiers.length} selected)`}
             </p>
           </div>
@@ -643,6 +708,7 @@ const ProfileLookup = ({
             </div>
             <p className="profile-lookup__help">
               Select which endpoints to query for each identifier.
+              <br /> Multiple endpoints may be selected.
               {selectedEndpoints.length > 0 && ` (${selectedEndpoints.length} selected)`}
             </p>
             {selectedEndpoints.includes('traits') && (
@@ -698,14 +764,30 @@ const ProfileLookup = ({
         </div>
 
         <div className="profile-lookup__results-section">
-          {(Object.keys(results).length > 0 || Object.keys(errors).length > 0 || Object.keys(profileApiResults).length > 0) && (
+          {(Object.keys(results).length > 0 || Object.keys(errors).length > 0 || Object.keys(profileApiResults).length > 0 || isLoading) && (
             <div className="profile-lookup__results">
               <div className="profile-lookup__results-header">
-                <UniqueProfilesList 
-                  profileApiResults={profileApiResults}
-                  events={events}
-                  onHighlightEvents={onHighlightEvents}
-                />
+                {isLoading ? (
+                  <div className="unique-profiles-list">
+                    <div className="unique-profiles-list__header">
+                      <div className="unique-profiles-list__title-skeleton skeleton-loader"></div>
+                      <div className="unique-profiles-list__subtitle-skeleton skeleton-loader"></div>
+                    </div>
+                    <div className="unique-profiles-list__content">
+                      <div className="unique-profiles-list__users">
+                        <div className="unique-user-skeleton skeleton-loader"></div>
+                        <div className="unique-user-skeleton skeleton-loader"></div>
+                        <div className="unique-user-skeleton skeleton-loader"></div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <UniqueProfilesList 
+                    profileApiResults={profileApiResults}
+                    events={events}
+                    onHighlightEvents={onHighlightEvents}
+                  />
+                )}
                 {Object.keys(profileApiResults).length > 0 && onClearProfiles && (
                   <div className="profile-lookup__clear-profiles-container">
                     <button 
@@ -778,6 +860,26 @@ const ProfileLookup = ({
           )}
         </div>
       </div>
+      
+      {/* Copy Animation */}
+      {copyAnimation.show && (
+        <div 
+          className="profile-lookup__copy-animation"
+          style={{
+            position: 'fixed',
+            left: `${copyAnimation.x}px`,
+            top: `${copyAnimation.y}px`,
+            transform: 'translateX(-50%)',
+            zIndex: 9999,
+            pointerEvents: 'none'
+          }}
+        >
+          <div className="profile-lookup__copy-message">
+            <span className="profile-lookup__copy-icon">📋</span>
+            Copied!
+          </div>
+        </div>
+      )}
     </div>
   );
 };

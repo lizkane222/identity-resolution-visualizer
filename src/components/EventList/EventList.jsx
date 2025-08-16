@@ -258,13 +258,21 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
       }
     }
     
-    // If we didn't find a position above any event, put checkpoint after the last event
+    // If we didn't find a position above any event, allow checkpoint to go beyond the last event
     if (newCheckpointIndex === -1 && eventElements.length > 0) {
-      newCheckpointIndex = eventElements.length - 1;
+      const lastEventRect = eventElements[eventElements.length - 1].getBoundingClientRect();
+      const lastEventBottom = lastEventRect.bottom;
+      
+      // If mouse is below the last event, set checkpoint after all events
+      if (mouseY > lastEventBottom) {
+        newCheckpointIndex = eventElements.length; // Allow beyond last event
+      } else {
+        newCheckpointIndex = eventElements.length - 1;
+      }
     }
     
-    // Ensure checkpoint index is within valid bounds
-    const maxIndex = sortedEvents.length - 1;
+    // Allow checkpoint to go beyond the last event
+    const maxIndex = sortedEvents.length; // Changed from length - 1 to length
     const minIndex = -1; // -1 means start from beginning
     
     setCheckpointIndex(Math.max(minIndex, Math.min(maxIndex, newCheckpointIndex)));
@@ -275,12 +283,24 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
     e.preventDefault();
     setIsDraggingCheckpoint(true);
     
+    // Add smooth dragging with throttled updates
+    let animationFrameId;
+    
     const handleMouseMove = (moveEvent) => {
-      handleCheckpointDrag(moveEvent);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+      
+      animationFrameId = requestAnimationFrame(() => {
+        handleCheckpointDrag(moveEvent);
+      });
     };
     
     const handleMouseUp = () => {
       setIsDraggingCheckpoint(false);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };

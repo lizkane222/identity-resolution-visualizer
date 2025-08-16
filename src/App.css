@@ -48,7 +48,7 @@ body {
   width: 20vw;
   max-width: 20vw;
   min-width: 300px;
-  background-color: #ffffff; /* white */
+  /* background-color: #ffffff; */   /* white */
   border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
@@ -109,7 +109,7 @@ body {
 .app__theme-button {
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border-radius: 20px;
   padding: 8px 12px;
   font-size: 13px;
   font-weight: 500;
@@ -253,7 +253,7 @@ body {
 .app__visualize-button {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  border-radius: 6px;
+  border-radius: 20px;
   padding: 8px 12px;
   font-size: 13px;
   font-weight: 500;
@@ -281,7 +281,7 @@ body {
 .app__visualize2-button {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   border: none;
-  border-radius: 6px;
+  border-radius: 20px;
   padding: 8px 12px;
   font-size: 13px;
   font-weight: 500;
@@ -1164,8 +1164,8 @@ body {
 }
 
 .twilio-mode .app__sidebar {
-  background-color: #0f172a; /* slate-900 */
-  border-right: 1px solid #334155;
+  background-color: #0f172a !important; /* slate-900 */
+  border-right: 1px solid #334155 !important;
 }
 
 .twilio-mode .app__header {
@@ -1180,11 +1180,23 @@ body {
   color: #f1f5f9;
 }
 
+/* Make icons match text color in twilio mode */
+.twilio-mode .app__config-button .app__button-icon:not(.app__button-icon--color),
+.twilio-mode .app__lookup-button .app__button-icon:not(.app__button-icon--color) {
+  filter: brightness(0) saturate(100%) invert(96%) sepia(3%) saturate(305%) hue-rotate(179deg) brightness(106%) contrast(94%);
+}
+
 .twilio-mode .app__config-button:hover,
 .twilio-mode .app__lookup-button:hover {
   background: #334155;
   border-color: #dc2626;
   color: #dc2626;
+}
+
+/* Make icons match hover text color in twilio mode */
+.twilio-mode .app__config-button:hover .app__button-icon:not(.app__button-icon--color),
+.twilio-mode .app__lookup-button:hover .app__button-icon:not(.app__button-icon--color) {
+  filter: brightness(0) saturate(100%) invert(12%) sepia(79%) saturate(7444%) hue-rotate(357deg) brightness(93%) contrast(118%);
 }
 
 .twilio-mode .app__visualize-button {
@@ -1221,4 +1233,19 @@ body {
     height: 44px;
     font-size: 16px;
   }
+}
+
+/* Fix for twilio-mode sidebar when glow-mode is also active */
+.twilio-mode .app__sidebar,
+.glow-mode.twilio-mode .app__sidebar {
+  background-color: #0f172a !important; /* slate-900 - force override */
+  border-right: 1px solid #334155 !important;
+}
+
+/* Even more aggressive override for all possible combinations */
+html.twilio-mode .app__sidebar,
+body.twilio-mode .app__sidebar,
+.twilio-mode div.app__sidebar {
+  background-color: #0f172a !important; /* slate-900 - ultimate override */
+  background: #0f172a !important; /* slate-900 - ultimate override */
 }

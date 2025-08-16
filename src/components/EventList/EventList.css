@@ -45,11 +45,13 @@
   cursor: grab;
   user-select: none;
   z-index: 2;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother transition */
 }
 
 .event-list__checkpoint--dragging {
   cursor: grabbing;
   z-index: 10;
+  transform: scale(1.02); /* Subtle scale during drag */
 }
 
 .event-list__checkpoint-line {
@@ -57,8 +59,8 @@
   height: 2px;
   background: repeating-linear-gradient(
     to right,
-    #f59e0b 0px,
-    #f59e0b 8px,
+    #60a5fa 0px, /* blue-450 */
+    #60a5fa 8px,
     transparent 8px,
     transparent 16px
   );
@@ -71,24 +73,25 @@
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  background: #fef3c7;
-  border: 1px solid #f59e0b;
-  border-radius: 6px;
+  background: rgba(96, 165, 250, 0.5); /* blue-450 with 50% transparency */
+  border: 1px solid #60a5fa; /* blue-450 */
+  border-radius: 2rem;
   font-size: 12px;
   font-weight: 500;
-  color: #92400e;
-  transition: all 0.2s ease;
+  color: #60a5fa; /* blue-450 */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother transition */
 }
 
 .event-list__checkpoint:hover .event-list__checkpoint-handle {
-  background: #fde68a;
-  border-color: #d97706;
-  color: #78350f;
+  background: rgba(96, 165, 250, 0.7); /* Darker blue-450 on hover */
+  border-color: #3b82f6; /* blue-500 */
+  color: #3b82f6; /* blue-500 */
+  transform: translateY(-1px); /* Subtle lift on hover */
 }
 
 .event-list__checkpoint-icon {
   font-size: 14px;
-  color: #f59e0b;
+  color: #60a5fa; /* blue-450 */
   cursor: grab;
 }
 
@@ -238,6 +241,66 @@
   border: none;
   height: 100vh;
   box-shadow: none;
+  background: #ffffff; /* Default white background */
+}
+
+/* Twilio mode sidebar background */
+.twilio-mode .event-list--sidebar {
+  background: #0f172a; /* slate-900 */
+}
+
+/* Twilio mode text colors */
+.twilio-mode .event-list__empty-state {
+  color: #ffffff;
+}
+
+.twilio-mode .event-list__controls--footer {
+  color: #ffffff;
+  background-color: #4D5777; /* grey-600 dark background for twilio mode */
+}
+
+.twilio-mode .event-list__header {
+  color: #ffffff;
+}
+
+.twilio-mode .event-list__title {
+  color: #ffffff;
+}
+
+.twilio-mode .event-list__clear-button {
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.twilio-mode .event-list__clear-button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.twilio-mode .event-list__order-label {
+  color: #ffffff;
+}
+
+.twilio-mode .event-list__timeout-label {
+  color: #ffffff;
+}
+
+.twilio-mode .event-list__checkpoint-text {
+  color: #ffffff;
+}
+
+.twilio-mode .event-list__checkpoint-handle {
+  color: #ffffff;
+}
+
+.twilio-mode .event-list__log-title {
+  color: #ffffff;
+}
+
+/* Segment mode sidebar background */
+.segment-mode .event-list--sidebar {
+  background: #ffffff; /* white */
 }
 
 .event-list:hover {
@@ -303,7 +366,7 @@
   text-align: center;
   padding: 48px 24px;
   color: #6b7280;
-  background-color: #fafafa;
+  background-color: #4D5777; /* grey-600 */
   border: 2px dashed #e5e7eb;
   border-radius: 8px;
   margin: 24px 0;
@@ -324,7 +387,7 @@
 /* Individual Event Items */
 .event-list__event {
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 2rem;
   padding: 20px;
   margin-bottom: 12px;
   background-color: #DDE0E6; /* grey-100 */
@@ -509,7 +572,7 @@
   border-radius: 6px;
   .event-list__controls--footer {
     border-top: 1px solid #e5e7eb;
-    background-color: #ffffff;
+    background-color: #ffffff; /* Default white background */
     flex-direction: column; /* Added to stack controls vertically */
   }
 
@@ -555,7 +618,7 @@
   margin-top: auto;
   flex-shrink: 0;
   border-top: 1px solid #e5e7eb;
-  background-color: #ffffff;
+  background-color: #ffffff; /* Default white background */
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -583,7 +646,7 @@
   border-radius: 6px;
   font-size: 14px;
   color: #111827;
-  background-color: #ffffff;
+  background-color: #fff; /* Match order-select background */
   text-align: center;
   transition: all 0.2s ease-in-out;
   outline: none;
@@ -850,14 +913,15 @@
 
 /* Simulation Log */
 .event-list__log-section {
-  margin-top: 24px;
+  /* margin-top: 24px; */
 }
 
 .event-list__log-title {
   font-size: 18px;
   font-weight: 600;
   color: #111827;
-  margin-bottom: 16px;
+  margin: 6px;
+  /* margin-bottom: 16px; */
   letter-spacing: -0.025em;
 }
 
@@ -1134,6 +1198,7 @@
 /* EventList header - Events Level 1 */
 .dark-mode .event-list__title {
   color: #DDE0E6; /* grey-100 */
+  background: rgb(26, 31, 52); /* Twilio secondary blue */
 }
 
 /* Events Level 2 - Controls */

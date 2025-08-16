@@ -76,42 +76,69 @@ const Visualizer2 = ({
     ));
   };
 
+  // Render individual profile card for timeline display
+  const renderProfileCardForTimeline = (profileId) => {
+    if (!currentSimulation || !profileId) return null;
+    
+    const profile = currentSimulation.profiles.find(p => p.id === profileId);
+    if (!profile) return null;
+
+    return (
+      <div className="visualizer2__profile-card visualizer2__profile-card--timeline">
+        <div className="visualizer2__profile-header">
+          <h4>{profile.id}</h4>
+          <span className="visualizer2__profile-actions">
+            {profile.history.length} action{profile.history.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        <div className="visualizer2__profile-identifiers">
+          {Object.entries(profile.identifiers).map(([type, values]) => (
+            <div key={type} className="visualizer2__identifier-row">
+              <span className="visualizer2__identifier-type">{type}:</span>
+              <span className="visualizer2__identifier-values">
+                {Array.from(values).join(', ')}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="visualizer2">
       {/* Header */}
       <div className="visualizer2__header">
-        <div className="visualizer2__header-left">
-          <img src="/assets/pie-chart.svg" alt="Visualizer" className="visualizer2__header-icon" />
-          <h2 className="visualizer2__title">
-            Identity Resolution Simulator
-            <div className="visualizer2__separator">
-              <div className="separator-line">
-                <div className="dash-pixel dash-pixel-1"></div>
-                <div className="dash-pixel dash-pixel-2"></div>
-                <div className="dash-pixel dash-pixel-3"></div>
-                <div className="dash-pixel dash-pixel-4"></div>
-                <div className="dash-pixel dash-pixel-5"></div>
-                <div className="dash-pixel dash-pixel-6"></div>
-                <div className="dash-pixel dash-pixel-7"></div>
+        <div className="visualizer2__header-top">
+          <div className="visualizer2__header-left">
+            <img src="/assets/pie-chart.svg" alt="Visualizer" className="visualizer2__header-icon" />
+            <h2 className="visualizer2__title">
+              Identity Resolution Simulator
+              <div className="visualizer2__separator">
+                <div className="separator-line">
+                  <div className="dash-pixel dash-pixel-1"></div>
+                  <div className="dash-pixel dash-pixel-2"></div>
+                  <div className="dash-pixel dash-pixel-3"></div>
+                  <div className="dash-pixel dash-pixel-4"></div>
+                  <div className="dash-pixel dash-pixel-5"></div>
+                  <div className="dash-pixel dash-pixel-6"></div>
+                  <div className="dash-pixel dash-pixel-7"></div>
+                </div>
               </div>
-            </div>
-            Event Processing Simulation
-          </h2>
+              Event Processing Simulation
+            </h2>
+          </div>
+          <div className="visualizer2__header-right">
+            <button
+              className="visualizer2__back-button"
+              onClick={onClose}
+              title="Back to Builder"
+            >
+              ← Back to Builder
+            </button>
+          </div>
         </div>
-        <div className="visualizer2__header-right">
-          <button
-            className="visualizer2__back-button"
-            onClick={onClose}
-            title="Back to Builder"
-          >
-            ← Back to Builder
-          </button>
-        </div>
-      </div>
-
-      {/* Description */}
-      <div className="visualizer2__description">
-        <p>
+        <p className="visualizer2__description">
           This simulator processes events through Segment's identity resolution algorithm, 
           showing how profiles are created, merged, and updated based on incoming identifiers.
         </p>
@@ -121,33 +148,75 @@ const Visualizer2 = ({
       <div className="visualizer2__content">
         {/* Left Sidebar - Config and Profiles */}
         <div className="visualizer2__sidebar">
-          {/* Configuration Section */}
-          <div className="visualizer2__config-section">
-            <h3>Resolution Configuration</h3>
-            <div className="visualizer2__config-stats">
-              <div className="visualizer2__stat">
-                <span className="visualizer2__stat-label">Events:</span>
-                <span className="visualizer2__stat-value">{events.length}</span>
-              </div>
-              <div className="visualizer2__stat">
-                <span className="visualizer2__stat-label">Profiles:</span>
-                <span className="visualizer2__stat-value">
-                  {currentSimulation ? currentSimulation.profiles.length : 0}
-                </span>
-              </div>
-              <div className="visualizer2__stat">
-                <span className="visualizer2__stat-label">Identifiers:</span>
-                <span className="visualizer2__stat-value">{idResConfig.length}</span>
-              </div>
-            </div>
+          {/* Sidebar Header */}
+          <div className="visualizer2__sidebar-header">
+            <h3>Identity Resolution Config</h3>
           </div>
-
-          {/* Profiles Section */}
-          <div className="visualizer2__profiles-section">
-            <h3>Created Profiles</h3>
-            <div className="visualizer2__profiles-container">
-              {renderSimulationProfiles()}
+          
+          <div className="visualizer2__sidebar-content">
+            {/* Identifier Configuration Table */}
+            <div className="visualizer2__config-section">
+              <div className="visualizer2__identifier-table">
+                <div className="visualizer2__table-header">
+                  <span className="visualizer2__table-col visualizer2__table-col--priority">PRIORITY</span>
+                  <span className="visualizer2__table-col visualizer2__table-col--identifier">IDENTIFIER</span>
+                  <span className="visualizer2__table-col visualizer2__table-col--limit">LIMIT</span>
+                </div>
+                {idResConfig.map((identifier, index) => (
+                  <div key={identifier.id} className="visualizer2__table-row">
+                    <span className="visualizer2__table-col visualizer2__table-col--priority">{index + 1}</span>
+                    <span className="visualizer2__table-col visualizer2__table-col--identifier">
+                      <span>
+                        {identifier.id}
+                        {identifier.isCustom && <span className="visualizer2__custom-indicator">*</span>}
+                      </span>
+                    </span>
+                    <span className="visualizer2__table-col visualizer2__table-col--limit">{identifier.limit}</span>
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {/* Current Settings Section */}
+            <div className="visualizer2__config-section">
+              <h4>Current Settings</h4>
+              <div className="visualizer2__setting-item">
+                <span className="visualizer2__setting-label">Unify Space:</span>
+                <span className="visualizer2__setting-value">{unifySpaceSlug || 'Not configured'}</span>
+              </div>
+              <div className="visualizer2__setting-item">
+                <span className="visualizer2__setting-label">Events to Process:</span>
+                <span className="visualizer2__setting-value">{events.length}</span>
+              </div>
+              <div className="visualizer2__setting-item">
+                <span className="visualizer2__setting-label">Enabled Identifiers:</span>
+                <span className="visualizer2__setting-value">{idResConfig.length}</span>
+              </div>
+            </div>
+
+            {/* Configuration Stats Section */}
+            <div className="visualizer2__config-section">
+              <h4>Resolution Statistics</h4>
+              <div className="visualizer2__config-stats">
+                <div className="visualizer2__stat">
+                  <span className="visualizer2__stat-label">Events:</span>
+                  <span className="visualizer2__stat-value">{events.length}</span>
+                </div>
+                <div className="visualizer2__stat">
+                  <span className="visualizer2__stat-label">Profiles:</span>
+                  <span className="visualizer2__stat-value">
+                    {currentSimulation ? currentSimulation.profiles.length : 0}
+                  </span>
+                </div>
+                <div className="visualizer2__stat">
+                  <span className="visualizer2__stat-label">Identifiers:</span>
+                  <span className="visualizer2__stat-value">{idResConfig.length}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Profiles Section - Removed, now showing above events in timeline */}
+            {/* Profile cards are now displayed above their corresponding events */}
           </div>
         </div>
 
@@ -172,6 +241,8 @@ const Visualizer2 = ({
               }))}
               unifySpaceSlug={unifySpaceSlug}
               onSimulationUpdate={handleSimulationUpdate}
+              currentSimulation={currentSimulation}
+              renderProfileCard={renderProfileCardForTimeline}
             />
           )}
         </div>

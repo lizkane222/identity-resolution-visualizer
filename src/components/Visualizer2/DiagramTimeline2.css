@@ -50,7 +50,7 @@
     to right,
     #4f46e5,
     #7c3aed
-  );
+  ) !important;
   border-radius: 2px;
   transform: translateY(-50%);
   z-index: 1;
@@ -79,7 +79,7 @@
 
 /* Brand mode support */
 .segment-mode .diagram-timeline2__timeline-line {
-  background: linear-gradient(to right, #4fb58b, #36a378);
+  background: linear-gradient(to right, #4fb58b, #36a378) !important;
 }
 
 .segment-mode .diagram-timeline2__loading-spinner {
@@ -95,7 +95,7 @@
 }
 
 .twilio-mode .diagram-timeline2__timeline-line {
-  background: linear-gradient(to right, #dc2626, #b91c1c);
+  background: linear-gradient(to right, #dc2626, #b91c1c) !important;
 }
 
 .twilio-mode .diagram-timeline2__loading-spinner {

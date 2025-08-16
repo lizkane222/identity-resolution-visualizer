@@ -8,7 +8,8 @@ const DiagramNode2 = ({
   identifierOptions, 
   position, 
   totalEvents, 
-  simulation 
+  simulation,
+  renderProfileCard 
 }) => {
   const [expanded, setExpanded] = useState(false);
 
@@ -112,20 +113,10 @@ const DiagramNode2 = ({
           </div>
         </div>
 
-        {/* Profiles Section - Show current simulation profiles */}
-        {simulation && simulation.profiles.length > 0 && (
-          <div className="diagram-node2__profiles-card">
-            <h5>Current Profiles ({simulation.profiles.length})</h5>
-            <div className="diagram-node2__profiles-list">
-              {simulation.profiles.map((profile, index) => (
-                <div key={profile.id || index} className="diagram-node2__profile-item">
-                  <span className="diagram-node2__profile-id">{profile.id}</span>
-                  <span className="diagram-node2__profile-meta">
-                    {Object.keys(profile.identifiers).length} identifier types
-                  </span>
-                </div>
-              ))}
-            </div>
+        {/* Profile Card - Show the specific profile affected by this event */}
+        {renderProfileCard && event.simulationResult && event.simulationResult.profile && (
+          <div className="diagram-node2__profile-section">
+            {renderProfileCard(event.simulationResult.profile.id)}
           </div>
         )}
 

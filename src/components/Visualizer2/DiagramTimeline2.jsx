@@ -3,7 +3,7 @@ import DiagramNode2 from './DiagramNode2';
 import { IdentitySimulation } from '../../utils/identitySimulation.js';
 import './DiagramTimeline2.css';
 
-const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, onSimulationUpdate }) => {
+const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, onSimulationUpdate, currentSimulation, renderProfileCard }) => {
   const [processedEvents, setProcessedEvents] = useState([]);
   const [simulation, setSimulation] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -108,6 +108,7 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, onSimulat
               position={index}
               totalEvents={processedEvents.length}
               simulation={simulation}
+              renderProfileCard={renderProfileCard}
             />
           ))}
         </div>

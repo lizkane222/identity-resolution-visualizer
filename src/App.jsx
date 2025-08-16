@@ -439,7 +439,12 @@ function App() {
     <div className="app">
       {/* Left Sidebar - Event List (Hidden in Visualizer) */}
       {currentPage === 'main' && (
-        <aside className="app__sidebar">
+        <aside 
+          className="app__sidebar"
+          style={{
+            backgroundColor: brandMode === 'twilio' ? '#0f172a' : '#ffffff'
+          }}
+        >
           <EventList 
             events={events}
             onRemoveEvent={handleRemoveEvent}
@@ -492,7 +497,18 @@ function App() {
               <button 
                 onClick={() => {
                   setCurrentPage('main');
-                  setShowProfileLookup(!showProfileLookup);
+                  const newShowState = !showProfileLookup;
+                  setShowProfileLookup(newShowState);
+                  
+                  // If opening the lookup, scroll to top of page to show header and lookup section
+                  if (newShowState) {
+                    setTimeout(() => {
+                      window.scrollTo({ 
+                        top: 0, 
+                        behavior: 'smooth' 
+                      });
+                    }, 100);
+                  }
                 }}
                 className={`app__lookup-button ${showProfileLookup ? 'app__lookup-button--active' : ''}`}
                 title="Profile Lookup Tool"
