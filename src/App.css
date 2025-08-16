@@ -170,7 +170,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: #374151;
 }
 
 .app__footer-theme-button:hover {
@@ -181,7 +181,7 @@ body {
 .app__footer-theme-button--clear {
   background: #ffffff;
   border-color: #d1d5db;
-  color: #6b7280;
+  color: #374151;
 }
 
 .app__footer-theme-button--brand {
@@ -284,6 +284,16 @@ body {
   height: 20px;
   flex-shrink: 0;
   display: block;
+}
+
+/* Ensure brand icons are visible on colored backgrounds */
+.app__footer-theme-button--segment .app__brand-icon,
+.app__footer-theme-button--twilio .app__brand-icon {
+  filter: brightness(0) invert(1); /* Make icons white on colored backgrounds */
+}
+
+.app__footer-theme-button--clear .app__brand-icon {
+  filter: none; /* Keep original colors for clear button */
 }
 
 /* Style for any SVG brand icons that need red-450 color */
@@ -612,13 +622,13 @@ body {
 /* Footer */
 .app__footer {
   width: 100%;
-  padding: 16px 24px;
+  padding: 0px 24px;
   border-top: 1px solid #f3f4f6;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 80px;
-  margin-top: auto;
+  min-height: 70px;
+  /* margin-top: auto; */
   background-color: #f8fafc;
 }
 
@@ -1059,7 +1069,7 @@ body {
 .dark-mode .app__footer-theme-button {
   background: #374151;
   border-color: #4b5563;
-  color: #d1d5db;
+  color: #f9fafb;
 }
 
 .dark-mode .app__footer-theme-button:hover {
@@ -1070,7 +1080,7 @@ body {
 .dark-mode .app__footer-theme-button--clear {
   background: #374151;
   border-color: #6b7280;
-  color: #d1d5db;
+  color: #f9fafb;
 }
 
 .dark-mode .app__footer-theme-button--brand {
@@ -1089,6 +1099,16 @@ body {
   background: #dc2626;
   border: none;
   color: white;
+}
+
+/* Dark mode brand icon visibility */
+.dark-mode .app__footer-theme-button--segment .app__brand-icon,
+.dark-mode .app__footer-theme-button--twilio .app__brand-icon {
+  filter: brightness(0) invert(1); /* Ensure white icons on colored backgrounds in dark mode */
+}
+
+.dark-mode .app__footer-theme-button--clear .app__brand-icon {
+  filter: none; /* Keep original colors for clear button in dark mode */
 }
 
 /* Custom scrollbar for webkit browsers */

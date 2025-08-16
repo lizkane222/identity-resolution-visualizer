@@ -5,7 +5,8 @@
   align-items: center;
   position: relative;
   width: 300px;
-  margin: 0 20px;
+  margin: 0; /* Remove horizontal margin - using gap in parent */
+  flex-shrink: 0; /* Prevent nodes from shrinking */
 }
 
 /* Above Timeline Section */
@@ -255,6 +256,32 @@
   box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
 }
 
+/* Highlighted state when profile is hovered */
+.diagram-node2__node-circle--highlighted {
+  transform: translateY(-15px) scale(1.15);
+  box-shadow: 
+    0 0 20px rgba(59, 130, 246, 0.6),  /* #3b82f6 - blue-500 */
+    0 0 40px rgba(59, 130, 246, 0.4),
+    0 4px 12px rgba(79, 70, 229, 0.3);
+  border: 2px solid rgba(59, 130, 246, 0.8);
+  animation: profileGlow 2s ease-in-out infinite;
+}
+
+@keyframes profileGlow {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(59, 130, 246, 0.6),
+      0 0 40px rgba(59, 130, 246, 0.4),
+      0 4px 12px rgba(79, 70, 229, 0.3);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(59, 130, 246, 0.8),
+      0 0 60px rgba(59, 130, 246, 0.6),
+      0 6px 16px rgba(79, 70, 229, 0.4);
+  }
+}
+
 .diagram-node2__sequence {
   font-size: 16px;
   font-weight: bold;
@@ -491,6 +518,33 @@
   box-shadow: 0 6px 16px rgba(79, 181, 139, 0.4);
 }
 
+.segment-mode .diagram-node2__node-circle--highlighted {
+  box-shadow: 
+    0 0 20px rgba(79, 181, 139, 0.6),  /* #4fb58b - segment green */
+    0 0 40px rgba(79, 181, 139, 0.4),
+    0 4px 12px rgba(79, 181, 139, 0.3);
+  border: 2px solid rgba(79, 181, 139, 0.8);
+}
+
+.segment-mode .diagram-node2__node-circle--highlighted {
+  animation: profileGlowSegment 2s ease-in-out infinite;
+}
+
+@keyframes profileGlowSegment {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(79, 181, 139, 0.6),
+      0 0 40px rgba(79, 181, 139, 0.4),
+      0 4px 12px rgba(79, 181, 139, 0.3);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(79, 181, 139, 0.8),
+      0 0 60px rgba(79, 181, 139, 0.6),
+      0 6px 16px rgba(79, 181, 139, 0.4);
+  }
+}
+
 .segment-mode .diagram-node2__event-card:hover {
   border-color: #4fb58b;
   box-shadow: 0 4px 12px rgba(79, 181, 139, 0.2);
@@ -536,6 +590,30 @@
 
 .twilio-mode .diagram-node2__node-circle:hover {
   box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+}
+
+.twilio-mode .diagram-node2__node-circle--highlighted {
+  box-shadow: 
+    0 0 20px rgba(220, 38, 38, 0.6),  /* #dc2626 - twilio red */
+    0 0 40px rgba(220, 38, 38, 0.4),
+    0 4px 12px rgba(220, 38, 38, 0.3);
+  border: 2px solid rgba(220, 38, 38, 0.8);
+  animation: profileGlowTwilio 2s ease-in-out infinite;
+}
+
+@keyframes profileGlowTwilio {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(220, 38, 38, 0.6),
+      0 0 40px rgba(220, 38, 38, 0.4),
+      0 4px 12px rgba(220, 38, 38, 0.3);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(220, 38, 38, 0.8),
+      0 0 60px rgba(220, 38, 38, 0.6),
+      0 6px 16px rgba(220, 38, 38, 0.4);
+  }
 }
 
 .twilio-mode .diagram-node2__event-card:hover {
@@ -604,7 +682,7 @@
 @media (max-width: 768px) {
   .diagram-node2 {
     width: 250px;
-    margin: 0 10px;
+    margin: 0; /* Remove horizontal margin on mobile too */
   }
 
   .diagram-node2__above {

@@ -8,7 +8,8 @@ const DiagramNode2 = ({
   identifierOptions, 
   position, 
   totalEvents, 
-  simulation 
+  simulation,
+  hoveredProfileId
 }) => {
   const [expanded, setExpanded] = useState(false);
 
@@ -68,6 +69,22 @@ const DiagramNode2 = ({
   };
 
   const identifierDetails = getIdentifierDetails();
+
+  // Check if this node should be highlighted based on profile hover
+  const isProfileHighlighted = hoveredProfileId && 
+    event.simulationResult && 
+    event.simulationResult.profile && 
+    event.simulationResult.profile.id === hoveredProfileId;
+
+  // Debug logging
+  if (hoveredProfileId) {
+    console.log('Debug DiagramNode2:', {
+      hoveredProfileId,
+      eventProfileId: event.simulationResult?.profile?.id,
+      isHighlighted: isProfileHighlighted,
+      sequenceNumber
+    });
+  }
 
   return (
     <div className="diagram-node2">
@@ -135,7 +152,10 @@ const DiagramNode2 = ({
 
       {/* On Timeline: Event Node Circle */}
       <div className="diagram-node2__timeline-node">
-        <div className="diagram-node2__node-circle" onClick={() => setExpanded(!expanded)}>
+        <div 
+          className={`diagram-node2__node-circle ${isProfileHighlighted ? 'diagram-node2__node-circle--highlighted' : ''}`} 
+          onClick={() => setExpanded(!expanded)}
+        >
           <span className="diagram-node2__sequence">{sequenceNumber}</span>
         </div>
         <div className="diagram-node2__node-label">

@@ -7,6 +7,7 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
   const [processedEvents, setProcessedEvents] = useState([]);
   const [simulation, setSimulation] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hoveredProfileId, setHoveredProfileId] = useState(null);
 
   // Helper function to convert Profile API results to display format
   const convertProfileApiResultsToProfiles = (profileApiResults) => {
@@ -197,7 +198,18 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
             return profiles.length > 0 && (
               <div className="diagram-timeline2__profiles-list">
                 {profiles.map((profile, idx) => (
-                  <div key={profile.id || idx} className="visualizer2__profile-card">
+                  <div 
+                    key={profile.id || idx} 
+                    className="visualizer2__profile-card"
+                    onMouseEnter={() => {
+                      console.log('Profile hover enter:', profile.id);
+                      setHoveredProfileId(profile.id);
+                    }}
+                    onMouseLeave={() => {
+                      console.log('Profile hover leave');
+                      setHoveredProfileId(null);
+                    }}
+                  >
                     <div className="visualizer2__profile-header">
                       <div className="visualizer2__profile-avatar">👤</div>
                       <div className="visualizer2__profile-info">
@@ -235,18 +247,29 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
           })()}
           {/* Event Nodes */}
           <div className="diagram-timeline2__event-nodes">
-            {processedEvents.map((event, index) => (
-              <DiagramNode2
-                key={event.id}
-                event={event}
-                sequenceNumber={index + 1}
-                isLast={index === processedEvents.length - 1}
-                identifierOptions={identifierOptions}
-                position={index}
-                totalEvents={processedEvents.length}
-                simulation={simulation}
-              />
-            ))}
+            {processedEvents.map((event, index) => {
+              if (hoveredProfileId) {
+                console.log('Event simulation result:', {
+                  eventIndex: index,
+                  eventId: event.id,
+                  simulationResult: event.simulationResult,
+                  profileId: event.simulationResult?.profile?.id
+                });
+              }
+              return (
+                <DiagramNode2
+                  key={event.id}
+                  event={event}
+                  sequenceNumber={index + 1}
+                  isLast={index === processedEvents.length - 1}
+                  identifierOptions={identifierOptions}
+                  position={index}
+                  totalEvents={processedEvents.length}
+                  simulation={simulation}
+                  hoveredProfileId={hoveredProfileId}
+                />
+              );
+            })}
           </div>
         </div>
       </div>

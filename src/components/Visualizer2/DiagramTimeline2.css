@@ -36,7 +36,7 @@
   /* margin-top: 20px; */
   /* padding: 80px 40px 120px 40px; */
   overflow-x: auto;
-  min-height: 1600px; /* Increased height to ensure page is tall enough for smooth scrolling */
+  min-height: 1400px; /* Increased height to ensure page is tall enough for smooth scrolling */
   display: flex;
   flex-direction: column;
 }
@@ -64,8 +64,10 @@
   flex-direction: column;
   align-items: center;
   height: 100%;
-  min-width: 800px; /* Minimum width to ensure proper spacing */
+  min-width: fit-content; /* Only use space needed for content */
+  max-width: 100vw; /* Don't exceed viewport width */
   z-index: 2;
+  margin: 0 auto; /* Center the container */
 }
 
 /* Profile Cards Container - Above Event Nodes */
@@ -263,13 +265,17 @@
 /* Event Nodes Container */
 .diagram-timeline2__event-nodes {
   display: flex;
-  justify-content: space-between;
+  justify-content: center; /* Center nodes in viewport */
   align-items: flex-start;
-  width: 100%;
+  width: fit-content; /* Only use space needed for nodes */
+  max-width: calc(100vw - 80px); /* Leave margin for timeline line padding */
+  min-width: 320px; /* Minimum for at least one node */
   position: absolute;
   top: 400px; /* Moved further down to avoid overlapping with profiles list */
-  left: 0;
-  right: 0;
+  left: 50%; /* Center horizontally */
+  transform: translateX(-50%); /* Center alignment */
+  gap: 20px; /* Add consistent spacing between nodes */
+  overflow-x: visible; /* Allow overflow when many nodes */
 }
 
 /* Dark mode support */
@@ -458,6 +464,12 @@
   }
   
   .diagram-timeline2__events {
-    min-width: 600px;
+    min-width: fit-content;
+    max-width: calc(100vw - 40px);
+  }
+  
+  .diagram-timeline2__event-nodes {
+    max-width: calc(100vw - 40px);
+    gap: 15px; /* Reduce gap on mobile */
   }
 }

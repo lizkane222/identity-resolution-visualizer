@@ -16,8 +16,8 @@
 }
 
 .glow-modes-list__toggle {
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: linear-gradient(135deg, #1866EE 0%, #F83D53 100%);
   border: 2px solid transparent;
@@ -57,8 +57,8 @@
 }
 
 .glow-modes-list__logo {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   color: white;
   transition: all 0.3s ease;
 }
@@ -218,14 +218,14 @@
 /* Mobile responsiveness */
 @media (max-width: 768px) {
   .glow-modes-list__toggle {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     border-width: 1.5px;
   }
 
   .glow-modes-list__logo {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
   }
 
   .glow-modes-list__panel {
@@ -249,8 +249,13 @@
 
 @media (max-width: 480px) {
   .glow-modes-list__toggle {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .glow-modes-list__logo {
+    width: 16px;
+    height: 16px;
   }
   
   .glow-modes-list__panel {
