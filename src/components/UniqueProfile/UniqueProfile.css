@@ -367,7 +367,7 @@
 }
 
 .unique-profile__event-time {
-  color: #16a34a;
+  color: rgb(48, 172, 130); /* segment-green */
   font-size: 0.7rem;
   flex: 1;
   min-width: 0;
@@ -378,7 +378,7 @@
 }
 
 .unique-profile__event-time {
-  color: #15803d;
+  color: rgba(48, 172, 130, 0.8); /* segment-green with opacity */
 }
 
 .unique-profile__event-props {
@@ -388,7 +388,7 @@
 }
 
 .unique-profile__event-expand {
-  color: #16a34a;
+  color: rgb(48, 172, 130); /* segment-green */
   font-size: 0.7rem;
   margin-left: 0.25rem;
   transition: transform 0.2s ease;
@@ -420,7 +420,7 @@
 }
 
 .unique-profile__event-detail-value {
-  color: #15803d;
+  color: rgba(48, 172, 130, 0.8); /* segment-green with opacity */
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 0.7rem;
   word-break: break-all;
@@ -449,7 +449,7 @@
 }
 
 .unique-profile__event-property-value {
-  color: #15803d;
+  color: rgba(48, 172, 130, 0.8); /* segment-green with opacity */
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 0.7rem;
   flex: 1;
@@ -631,7 +631,7 @@
   }
   
   .unique-profile__event--expanded {
-    border-bottom-color: #16a34a;
+    border-bottom-color: rgb(48, 172, 130); /* segment-green */
   }
   
   .unique-profile__event--more {
@@ -657,7 +657,7 @@
   
   .unique-profile__event-details {
     background: #14532d;
-    border-color: #16a34a;
+    border-color: rgb(48, 172, 130); /* segment-green */
   }
   
   .unique-profile__event-detail-key {

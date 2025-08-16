@@ -158,10 +158,49 @@ export class IdentitySimulation {
     for (const index of matchedProfiles) {
       const profile = this.profiles[index];
       if (this.canAddToProfile(profile, identifiers)) {
-        return true;
+        return { canAdd: true };
       }
     }
-    return false;
+    return { canAdd: false };
+  }
+
+  // New method to get conflict details for limit conflicts
+  getLimitConflictDetails(matchedProfiles, identifiers) {
+    const conflicts = [];
+    
+    // For each matched profile, check what identifier types it contains
+    for (const index of matchedProfiles) {
+      const profile = this.profiles[index];
+      
+      for (const type in identifiers) {
+        const values = identifiers[type];
+        const limit = this.limits[type] != null ? this.limits[type] : 5;
+        const existing = profile.identifiers[type] ? profile.identifiers[type].size : 0;
+        let newCount = 0;
+        for (const v of values) {
+          if (!profile.identifiers[type] || !profile.identifiers[type].has(v)) {
+            newCount++;
+          }
+        }
+        if (existing + newCount > limit) {
+          // Find which identifier types in this profile are causing the conflict
+          // Look for the identifier type that actually has values and would cause the limit to be exceeded
+          for (const existingType in profile.identifiers) {
+            if (profile.identifiers[existingType] && profile.identifiers[existingType].size > 0) {
+              conflicts.push({
+                droppedType: type,
+                conflictingType: existingType,
+                limit: limit,
+                existing: existing,
+                newCount: newCount
+              });
+              break; // Only need the first conflicting type for this dropped type
+            }
+          }
+        }
+      }
+    }
+    return conflicts;
   }
 
   checkMergeConflict(profileIndices, identifiers) {
@@ -186,10 +225,71 @@ export class IdentitySimulation {
     for (const [type, set] of combined.entries()) {
       const limit = this.limits[type] != null ? this.limits[type] : 5;
       if (set.size > limit) {
-        return true;
+        return { hasConflict: true, conflictType: type };
       }
     }
-    return false;
+    return { hasConflict: false };
+  }
+
+  // New method to get merge conflict details  
+  getMergeConflictDetails(profileIndices, identifiers) {
+    const combined = new Map();
+    const profileContents = new Map(); // Track which types each profile contains
+    
+    // First, collect what's in each profile
+    for (const idx of profileIndices) {
+      const profile = this.profiles[idx];
+      profileContents.set(idx, new Set(Object.keys(profile.identifiers)));
+      
+      for (const type in profile.identifiers) {
+        if (!combined.has(type)) combined.set(type, new Set());
+        const set = combined.get(type);
+        for (const v of profile.identifiers[type]) {
+          set.add(v);
+        }
+      }
+    }
+    
+    // Add the incoming identifiers
+    for (const type in identifiers) {
+      if (!combined.has(type)) combined.set(type, new Set());
+      const set = combined.get(type);
+      for (const v of identifiers[type]) {
+        set.add(v);
+      }
+    }
+    
+    const conflicts = [];
+    for (const [type, set] of combined.entries()) {
+      const limit = this.limits[type] != null ? this.limits[type] : 5;
+      if (set.size > limit) {
+        // Find which profile contains this conflicting type
+        let conflictingType = null;
+        for (const [profileIdx, types] of profileContents) {
+          if (types.has(type)) {
+            conflictingType = type; // The same type is causing the conflict
+            break;
+          }
+        }
+        // If no direct match, find any other type in the profiles
+        if (!conflictingType) {
+          for (const [profileIdx, types] of profileContents) {
+            if (types.size > 0) {
+              conflictingType = Array.from(types)[0];
+              break;
+            }
+          }
+        }
+        
+        conflicts.push({
+          droppedType: type,
+          conflictingType: conflictingType,
+          limit: limit,
+          totalCount: set.size
+        });
+      }
+    }
+    return conflicts;
   }
 
   mergeProfiles(profileIndices) {
@@ -295,8 +395,10 @@ export class IdentitySimulation {
       }
 
       // Q2: Would adding any of the payload's identifiers to existing profile conflict with identity resolution limits?
-      const canAdd = this.hasAddableProfile(matched, identifiers);
-      if (!canAdd) {
+      const canAddResult = this.hasAddableProfile(matched, identifiers);
+      if (!canAddResult.canAdd) {
+        // Get conflict details to show which identifier is causing the issue
+        const conflictDetails = this.getLimitConflictDetails(matched, identifiers);
         const toDrop = this.findLowestPriority(identifiers);
         if (toDrop == null) {
           logs.push('All identifiers dropped due to conflict. Creating new profile.');
@@ -308,8 +410,16 @@ export class IdentitySimulation {
             logs,
           };
         }
+        
+        // Find which identifier type is causing the conflict with the dropped type
+        let conflictMessage = `Dropped identifier type '${toDrop}' due to limit conflict`;
+        const conflict = conflictDetails.find(c => c.droppedType === toDrop);
+        if (conflict && conflict.conflictingType) {
+          conflictMessage += ` with ${conflict.conflictingType}`;
+        }
+        
         delete identifiers[toDrop];
-        logs.push(`Dropped identifier type '${toDrop}' due to limit conflict`);
+        logs.push(conflictMessage);
         continue;
       }
 
@@ -374,8 +484,8 @@ export class IdentitySimulation {
       }
 
       const toMerge = [...unionProfiles];
-      const conflict = this.checkMergeConflict(toMerge, identifiers);
-      if (!conflict) {
+      const conflictResult = this.checkMergeConflict(toMerge, identifiers);
+      if (!conflictResult.hasConflict) {
         const merged = this.mergeProfiles(toMerge);
         const mergedIndex = this.profiles.indexOf(merged);
         this.addIdentifiersToProfile(mergedIndex, identifiers);
@@ -387,6 +497,8 @@ export class IdentitySimulation {
           logs,
         };
       } else {
+        // Get detailed conflict information
+        const conflictDetails = this.getMergeConflictDetails(toMerge, identifiers);
         const toDrop = this.findLowestPriority(identifiers);
         if (toDrop == null) {
           logs.push('All identifiers exhausted during merge conflict. Creating new profile.');
@@ -398,8 +510,16 @@ export class IdentitySimulation {
             logs,
           };
         }
+        
+        // Find which identifier type is causing the conflict with the dropped type
+        let conflictMessage = `Dropped identifier type '${toDrop}' due to merge conflict`;
+        const conflict = conflictDetails.find(c => c.droppedType === toDrop);
+        if (conflict && conflict.conflictingType) {
+          conflictMessage += ` with ${conflict.conflictingType}`;
+        }
+        
         delete identifiers[toDrop];
-        logs.push(`Dropped identifier type '${toDrop}' due to merge conflict`);
+        logs.push(conflictMessage);
         continue;
       }
     }

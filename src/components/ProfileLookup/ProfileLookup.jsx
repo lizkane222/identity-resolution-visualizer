@@ -2,7 +2,14 @@ import React, { useState, useEffect } from 'react';
 import UniqueProfilesList from '../UniqueProfilesList/UniqueProfilesList.jsx';
 import './ProfileLookup.css';
 
-const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents }) => {
+const ProfileLookup = ({ 
+  identifierOptions = [], 
+  events = [], 
+  onHighlightEvents,
+  profileApiResults = {},
+  onProfileApiResultsUpdate,
+  onClearProfiles
+}) => {
   const [selectedIdentifiers, setSelectedIdentifiers] = useState([]);
   const [customIdentifiers, setCustomIdentifiers] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -10,7 +17,6 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
   const [selectedEndpoints, setSelectedEndpoints] = useState(['external_ids']);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState({});
-  const [persistentResults, setPersistentResults] = useState({}); // Accumulate results across queries
   const [errors, setErrors] = useState({});
   const [isConfigured, setIsConfigured] = useState(false);
   const [activeRequests, setActiveRequests] = useState(new Map()); // Track active requests per identifier
@@ -104,9 +110,17 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
     const newErrors = {};
 
     // Make requests for each identifier and each selected endpoint
+    // Also automatically include metadata endpoint in background
     await Promise.all(
-      identifiersToProcess.flatMap(identifier =>
-        selectedEndpoints.map(async (endpoint) => {
+      identifiersToProcess.flatMap(identifier => {
+        const endpointsToFetch = [...selectedEndpoints];
+        
+        // Always include metadata endpoint in background (if not already selected)
+        if (!endpointsToFetch.includes('metadata')) {
+          endpointsToFetch.push('metadata');
+        }
+        
+        return endpointsToFetch.map(async (endpoint) => {
           try {
             const params = new URLSearchParams();
             // Add relevant query parameters based on endpoint
@@ -251,12 +265,14 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
                       data: data,
                       _endpoint: endpoint,
                       _segmentApiEndpoint: data._segmentApiEndpoint,
-                      _endpoints: [endpoint],
+                      _endpoints: endpoint === 'metadata' ? [] : [endpoint], // Don't include metadata in visible endpoints
                       _combinedData: { [endpoint]: data }
                     };
                   } else {
                     // Merge multiple endpoints for the same identifier
-                    newResults[resultKey]._endpoints.push(endpoint);
+                    if (endpoint !== 'metadata') {
+                      newResults[resultKey]._endpoints.push(endpoint);
+                    }
                     newResults[resultKey]._combinedData[endpoint] = data;
                   }
                   break;
@@ -311,8 +327,8 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
             };
             console.error(`💥 [Profile API] CONNECTION ERROR for: ${identifier}/${endpoint} - ${error.message}`);
           }
-        })
-      )
+        });
+      })
     );
 
     setResults(newResults);
@@ -322,35 +338,10 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
     // Clear all active requests since batch is complete
     setActiveRequests(new Map());
     
-    // Merge into persistent results for cross-endpoint profile building
-    setPersistentResults(prev => {
-      const merged = { ...prev };
-      
-      Object.entries(newResults).forEach(([identifier, result]) => {
-        // Use identifier as key, not identifier_endpoint, so data for same identifier merges
-        if (merged[identifier]) {
-          // If we already have data for this identifier, we need to merge carefully
-          const existingResult = merged[identifier];
-          const mergedResult = {
-            ...result,
-            // Preserve and merge endpoint metadata
-            _endpoints: [
-              ...(existingResult._endpoints || [existingResult._endpoint || 'unknown']), 
-              ...(result._endpoints || [result._endpoint || 'unknown'])
-            ].filter((ep, index, arr) => arr.indexOf(ep) === index), // dedupe
-            _combinedData: {
-              ...(existingResult._combinedData || { [existingResult._endpoint || 'unknown']: existingResult.data }),
-              ...(result._combinedData || { [result._endpoint || 'unknown']: result.data })
-            }
-          };
-          merged[identifier] = mergedResult;
-        } else {
-          // First time seeing this identifier
-          merged[identifier] = result;
-        }
-      });
-      return merged;
-    });
+    // Update persistent results via parent callback
+    if (onProfileApiResultsUpdate && Object.keys(newResults).length > 0) {
+      onProfileApiResultsUpdate(newResults);
+    }
   };
 
   // Get all available identifiers (predefined + custom)
@@ -707,13 +698,27 @@ const ProfileLookup = ({ identifierOptions = [], events = [], onHighlightEvents 
         </div>
 
         <div className="profile-lookup__results-section">
-          {(Object.keys(results).length > 0 || Object.keys(errors).length > 0) && (
+          {(Object.keys(results).length > 0 || Object.keys(errors).length > 0 || Object.keys(profileApiResults).length > 0) && (
             <div className="profile-lookup__results">
-              <UniqueProfilesList 
-                profileApiResults={persistentResults}
-                events={events}
-                onHighlightEvents={onHighlightEvents}
-              />
+              <div className="profile-lookup__results-header">
+                <UniqueProfilesList 
+                  profileApiResults={profileApiResults}
+                  events={events}
+                  onHighlightEvents={onHighlightEvents}
+                />
+                {Object.keys(profileApiResults).length > 0 && onClearProfiles && (
+                  <div className="profile-lookup__clear-profiles-container">
+                    <button 
+                      onClick={onClearProfiles}
+                      className="profile-lookup__clear-profiles-button"
+                      title="Clear all saved profile lookup results"
+                    >
+                      <img src="/assets/compass.svg" alt="Clear" className="profile-lookup__button-icon" />
+                      Clear Profiles
+                    </button>
+                  </div>
+                )}
+              </div>
               
               {/* Display errors for each failed identifier */}
               {Object.keys(errors).length > 0 && (

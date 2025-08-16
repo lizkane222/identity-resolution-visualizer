@@ -108,40 +108,40 @@ const IdResConfig = forwardRef((props, ref) => {
       'Root level: { "userId": "value" }'
     ],
     'email': [
-      'Identify/Group traits: { "traits": { "email": "value" } }',
-      'Track/Page/Screen properties: { "properties": { "email": "value" } }',
-      'Context externalIds: { "context": { "externalIds": [{ "type": "email", "id": "value" }] } }',
-      'Context traits: { "context": { "traits": { "email": "value" } } }'
+      'Identify/Group traits: { "traits": { "email": "value" }}',
+      'Track/Page/Screen properties: { "properties": { "email": "value" }}',
+      'Context externalIds: { "context": { "externalIds": [{ "type": "email", "id": "value" }]}}',
+      'Context traits: { "context": { "traits": { "email": "value" }}}'
     ],
     'phone': [
-      'Identify/Group traits: { "traits": { "phone": "value" } }',
-      'Track/Page/Screen properties: { "properties": { "phone": "value" } }',
-      'Context externalIds: { "context": { "externalIds": [{ "type": "phone", "id": "value" }] } }',
-      'Context traits: { "context": { "traits": { "phone": "value" } } }'
+      'Identify/Group traits: { "traits": { "phone": "value" }}',
+      'Track/Page/Screen properties: { "properties": { "phone": "value" }}',
+      'Context externalIds: { "context": { "externalIds": [{ "type": "phone", "id": "value" }]}}',
+      'Context traits: { "context": { "traits": { "phone": "value" }}}'
     ],
     'android.id': [
-      'Context device: { "context": { "device": { "type": "android", "id": "value" } } }'
+      'Context device: { "context": { "device": { "type": "android", "id": "value" }}}'
     ],
     'android.idfa': [
-      'Context device: { "context": { "device": { "type": "android", "adTrackingEnabled": true, "advertisingId": "value" } } }'
+      'Context device: { "context": { "device": { "type": "android", "adTrackingEnabled": true, "advertisingId": "value" }}}'
     ],
     'android.push_token': [
-      'Context device: { "context": { "device": { "type": "android", "token": "value" } } }'
+      'Context device: { "context": { "device": { "type": "android", "token": "value" }}}'
     ],
     'anonymous_id': [
       'Root level: { "anonymousId": "value" }'
     ],
     'ga_client_id': [
-      'Context integrations: { "context": { "integrations": { "Google Analytics": { "clientId": "value" } } } }'
+      'Context integrations: { "context": { "integrations": { "Google Analytics": { "clientId": "value" }}}}'
     ],
     'ios.id': [
-      'Context device: { "context": { "device": { "type": "ios", "id": "value" } } }'
+      'Context device: { "context": { "device": { "type": "ios", "id": "value" }}}'
     ],
     'ios.idfa': [
-      'Context device: { "context": { "device": { "type": "ios", "advertisingId": "value" } } }'
+      'Context device: { "context": { "device": { "type": "ios", "advertisingId": "value" }}}'
     ],
     'ios.push_token': [
-      'Context device: { "context": { "device": { "type": "ios", "token": "value" } } }'
+      'Context device: { "context": { "device": { "type": "ios", "token": "value" }}}'
     ]
   };
 
@@ -261,11 +261,11 @@ const IdResConfig = forwardRef((props, ref) => {
     setExpandedIdentifier(expandedIdentifier === identifierId ? null : identifierId);
   };
 
-  const getCustomIdentifierLocations = () => [
-    'Identify/Group traits: { "traits": { "custom_field": "value" } }',
-    'Track/Page/Screen properties: { "properties": { "custom_field": "value" } }',
-    'Context externalIds: { "context": { "externalIds": [{ "type": "custom_field", "id": "value" }] } }',
-    'Context traits: { "context": { "traits": { "custom_field": "value" } } }'
+  const getCustomIdentifierLocations = (identifierName) => [
+    `Identify/Group traits: { "traits": { "${identifierName}": "value" }}`,
+    `Track/Page/Screen properties: { "properties": { "${identifierName}": "value" }}`,
+    `Context externalIds: { "context": { "externalIds": [{ "type": "${identifierName}", "id": "value" }]}}`,
+    `Context traits: { "context": { "traits": { "${identifierName}": "value" }}}`
   ];
 
   // Save identifiers to localStorage whenever they change (including Limit and Frequency changes)
@@ -407,7 +407,7 @@ const IdResConfig = forwardRef((props, ref) => {
                       className="idres-config__remove-button"
                       title="Remove identifier"
                     >
-                      🗑
+                      <img src="/assets/trash.svg" alt="Remove" className="idres-config__button-icon" />
                     </button>
                   </div>
                 </div>
@@ -415,7 +415,7 @@ const IdResConfig = forwardRef((props, ref) => {
                   <div className="idres-config__identifier-details">
                     <h5 className="idres-config__details-title">Event Payload Locations:</h5>
                     <ul className="idres-config__locations-list">
-                      {(identifier.isCustom ? getCustomIdentifierLocations() : identifierLocations[identifier.id])?.map((location, i) => {
+                      {(identifier.isCustom ? getCustomIdentifierLocations(identifier.id) : identifierLocations[identifier.id])?.map((location, i) => {
                         let label = '', code = location;
                         const colonIdx = location.indexOf(':');
                         if (colonIdx !== -1) {
@@ -423,9 +423,9 @@ const IdResConfig = forwardRef((props, ref) => {
                           code = location.slice(colonIdx + 1).trim();
                         }
                         return (
-                          <li key={i} className="idres-config__location-item" style={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                            {label && <span style={{ fontWeight: 'bold', minWidth: 0, fontSize: '11px', marginRight: 4 }}>{label}</span>}
-                            <span style={{ background: '#f3f4f6', borderRadius: '4px', padding: '1px 4px', fontFamily: 'monospace', fontSize: '11px', display: 'inline-block' }}>{code}</span>
+                          <li key={i} className="idres-config__location-item">
+                            {label && <span className="idres-config__location-label">{label}</span>}
+                            <code className="idres-config__location-code">{code}</code>
                           </li>
                         );
                       })}

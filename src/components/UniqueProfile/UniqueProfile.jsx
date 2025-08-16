@@ -116,8 +116,8 @@ const UniqueProfile = ({ profile, onHighlightEvents }) => {
           <div className="unique-profile__name" title={displayName}>
             {displayName}
           </div>
-          <div className="unique-profile__id" title={profile.userId || profile.id}>
-            {profile.userId || `Profile #${profile.id}`}
+          <div className="unique-profile__id" title={profile.segmentId || profile.userId || profile.id}>
+            {profile.segmentId || profile.userId || `Profile #${profile.id}`}
           </div>
         </div>
         <div className="unique-profile__expand-icon">

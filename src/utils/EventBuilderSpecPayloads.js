@@ -478,7 +478,7 @@ export const CORE_EVENTS = {
 
   identify: {
     name: "Identify",
-    description: "The Identify call lets you tie a user to their actions and record traits about them. It includes a unique User ID and any optional traits you know about the user.",
+    description: "The Identify call lets you tie a user to their actions and record traits about them. It includes a unique userId or anonymousId and any optional traits you know about the user.",
     payload: (currentUser) => {
       const ids = getUserId(currentUser);
       const payload = {

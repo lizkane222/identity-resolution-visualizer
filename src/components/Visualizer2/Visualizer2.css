@@ -390,7 +390,7 @@
 }
 
 .visualizer2__action-icon--create {
-  color: #10b981;
+  color: rgb(48, 172, 130); /* segment-green */
 }
 
 .visualizer2__action-icon--add {

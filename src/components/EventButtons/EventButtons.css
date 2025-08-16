@@ -17,11 +17,7 @@
 }
 
 .event-buttons__section {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border-radius: 2rem;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -40,9 +36,9 @@
   color: #111827;
   margin: 0 0 12px 0;
   letter-spacing: -0.025em;
-  border-bottom: 1px solid #f3f4f6;
   padding-bottom: 6px;
   flex-shrink: 0;
+  text-align: center;
 }
 
 .event-buttons__grid {
@@ -69,10 +65,10 @@
 /* Send button - appears when event is loaded */
 .event-buttons__send-button {
   padding: 6px 8px;
-  border: 1px solid #059669;
+  border: 1px solid rgb(48, 172, 130); /* segment-green border */
   border-right: none;
-  border-radius: 4px 0 0 4px;
-  background-color: #10b981;
+  border-radius: 24px 0 0 24px; /* Oval shape on visible side */
+  background-color: rgb(48, 172, 130); /* segment-green background */
   color: #ffffff;
   font-size: 12px;
   font-weight: 600;
@@ -87,10 +83,10 @@
 }
 
 .event-buttons__send-button:hover {
-  background-color: #059669;
-  border-color: #047857;
+  background-color: rgba(48, 172, 130, 0.9); /* segment-green with opacity */
+  border-color: rgba(48, 172, 130, 0.9);
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.3);
+  box-shadow: 0 2px 4px rgba(48, 172, 130, 0.3); /* segment-green shadow */
 }
 
 .event-buttons__send-button:active {
@@ -100,15 +96,15 @@
 
 .event-buttons__send-button:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 0 3px rgba(48, 172, 130, 0.3); /* segment-green focus */
 }
 
 .event-buttons__button {
   padding: 6px 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
+  border: 1px solid #3b82f6; /* blue-500 border */
+  border-radius: 24px; /* Oval shape */
   background-color: #ffffff;
-  color: #374151;
+  color: #3b82f6; /* blue-500 font color */
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
@@ -125,15 +121,16 @@
 
 /* Shrunk button state - when Send button is visible */
 .event-buttons__button--shrunk {
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 24px 24px 0; /* Keep oval shape on visible side */
   border-left: none;
 }
 
 .event-buttons__button:hover {
-  border-color: #9ca3af;
+  border-color: #1d4ed8; /* darker blue on hover */
   background-color: #f9fafb;
+  color: #1d4ed8; /* darker blue font on hover */
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2); /* blue shadow */
 }
 
 .event-buttons__button:active {
@@ -149,28 +146,28 @@
 
 /* Core Events Styling */
 .event-buttons__button--core {
-  background-color: #eff6ff;
-  border-color: #bfdbfe;
-  color: #1e40af;
+  background-color: #ffffff;
+  border-color: #3b82f6; /* blue-500 border */
+  color: #3b82f6; /* blue-500 font color */
 }
 
 .event-buttons__button--core:hover {
-  background-color: #dbeafe;
-  border-color: #93c5fd;
-  color: #1d4ed8;
+  background-color: #f9fafb;
+  border-color: #1d4ed8; /* darker blue on hover */
+  color: #1d4ed8; /* darker blue font on hover */
 }
 
 /* Product Events Styling */
 .event-buttons__button--product {
-  background-color: #f0fdf4;
-  border-color: #bbf7d0;
-  color: #166534;
+  background-color: #ffffff;
+  border-color: #3b82f6; /* blue-500 border */
+  color: #3b82f6; /* blue-500 font color */
 }
 
 .event-buttons__button--product:hover {
-  background-color: #dcfce7;
-  border-color: #86efac;
-  color: #15803d;
+  background-color: #f9fafb;
+  border-color: #1d4ed8; /* darker blue on hover */
+  color: #1d4ed8; /* darker blue font on hover */
 }
 
 /* Responsive Design */
@@ -233,7 +230,6 @@
   
   .event-buttons__section-title {
     color: #f9fafb;
-    border-bottom-color: #374151;
   }
   
   .event-buttons__button {
@@ -248,36 +244,38 @@
   }
   
   .event-buttons__send-button {
-    background-color: #059669;
-    border-color: #047857;
+    background-color: rgb(48, 172, 130); /* segment-green */
+    border-color: rgb(48, 172, 130); /* segment-green */
     color: #ffffff;
   }
   
   .event-buttons__send-button:hover {
-    background-color: #047857;
-    border-color: #065f46;
+    background-color: rgba(48, 172, 130, 0.9); /* segment-green with opacity */
+    border-color: rgba(48, 172, 130, 0.9); /* segment-green with opacity */
   }
   
   .event-buttons__button--core {
-    background-color: #1e3a8a;
-    border-color: #3b82f6;
-    color: #dbeafe;
+    background-color: #111827;
+    border-color: #3b82f6; /* blue-500 border */
+    color: #3b82f6; /* blue-500 font color */
   }
   
   .event-buttons__button--core:hover {
-    background-color: #1e40af;
-    border-color: #60a5fa;
+    background-color: #1f2937;
+    border-color: #60a5fa; /* lighter blue on hover */
+    color: #60a5fa; /* lighter blue font on hover */
   }
   
   .event-buttons__button--product {
-    background-color: #166534;
-    border-color: #16a34a;
-    color: #dcfce7;
+    background-color: #111827;
+    border-color: #3b82f6; /* blue-500 border */
+    color: #3b82f6; /* blue-500 font color */
   }
   
   .event-buttons__button--product:hover {
-    background-color: #15803d;
-    border-color: #22c55e;
+    background-color: #1f2937;
+    border-color: #60a5fa; /* lighter blue on hover */
+    color: #60a5fa; /* lighter blue font on hover */
   }
 }
 
@@ -290,24 +288,24 @@
 
 .dark-mode .event-buttons__section-title {
   color: #F3F4F7; /* grey-50 */
-  border-bottom-color: rgba(243, 244, 247, 0.2); /* grey-50 with opacity */
 }
 
 .dark-mode .event-buttons__button {
-  background-color: #191F36; /* blue-900 */
-  border-color: #191F36; /* blue-900 */
-  color: #F3F4F7; /* grey-50 */
+  background-color: #000D25; /* blue-900 */
+  border-color: #3b82f6; /* blue-500 border */
+  color: #3b82f6; /* blue-500 font color */
 }
 
 .dark-mode .event-buttons__button:hover {
   background-color: rgba(25, 31, 54, 0.8); /* blue-900 with opacity */
-  border-color: #1866EE; /* blue-500 */
-  box-shadow: 0 2px 4px rgba(24, 102, 238, 0.2);
+  border-color: #60a5fa; /* lighter blue on hover */
+  color: #60a5fa; /* lighter blue font on hover */
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
 }
 
 .dark-mode .event-buttons__button:focus {
-  border-color: #1866EE; /* blue-500 */
-  box-shadow: 0 0 0 3px rgba(24, 102, 238, 0.1);
+  border-color: #3b82f6; /* blue-500 */
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .dark-mode .event-buttons__button--shrunk {
@@ -332,26 +330,26 @@
 
 .dark-mode .event-buttons__button--core {
   background-color: rgba(8, 31, 71, 0.8); /* blue-850 with opacity */
-  border-color: #1866EE; /* blue-500 */
-  color: #F3F4F7; /* grey-50 */
+  border-color: #3b82f6; /* blue-500 border */
+  color: #3b82f6; /* blue-500 font color */
 }
 
 .dark-mode .event-buttons__button--core:hover {
   background-color: #081F47; /* blue-850 */
-  border-color: #1866EE; /* blue-500 */
-  color: #F3F4F7; /* grey-50 */
+  border-color: #60a5fa; /* lighter blue on hover */
+  color: #60a5fa; /* lighter blue font on hover */
 }
 
 .dark-mode .event-buttons__button--product {
   background-color: rgba(25, 31, 54, 0.8); /* blue-900 with opacity */
-  border-color: #1866EE; /* blue-500 */
-  color: #F3F4F7; /* grey-50 */
+  border-color: #3b82f6; /* blue-500 border */
+  color: #3b82f6; /* blue-500 font color */
 }
 
 .dark-mode .event-buttons__button--product:hover {
-  background-color: #191F36; /* blue-900 */
-  border-color: #1866EE; /* blue-500 */
-  color: #F3F4F7; /* grey-50 */
+  background-color: #000D25; /* blue-900 */
+  border-color: #60a5fa; /* lighter blue on hover */
+  color: #60a5fa; /* lighter blue font on hover */
 }
 
 /* Glow effect for event buttons container */

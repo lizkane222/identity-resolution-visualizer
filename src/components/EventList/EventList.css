@@ -127,10 +127,10 @@
 
 /* Updated run button to show remaining events */
 .event-list__run-button {
-  background: #2563eb;
+  background: rgb(48, 172, 130); /* segment-green */
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 24px; /* More oval shape */
   padding: 10px 20px;
   font-size: 14px;
   font-weight: 600;
@@ -225,7 +225,7 @@
 .event-list {
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 2rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.2s ease-in-out;
   display: flex;
@@ -268,19 +268,19 @@
 
 .event-list__clear-button {
   font-size: 13px;
-  color: #dc2626;
-  background: none;
-  border: none;
+  color: #fb7185; /* red-450 */
+  background: transparent;
+  border: 1px solid #fb7185; /* red-450 border */
   cursor: pointer;
   padding: 6px 12px;
-  border-radius: 4px;
+  border-radius: 24px; /* More oval shape */
   transition: all 0.2s ease-in-out;
   font-weight: 500;
 }
 
 .event-list__clear-button:hover:not(:disabled) {
-  background-color: #fef2f2;
-  color: #b91c1c;
+  background-color: rgba(251, 113, 133, 0.1); /* red-450 with opacity */
+  color: #fb7185; /* red-450 */
 }
 
 .event-list__clear-button:disabled {
@@ -327,7 +327,7 @@
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 12px;
-  background-color: #ffffff;
+  background-color: #DDE0E6; /* grey-100 */
   transition: all 0.2s ease-in-out;
 }
 
@@ -602,10 +602,10 @@
 
 .event-list__run-button {
   padding: 10px 24px;
-  background-color: #059669;
+  background-color: rgb(48, 172, 130); /* segment-green */
   color: #ffffff;
   border: none;
-  border-radius: 6px;
+  border-radius: 24px; /* More oval shape */
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -619,13 +619,13 @@
 }
 
 .event-list__run-button:hover:not(:disabled) {
-  background-color: #047857;
+  background-color: rgba(48, 172, 130, 0.9); /* segment-green with opacity */
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(5, 150, 105, 0.2);
+  box-shadow: 0 4px 8px rgba(48, 172, 130, 0.2); /* segment-green shadow */
 }
 
 .event-list__run-button:active {
-  background-color: #065f46;
+  background-color: rgba(48, 172, 130, 0.8); /* segment-green with opacity */
   transform: translateY(0);
 }
 
@@ -640,6 +640,51 @@
 .event-list__run-button:focus {
   margin-left: 8px;
   margin-top: 8px;
+}
+
+/* Download Button */
+.event-list__download-button {
+  padding: 6px 12px;
+  background-color: #3b82f6; /* blue-500 */
+  color: #ffffff;
+  border: none;
+  border-radius: 24px; /* More oval shape */
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+  margin-left: 12px;
+}
+
+.event-list__download-button:hover:not(:disabled) {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+}
+
+.event-list__download-button:active {
+  background-color: #1d4ed8;
+  transform: translateY(0);
+}
+
+.event-list__download-button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.event-list__download-icon {
+  width: 14px;
+  height: 14px;
+  filter: brightness(0) invert(1);
 }
 
 /* Running Status */
@@ -774,8 +819,8 @@
 
 /* User hover highlighting effect */
 .event-list__event--user-highlighted {
-  border-color: #10b981 !important;
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+  border-color: rgb(48, 172, 130) !important; /* segment-green */
+  box-shadow: 0 0 12px rgba(48, 172, 130, 0.4); /* segment-green shadow */
   animation: userGlow 1.2s ease-in-out infinite alternate;
 }
 
@@ -830,6 +875,17 @@
   background-color: #f3f4f6;
 }
 
+.event-list__log-completed {
+  font-size: 12px;
+  color: rgb(48, 172, 130);
+  background-color: rgba(48, 172, 130, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+  letter-spacing: 0.025em;
+}
+
 .event-list__log-toggle {
   font-size: 14px;
   color: #6b7280;
@@ -862,7 +918,7 @@
 
 .event-list__log-entry--success {
   background-color: #f0fdf4;
-  border-left: 3px solid #10b981;
+  border-left: 3px solid rgb(48, 172, 130); /* segment-green */
 }
 
 .event-list__log-entry--error {
@@ -899,7 +955,7 @@
 }
 
 .event-list__log-message--success {
-  color: #065f46;
+  color: rgba(48, 172, 130, 0.8); /* segment-green with opacity */
 }
 
 .event-list__log-message--error {
@@ -1070,8 +1126,8 @@
 
 /* Dark Mode Styles for EventList - Events Level 1 */
 .dark-mode .event-list {
-  background: #081F47; /* blue-850 */
-  border-color: #081F47; /* blue-850 */
+  background: rgb(26, 31, 52); /* Twilio secondary blue */
+  border-color: rgb(26, 31, 52); /* Twilio secondary blue */
   color: #F3F4F7; /* grey-50 */
 }
 
@@ -1090,13 +1146,13 @@
 
 /* Events Level 2 - Event items and log entries */
 .dark-mode .event-list__event {
-  background: #4D5777; /* grey-600 */
-  border-color: #4D5777; /* grey-600 */
-  color: #F3F4F7; /* grey-50 */
+  background: #DDE0E6; /* grey-100 */
+  border-color: #DDE0E6; /* grey-100 */
+  color: #111827; /* dark text for contrast */
 }
 
 .dark-mode .event-list__event:hover {
-  background: rgba(77, 87, 119, 0.8); /* grey-600 with opacity */
+  background: rgba(221, 224, 230, 0.9); /* grey-100 with slight opacity */
 }
 
 .dark-mode .event-list__log-entry {
@@ -1105,29 +1161,29 @@
   color: #F3F4F7; /* grey-50 */
 }
 
-/* Event text elements - grey-50 */
+/* Event text elements - dark text for grey-100 background */
 .dark-mode .event-list__event-number,
 .dark-mode .event-list__event-name,
 .dark-mode .event-list__event-meta {
-  color: #F3F4F7; /* grey-50 */
+  color: #111827; /* dark text for contrast */
 }
 
-/* Simulation Log header - white color */
+/* Simulation Log header - dark text */
 .dark-mode .event-list__log-title {
-  color: #F3F4F7; /* grey-50 (white) */
+  color: #111827; /* dark text for contrast */
 }
 
 .dark-mode .event-list__event-header {
-  color: #F3F4F7; /* grey-50 */
-  border-bottom-color: rgba(77, 87, 119, 0.3); /* grey-600 with opacity */
+  color: #111827; /* dark text for contrast */
+  border-bottom-color: rgba(17, 24, 39, 0.2); /* dark border with opacity */
 }
 
 .dark-mode .event-list__event-title {
-  color: #F3F4F7; /* grey-50 */
+  color: #111827; /* dark text for contrast */
 }
 
 .dark-mode .event-list__event-timestamp {
-  color: #DDE0E6; /* grey-100 */
+  color: #6b7280; /* grey-500 for subtle text on grey-100 background */
 }
 
 .dark-mode .event-list__run-button {
@@ -1139,6 +1195,20 @@
 .dark-mode .event-list__run-button:hover:not(:disabled) {
   background: #081F47; /* blue-850 */
   border-color: #081F47; /* blue-850 */
+}
+
+.dark-mode .event-list__download-button {
+  background: #3b82f6;
+  color: #f9fafb;
+}
+
+.dark-mode .event-list__download-button:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.dark-mode .event-list__download-button:disabled {
+  background: #4b5563;
+  color: #9ca3af;
 }
 
 .dark-mode .event-list__checkpoint {

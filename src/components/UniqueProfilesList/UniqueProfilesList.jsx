@@ -54,54 +54,75 @@ const UniqueProfilesList = ({ profileApiResults, events, onHighlightEvents }) =>
               endpointType = 'events';
             }
           } else if (typeof data === 'object') {
-            // Traits endpoint - object with trait key-value pairs
-            endpointType = 'traits';
+            // Traits or metadata endpoint - object with key-value pairs
+            if (data.segment_id && data.metadata) {
+              endpointType = 'metadata';
+            } else {
+              endpointType = 'traits';
+            }
           }
         }
 
-        // Find user_id from the data to group profiles
+        // Find segment_id from metadata endpoint for grouping, fall back to user_id
+        let segmentId = null;
         let userId = null;
         let profileKey = identifier; // Default to the lookup identifier
 
-        if (endpointType === 'external_ids') {
-          // Look for user_id in external IDs - handle nested data structure
-          const externalIdsArray = Array.isArray(data) ? data : (data.data || []);
-          const userIdEntry = externalIdsArray.find(entry => entry.type === 'user_id');
-          if (userIdEntry) {
-            userId = userIdEntry.id;
-            profileKey = userId; // Group by user_id
+        // First, check if we have metadata endpoint data for this identifier
+        if (endpointType === 'metadata' && data.segment_id) {
+          segmentId = data.segment_id;
+          profileKey = segmentId; // Group by segment_id
+        } else {
+          // Check if we already have metadata for this identifier in the current batch
+          const metadataFromSameIdentifier = result._combinedData?.metadata;
+          if (metadataFromSameIdentifier && metadataFromSameIdentifier.segment_id) {
+            segmentId = metadataFromSameIdentifier.segment_id;
+            profileKey = segmentId;
           }
-        } else if (endpointType === 'traits') {
-          // Extract user_id from identifier (e.g., "user_id:3eca7d22-6f6d-4ef0-8f4b-19296da2612f")
-          if (identifier.startsWith('user_id:')) {
-            userId = identifier.replace('user_id:', '');
-            profileKey = userId;
-          } else if (data.user_id) {
-            userId = data.user_id;
-            profileKey = userId;
-          }
-        } else if (endpointType === 'events') {
-          // Look for user_id in event data - handle nested data structure
-          const eventsArray = Array.isArray(data) ? data : (data.data || []);
-          const eventWithUserId = eventsArray.find(event => event.userId || event.user_id);
-          if (eventWithUserId) {
-            userId = eventWithUserId.userId || eventWithUserId.user_id;
-            profileKey = userId;
-          } else {
-            // If no userId in event, look in external_ids within each event
-            const eventWithExternalIds = eventsArray.find(event => 
-              event.external_ids && Array.isArray(event.external_ids)
-            );
-            if (eventWithExternalIds) {
-              const userIdExternal = eventWithExternalIds.external_ids.find(extId => extId.type === 'user_id');
-              if (userIdExternal) {
-                userId = userIdExternal.id;
-                profileKey = userId;
-              } else {
-                // Try to match with any other external_id that might correspond to existing profiles
-                const emailExternal = eventWithExternalIds.external_ids.find(extId => extId.type === 'email');
-                if (emailExternal) {
-                  profileKey = `email:${emailExternal.id}`;
+        }
+
+        // Fall back to user_id grouping if no segment_id available
+        if (!segmentId) {
+          if (endpointType === 'external_ids') {
+            // Look for user_id in external IDs - handle nested data structure
+            const externalIdsArray = Array.isArray(data) ? data : (data.data || []);
+            const userIdEntry = externalIdsArray.find(entry => entry.type === 'user_id');
+            if (userIdEntry) {
+              userId = userIdEntry.id;
+              profileKey = userId; // Group by user_id
+            }
+          } else if (endpointType === 'traits') {
+            // Extract user_id from identifier (e.g., "user_id:3eca7d22-6f6d-4ef0-8f4b-19296da2612f")
+            if (identifier.startsWith('user_id:')) {
+              userId = identifier.replace('user_id:', '');
+              profileKey = userId;
+            } else if (data.user_id) {
+              userId = data.user_id;
+              profileKey = userId;
+            }
+          } else if (endpointType === 'events') {
+            // Look for user_id in event data - handle nested data structure
+            const eventsArray = Array.isArray(data) ? data : (data.data || []);
+            const eventWithUserId = eventsArray.find(event => event.userId || event.user_id);
+            if (eventWithUserId) {
+              userId = eventWithUserId.userId || eventWithUserId.user_id;
+              profileKey = userId;
+            } else {
+              // If no userId in event, look in external_ids within each event
+              const eventWithExternalIds = eventsArray.find(event => 
+                event.external_ids && Array.isArray(event.external_ids)
+              );
+              if (eventWithExternalIds) {
+                const userIdExternal = eventWithExternalIds.external_ids.find(extId => extId.type === 'user_id');
+                if (userIdExternal) {
+                  userId = userIdExternal.id;
+                  profileKey = userId;
+                } else {
+                  // Try to match with any other external_id that might correspond to existing profiles
+                  const emailExternal = eventWithExternalIds.external_ids.find(extId => extId.type === 'email');
+                  if (emailExternal) {
+                    profileKey = `email:${emailExternal.id}`;
+                  }
                 }
               }
             }
@@ -111,6 +132,7 @@ const UniqueProfilesList = ({ profileApiResults, events, onHighlightEvents }) =>
         console.log(`🔑 Profile key resolution:`);
         console.log(`  - Identifier: ${identifier}`);
         console.log(`  - Endpoint: ${endpointType}`);
+        console.log(`  - Found segmentId: ${segmentId}`);
         console.log(`  - Found userId: ${userId}`);
         console.log(`  - Profile key: ${profileKey}`);
 
@@ -148,12 +170,14 @@ const UniqueProfilesList = ({ profileApiResults, events, onHighlightEvents }) =>
           console.log(`🆕 Creating new profile for key: ${profileKey}`);
           profilesMap.set(profileKey, {
             id: profileKey,
+            segmentId: segmentId,
             userId: userId,
             lookupIdentifier: identifier,
             endpoints: [],
             externalIds: [],
             traits: {},
             events: [],
+            metadata: null,
             eventCount: 0,
             eventIndices: [],
             firstSeen: null,
@@ -165,13 +189,49 @@ const UniqueProfilesList = ({ profileApiResults, events, onHighlightEvents }) =>
 
         const profile = profilesMap.get(profileKey);
 
-        // Add endpoint to the list if not already present
-        if (!profile.endpoints.includes(endpointType)) {
+        // Update segmentId and userId if we found them and profile doesn't have them yet
+        if (segmentId && !profile.segmentId) {
+          profile.segmentId = segmentId;
+        }
+        if (userId && !profile.userId) {
+          profile.userId = userId;
+        }
+
+        // Add endpoint to the list if not already present (exclude metadata from visible endpoints)
+        if (endpointType !== 'metadata' && !profile.endpoints.includes(endpointType)) {
           profile.endpoints.push(endpointType);
         }
 
         // Process data based on endpoint type
-        if (endpointType === 'external_ids') {
+        if (endpointType === 'metadata') {
+          // Store metadata information
+          profile.metadata = data;
+          
+          // Update profile ID to use segment_id if available
+          if (data.segment_id && profile.id !== data.segment_id) {
+            // Update the map key to use segment_id
+            profilesMap.delete(profileKey);
+            profile.id = data.segment_id;
+            profile.segmentId = data.segment_id;
+            profilesMap.set(data.segment_id, profile);
+          }
+          
+          // Update timestamps from metadata
+          if (data.metadata) {
+            if (data.metadata.created_at) {
+              const createdAt = new Date(data.metadata.created_at);
+              if (!profile.firstSeen || createdAt < new Date(profile.firstSeen)) {
+                profile.firstSeen = createdAt.toISOString();
+              }
+            }
+            if (data.metadata.updated_at) {
+              const updatedAt = new Date(data.metadata.updated_at);
+              if (!profile.lastSeen || updatedAt > new Date(profile.lastSeen)) {
+                profile.lastSeen = updatedAt.toISOString();
+              }
+            }
+          }
+        } else if (endpointType === 'external_ids') {
           // Merge external IDs, avoiding duplicates - handle nested data structure
           const externalIdsArray = Array.isArray(data) ? data : (data.data || []);
           externalIdsArray.forEach(identifier => {

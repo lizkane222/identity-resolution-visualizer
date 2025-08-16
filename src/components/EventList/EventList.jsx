@@ -12,36 +12,46 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
   const [customOrderField, setCustomOrderField] = useState('');
   const [orderEnabled, setOrderEnabled] = useState(false);
 
+  // Helper function to get nested values from object
+  const getNestedValue = (obj, path) => {
+    try {
+      const parsedData = JSON.parse(obj.rawData);
+      if (path === 'timestamp') {
+        return parsedData.timestamp || parsedData.originalTimestamp || parsedData.receivedAt || parsedData.sentAt || new Date(0).toISOString();
+      }
+      return path.split('.').reduce((current, key) => current?.[key], parsedData);
+    } catch {
+      return '';
+    }
+  };
+
   // Sort events by selected field
   const sortedEvents = orderEnabled
     ? [...events].sort((a, b) => {
-        try {
-          const aObj = JSON.parse(a.rawData);
-          const bObj = JSON.parse(b.rawData);
-          if (orderBy === 'timestamp') {
-            // Extract timestamp from rawData with fallbacks
-            const getTimestamp = (obj) => obj.timestamp || obj.originalTimestamp || obj.receivedAt || obj.sentAt || new Date(0).toISOString();
-            return new Date(getTimestamp(aObj)) - new Date(getTimestamp(bObj));
-          } else if (orderBy === 'custom' && customOrderField) {
-            if (aObj[customOrderField] === undefined) return 1;
-            if (bObj[customOrderField] === undefined) return -1;
-            if (aObj[customOrderField] < bObj[customOrderField]) return -1;
-            if (aObj[customOrderField] > bObj[customOrderField]) return 1;
-            return 0;
-          }
-          return 0;
-        } catch {
-          return 0;
+        const fieldToSort = orderBy === 'custom' ? customOrderField : orderBy;
+        const aValue = getNestedValue(a, fieldToSort);
+        const bValue = getNestedValue(b, fieldToSort);
+        
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return aValue.localeCompare(bValue);
         }
+        
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return aValue - bValue;
+        }
+        
+        return String(aValue).localeCompare(String(bValue));
       })
     : events;
 
+  // Simulation state
   const [isRunning, setIsRunning] = useState(false);
   const [timeoutMs, setTimeoutMs] = useState(1000);
   const [currentEventIndex, setCurrentEventIndex] = useState(-1);
   const [simulationLog, setSimulationLog] = useState([]);
   const [expandedEvents, setExpandedEvents] = useState(new Set());
   const [simulationLogExpanded, setSimulationLogExpanded] = useState(true);
+  const [simulationCompleted, setSimulationCompleted] = useState(false);
   
   // Checkpoint state - only one checkpoint at a time
   const [checkpointIndex, setCheckpointIndex] = useState(-1); // -1 means start from beginning
@@ -51,7 +61,6 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
   const eventsListRef = useRef(null);
   const activeEventRef = useRef(null);
   const checkpointRef = useRef(null);
-
   // Auto-scroll to active event during simulation
   useEffect(() => {
     if (isRunning && currentEventIndex >= 0 && activeEventRef.current && eventsListRef.current) {
@@ -95,6 +104,8 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
 
     setIsRunning(true);
     setCurrentEventIndex(-1);
+    setSimulationCompleted(false);
+    setSimulationLogExpanded(true); // Expand log during simulation
     
     // Don't clear the simulation log if we're continuing from a checkpoint
     if (checkpointIndex === -1) {
@@ -206,6 +217,8 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
     } finally {
       setIsRunning(false);
       setCurrentEventIndex(-1);
+      setSimulationCompleted(true);
+      setSimulationLogExpanded(false); // Collapse log when completed
     }
   };
 
@@ -323,6 +336,105 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
     }
   };
 
+  // Convert events to CSV and download
+  const downloadEventsCSV = () => {
+    if (events.length === 0) {
+      alert('No events to download');
+      return;
+    }
+
+    // Prepare CSV data
+    const csvRows = [];
+    
+    // Add header row
+    csvRows.push([
+      'Event Number',
+      'Event Type',
+      'Event Name',
+      'Timestamp',
+      'User ID',
+      'Anonymous ID',
+      'Source Name',
+      'Source Type',
+      'Write Key',
+      'Raw Event Data'
+    ]);
+
+    // Add data rows
+    sortedEvents.forEach((event, index) => {
+      try {
+        const parsedData = JSON.parse(event.rawData);
+        const eventType = getEventType(event.rawData);
+        const eventName = parsedData.event || parsedData.properties?.name || '';
+        const timestamp = parsedData.timestamp || parsedData.originalTimestamp || parsedData.receivedAt || event.timestamp || '';
+        const userId = parsedData.userId || '';
+        const anonymousId = parsedData.anonymousId || '';
+        
+        // Handle multiple sources or single source
+        if (event.sources && event.sources.length > 0) {
+          event.sources.forEach(source => {
+            csvRows.push([
+              index + 1,
+              eventType,
+              eventName,
+              timestamp,
+              userId,
+              anonymousId,
+              source.name || '',
+              source.type || '',
+              source.settings?.writeKey || '',
+              `"${event.rawData.replace(/"/g, '""')}"` // Escape quotes in JSON
+            ]);
+          });
+        } else {
+          csvRows.push([
+            index + 1,
+            eventType,
+            eventName,
+            timestamp,
+            userId,
+            anonymousId,
+            event.sourceName || '',
+            event.sourceType || '',
+            event.writeKey || '',
+            `"${event.rawData.replace(/"/g, '""')}"` // Escape quotes in JSON
+          ]);
+        }
+      } catch (error) {
+        // If parsing fails, add basic info
+        csvRows.push([
+          index + 1,
+          'unknown',
+          '',
+          event.timestamp || '',
+          '',
+          '',
+          event.sourceName || '',
+          event.sourceType || '',
+          event.writeKey || '',
+          `"${event.rawData.replace(/"/g, '""')}"`
+        ]);
+      }
+    });
+
+    // Convert to CSV string
+    const csvContent = csvRows.map(row => row.join(',')).join('\n');
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `events_export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   return (
     <div className="event-list event-list--sidebar">
       <div className="event-list__header">
@@ -364,7 +476,8 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
                 <div className="event-list__checkpoint-handle">
                   <span className="event-list__checkpoint-icon">⋮⋮</span>
                   <span className="event-list__checkpoint-text">
-                    Checkpoint - Start simulation from here ({Math.max(0, sortedEvents.length - (checkpointIndex + 1))} events remaining)
+                    Checkpoint - Start simulation from here.
+                    {/* Checkpoint - Start simulation from here ({Math.max(0, sortedEvents.length - (checkpointIndex + 1))} events remaining) */}
                   </span>
                 </div>
               </div>
@@ -530,7 +643,8 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
                       <div className="event-list__checkpoint-handle">
                         <span className="event-list__checkpoint-icon">⋮⋮</span>
                         <span className="event-list__checkpoint-text">
-                          Checkpoint - Start simulation from here ({Math.max(0, sortedEvents.length - (checkpointIndex + 1))} events remaining)
+                          Checkpoint - Start simulation from here.
+                          {/* Checkpoint - Start simulation from here ({Math.max(0, sortedEvents.length - (checkpointIndex + 1))} events remaining) */}
                         </span>
                       </div>
                     </div>
@@ -592,6 +706,15 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
             disabled={isRunning}
             className="event-list__timeout-input"
           />
+          <button
+            onClick={downloadEventsCSV}
+            disabled={events.length === 0}
+            className="event-list__download-button"
+            title="Download events as CSV"
+          >
+            <img src="/assets/Download_symbol.svg" alt="Download" className="event-list__download-icon" />
+            Download
+          </button>
         </div>
 
         <button
@@ -622,7 +745,7 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
         </button>
       </div>
 
-      {/* Simulation log (simplified for brevity) */}
+      {/* Simulation log */}
       {simulationLog.length > 0 && (
         <div className="event-list__log-section">
           <h3 
@@ -630,23 +753,30 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
             onClick={() => setSimulationLogExpanded(!simulationLogExpanded)}
           >
             Simulation Log
+            {simulationCompleted && (
+              <span className="event-list__log-completed">COMPLETED</span>
+            )}
             <span className={`event-list__log-toggle ${simulationLogExpanded ? 'event-list__log-toggle--expanded' : ''}`}>
               ▼
             </span>
           </h3>
           {simulationLogExpanded && (
             <div className="event-list__log-container">
-              {simulationLog.map((logEntry, index) => (
-                <div
-                  key={index}
-                  className={`event-list__log-entry ${
-                    logEntry.status === 'error' 
-                      ? 'event-list__log-entry--error' 
-                      : logEntry.status === 'info'
-                      ? 'event-list__log-entry--info'
-                      : 'event-list__log-entry--success'
-                  }`}
-                >
+              {/* During simulation, show only the latest log. After completion, show all logs */}
+              {(isRunning ? simulationLog.slice(-1) : simulationLog).map((logEntry, index, array) => {
+                // Use original index for key when showing only latest, otherwise use current index
+                const keyIndex = isRunning ? simulationLog.length - 1 : index;
+                return (
+                  <div
+                    key={keyIndex}
+                    className={`event-list__log-entry ${
+                      logEntry.status === 'error' 
+                        ? 'event-list__log-entry--error' 
+                        : logEntry.status === 'info'
+                        ? 'event-list__log-entry--info'
+                        : 'event-list__log-entry--success'
+                    }`}
+                  >
                   <div className="event-list__log-header">
                     <span className="event-list__log-event-title">
                       {logEntry.eventIndex >= 0 ? `Event #${logEntry.eventIndex + 1}` : 'System'}
@@ -697,7 +827,8 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

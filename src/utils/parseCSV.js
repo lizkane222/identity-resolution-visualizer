@@ -154,6 +154,8 @@ export function parseCSV(text) {
 
   const cleanedData = data.map((row, idx) => {
     const cleaned = {};
+    let hasRawEventData = false;
+    
     Object.entries(row).forEach(([k, v]) => {
       let trimmed = (v ?? '').toString().trim();
 
@@ -162,6 +164,22 @@ export function parseCSV(text) {
 
       // Skip completely empty values - don't add fields that weren't in CSV
       if (trimmed === '') {
+        return;
+      }
+
+      // Check for special columns (case insensitive)
+      const normalizedKey = k.toLowerCase().replace(/[^a-z]/g, '');
+      
+      // Handle "Raw Event Data" column
+      if (normalizedKey === 'raweventdata') {
+        cleaned['rawEventData'] = trimmed;
+        hasRawEventData = true;
+        return;
+      }
+      
+      // Handle "Write Key" column
+      if (normalizedKey === 'writekey') {
+        cleaned['writeKey'] = trimmed;
         return;
       }
 
@@ -197,7 +215,15 @@ export function parseCSV(text) {
     // Remove messageId if present (Segment generates this automatically)
     delete cleaned.messageId;
 
-    if (idx < 3) console.log(`Parsed row ${idx + 1}:`, cleaned);
+    if (idx < 3) {
+      console.log(`Parsed row ${idx + 1}:`, cleaned);
+      if (hasRawEventData) {
+        console.log(`Row ${idx + 1} has raw event data - will use directly`);
+      }
+      if (cleaned.writeKey) {
+        console.log(`Row ${idx + 1} has writeKey: ${cleaned.writeKey}`);
+      }
+    }
     return cleaned;
   });
 

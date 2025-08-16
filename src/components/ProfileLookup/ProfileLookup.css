@@ -1,11 +1,9 @@
+/* Profile Lookup Styles */
 .profile-lookup {
   background: #f8f9fa;
-  border: none;
   border-radius: 8px;
-  padding: 1.5rem;
-  margin: 1rem 0;
-  position: relative;
-  z-index: 1;
+  padding: 24px;
+  margin-bottom: 24px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -188,11 +186,11 @@
 }
 
 .profile-lookup__button {
-  background: #007bff;
+  background: #3b82f6; /* blue-500 background */
   color: white;
-  border: none;
+  border: 1px solid #3b82f6; /* blue-500 border */
   padding: 0.6rem 1.25rem;
-  border-radius: 4px;
+  border-radius: 24px; /* Oval shape */
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -201,31 +199,35 @@
 }
 
 .profile-lookup__button--secondary {
-  background: #6c757d;
-  color: white;
+  background: transparent;
+  border: 1px solid #fb7185; /* red-450 border */
+  color: #7c2d12; /* red-900 text */
 }
 
 .profile-lookup__button--secondary:hover:not(:disabled) {
-  background: #545b62;
+  background-color: rgba(251, 113, 133, 0.1); /* red-450 with opacity */
+  color: #7c2d12; /* red-900 */
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+  box-shadow: 0 2px 4px rgba(251, 113, 133, 0.3);
 }
 
 .profile-lookup__button--stop {
-  background: #dc3545;
-  color: white;
+  background: transparent;
+  border: 1px solid #fb7185; /* red-450 border */
+  color: #7c2d12; /* red-900 text */
 }
 
 .profile-lookup__button--stop:hover:not(:disabled) {
-  background: #c82333;
+  background-color: rgba(251, 113, 133, 0.1); /* red-450 with opacity */
+  color: #7c2d12; /* red-900 */
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+  box-shadow: 0 2px 4px rgba(251, 113, 133, 0.3);
 }
 
 .profile-lookup__button:hover:not(:disabled) {
-  background: #0056b3;
+  background: #1d4ed8; /* darker blue on hover */
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 .profile-lookup__button:active {
@@ -336,12 +338,12 @@
 }
 
 .profile-lookup__endpoint-toggle--selected {
-  border-color: #059669;
-  color: #059669;
+  border-color: rgb(48, 172, 130); /* segment-green */
+  color: rgb(48, 172, 130); /* segment-green */
 }
 
 .profile-lookup__endpoint-toggle--selected:hover {
-  background-color: #059669;
+  background-color: rgb(48, 172, 130); /* segment-green */
   color: white;
 }
 
@@ -396,12 +398,12 @@
 }
 
 .profile-lookup__identifier-toggle--selected {
-  border-color: #059669;
-  color: #059669;
+  border-color: rgb(48, 172, 130); /* segment-green */
+  color: rgb(48, 172, 130); /* segment-green */
 }
 
 .profile-lookup__identifier-toggle--selected:hover {
-  background-color: #059669;
+  background-color: rgb(48, 172, 130); /* segment-green */
   color: white;
 }
 
@@ -1242,5 +1244,78 @@
     flex-direction: column;
     gap: 0.5rem;
     align-items: flex-start;
+  }
+}
+
+/* Clear Profiles Button Styles */
+.profile-lookup__results-header {
+  position: relative;
+  width: 100%;
+}
+
+.profile-lookup__clear-profiles-container {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 10;
+}
+
+.profile-lookup__clear-profiles-button {
+  background: transparent;
+  border: 1px solid #fb7185; /* red-450 border */
+  color: #7c2d12; /* red-900 text */
+  border-radius: 24px; /* Oval shape */
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(251, 113, 133, 0.2);
+}
+
+.profile-lookup__clear-profiles-button:hover {
+  background-color: rgba(251, 113, 133, 0.1); /* red-450 with opacity */
+  color: #7c2d12; /* red-900 */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(251, 113, 133, 0.3);
+}
+
+.profile-lookup__clear-profiles-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+}
+
+.profile-lookup__button-icon {
+  width: 14px;
+  height: 14px;
+  filter: brightness(0) invert(1);
+}
+
+/* Dark mode styles */
+.app--dark .profile-lookup__clear-profiles-button {
+  background: #dc3545;
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+.app--dark .profile-lookup__clear-profiles-button:hover {
+  background: #c82333;
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4);
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .profile-lookup__clear-profiles-container {
+    position: static;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+  }
+  
+  .profile-lookup__clear-profiles-button {
+    font-size: 0.8rem;
+    padding: 6px 12px;
   }
 }

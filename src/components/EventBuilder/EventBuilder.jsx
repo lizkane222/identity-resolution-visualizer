@@ -113,6 +113,7 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
   const [selectedSource, setSelectedSource] = useState(null);
   const [configuredSources, setConfiguredSources] = useState([]);
   const [lastUpdatedFrom, setLastUpdatedFrom] = useState('raw'); // Track which field was last updated
+  const [showFormattedBorder, setShowFormattedBorder] = useState(false); // Track when to show blue border
   const textareaRef = useRef(null);
   const formattedTextareaRef = useRef(null);
   
@@ -426,6 +427,16 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
     }
   };
 
+  // Handle focus on formatted textarea
+  const handleFormattedTextFocus = () => {
+    setShowFormattedBorder(true);
+  };
+
+  // Handle blur on formatted textarea
+  const handleFormattedTextBlur = () => {
+    setShowFormattedBorder(false);
+  };
+
   // Helper function to notify parent of payload changes
   const notifyPayloadChange = (parsedPayload) => {
     if (onEventInfoChange) {
@@ -468,8 +479,10 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
       
       // Visual feedback
       setCopySuccess(true);
+      setShowFormattedBorder(true); // Show border when copying
       setTimeout(() => {
         setCopySuccess(false);
+        setShowFormattedBorder(false); // Hide border after a few seconds
       }, 1500);
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
@@ -591,22 +604,75 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
       // If no source is selected, create one event per row with all configured sources
       // If a source is selected, create one event per row for that source only
       rows.forEach((row, rowIndex) => {
-        // Remove messageId if present (Segment generates this)
-        delete row.messageId;
-        delete row.messageid;
-        
         // Clear both raw and formatted text
         setRawText('');
         setFormattedText('');
         setLastUpdatedFrom('system');
         
-        // Only use fields that were actually present in the CSV
-        // Don't add timestamp if it wasn't in the original data
-        // Process the row to move messageId to context if present
-        const processedRow = processMessageIdForSegment(row);
-        const rawData = JSON.stringify(processedRow);
+        let rawData;
+        let eventWriteKey = null;
         
-        if (!selectedSource && configuredSources.length > 0) {
+        // Check if this CSV has "Raw Event Data" column (from downloaded events)
+        if (row.rawEventData || row['Raw Event Data']) {
+          // Use the raw event data directly
+          const rawEventJson = row.rawEventData || row['Raw Event Data'];
+          try {
+            // Parse and re-stringify to ensure it's valid JSON
+            const eventObj = JSON.parse(rawEventJson);
+            // Remove messageId if present (Segment generates this)
+            delete eventObj.messageId;
+            delete eventObj.messageid;
+            rawData = JSON.stringify(eventObj);
+          } catch (e) {
+            console.error('Failed to parse raw event data:', e);
+            // Fallback to original behavior
+            delete row.messageId;
+            delete row.messageid;
+            const processedRow = processMessageIdForSegment(row);
+            rawData = JSON.stringify(processedRow);
+          }
+        } else {
+          // Original behavior for other CSV formats
+          // Remove messageId if present (Segment generates this)
+          delete row.messageId;
+          delete row.messageid;
+          
+          // Only use fields that were actually present in the CSV
+          // Don't add timestamp if it wasn't in the original data
+          // Process the row to move messageId to context if present
+          const processedRow = processMessageIdForSegment(row);
+          rawData = JSON.stringify(processedRow);
+        }
+
+        // Check if the CSV row has a writeKey (from downloaded events)
+        if (row.writeKey || row['Write Key']) {
+          eventWriteKey = row.writeKey || row['Write Key'];
+        }
+
+        // Determine which source(s) to use based on writeKey
+        let sourceToUse = null;
+        let useAllSources = false;
+
+        if (eventWriteKey) {
+          // Find the configured source that matches this writeKey
+          sourceToUse = configuredSources.find(source => 
+            source.settings?.writeKey === eventWriteKey
+          );
+          
+          if (!sourceToUse) {
+            console.warn(`No configured source found for writeKey: ${eventWriteKey}. Using selectedSource instead.`);
+            sourceToUse = selectedSource;
+          }
+        } else {
+          // No writeKey provided, use selectedSource or all sources
+          if (!selectedSource && configuredSources.length > 0) {
+            useAllSources = true;
+          } else {
+            sourceToUse = selectedSource;
+          }
+        }
+
+        if (useAllSources) {
           // Create a single event with all configured sources
           const eventData = {
             id: Date.now() + Math.random() + rowIndex,
@@ -624,8 +690,7 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
           };
           onSave(eventData);
         } else {
-          // Create a single event for the selected source or null
-          const sourceToUse = selectedSource || null;
+          // Create a single event for the determined source
           const eventData = {
             id: Date.now() + Math.random() + rowIndex,
             rawData,
@@ -658,14 +723,17 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
         {configuredSources.length > 0 && selectedSource && (
           <div className="event-builder__source-status">
             <span className="event-builder__source-status-text">
-              Events will be sent to: <strong>{selectedSource.name}</strong> ({selectedSource.type})
+              {/* Events will be sent to:  */}
+              Events will be sent to: <strong>{selectedSource.name}</strong>
+              {/* Events will be sent to: <strong>{selectedSource.name}</strong> ({selectedSource.type}) */}
             </span>
           </div>
         )}
         {configuredSources.length > 0 && !selectedSource && (
           <div className="event-builder__source-status">
             <span className="event-builder__source-status-text">
-              Events will be sent to: <strong>All configured sources</strong> ({configuredSources.map(s => s.name).join(', ')})
+              Events will be sent to: <strong>All configured sources listed below : </strong>
+              {/* Events will be sent to: <strong>All configured sources</strong> ({configuredSources.map(s => s.name).join(', ')}) */}
             </span>
           </div>
         )}
@@ -688,7 +756,7 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
               {!selectedSource && rawText.trim() && configuredSources.length > 1 && (
                 <div className="event-builder__select-source-indicator">
                   <span className="event-builder__select-source-text">
-                    Will Send to ALL Sources
+                    Select A Source
                   </span>
                   <span className="event-builder__select-source-arrow">→</span>
                 </div>
@@ -727,7 +795,7 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
           {/* Raw input textarea */}
           <div className="event-builder__input-group">
             <label htmlFor="event-input" className="event-builder__label">
-              Event Data (paste analytics calls or JSON here)
+              Event Data (paste Analytics.js calls or JSON here)
             </label>
             <textarea
               id="event-input"
@@ -759,8 +827,12 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
               ref={formattedTextareaRef}
               value={formattedText}
               onChange={handleFormattedTextChange}
+              onFocus={handleFormattedTextFocus}
+              onBlur={handleFormattedTextBlur}
               placeholder='Formatted JSON will appear here and can be edited directly'
-              className={`event-builder__textarea event-builder__textarea--formatted ${
+              className={`event-builder__textarea ${
+                showFormattedBorder ? 'event-builder__textarea--formatted' : ''
+              } ${
                 !isValid ? 'event-builder__textarea--error' : ''
               }`}
             />
@@ -768,7 +840,7 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
         </div>
 
         {/* Action buttons */}
-  <div className="event-builder__actions" style={{ position: 'relative' }}>
+        <div className="event-builder__actions" style={{ position: 'relative' }}>
           <div className="event-builder__buttons-group">
             <button
               onClick={handleClear}
@@ -789,7 +861,7 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
               {copySuccess ? 'Copied!' : 'Copy JSON'}
             </button>
             
-            <button
+                        <button
               onClick={handleSave}
               disabled={(!rawText.trim() && !formattedText.trim()) || !isValid}
               className="event-builder__button event-builder__button--save"
@@ -799,22 +871,20 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
             </button>
 
             {/* Upload CSV Button */}
-            <div style={{ position: 'absolute', right: 0, bottom: 0 }}>
-              <input
-                type="file"
-                accept=".csv"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                onChange={handleCSVUpload}
-              />
-              <button
-                className="event-builder__button event-builder__button--upload"
-                onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                style={{ minWidth: 110 }}
-              >
-                Upload CSV
-              </button>
-            </div>
+            <input
+              type="file"
+              accept=".csv"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={handleCSVUpload}
+            />
+            <button
+              className="event-builder__button event-builder__button--upload"
+              onClick={() => fileInputRef.current && fileInputRef.current.click()}
+              style={{ minWidth: 110 }}
+            >
+              Upload CSV
+            </button>
           </div>
 
           {/* Event Info Display */}

@@ -5,7 +5,7 @@
   min-height: 200px;
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 2rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
@@ -20,6 +20,7 @@
 .current-user__header {
   padding: 12px 16px 8px 16px;
   border-bottom: 1px solid #f3f4f6;
+  border-radius: 2rem 2rem 0 0;
   flex-shrink: 0;
   background-color: #f8fafc;
 }
@@ -47,7 +48,7 @@
 .current-user__traits-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .current-user__section-title {
@@ -134,7 +135,6 @@
 .current-user__custom-section {
   grid-column: 1 / -1;
   margin-top: 8px;
-  padding-top: 12px;
   border-top: 1px solid #f3f4f6;
 }
 
@@ -190,12 +190,12 @@
 }
 
 .current-user__toggle--enabled {
-  border-color: #059669;
-  color: #059669;
+  border-color: rgb(48, 172, 130); /* segment-green */
+  color: rgb(48, 172, 130); /* segment-green */
 }
 
 .current-user__toggle--enabled:hover {
-  background-color: #059669;
+  background-color: rgb(48, 172, 130); /* segment-green */
   color: white;
 }
 
@@ -344,7 +344,6 @@
 .current-user__custom-section {
   margin-top: 4px;
   margin-bottom: 4px;
-  padding-top: 8px;
   border-top: 1px solid #f3f4f6;
 }
 
@@ -415,8 +414,6 @@
 /* Update Section */
 .current-user__update-section {
   grid-column: 1 / -1;
-  margin-top: 8px;
-  padding-top: 12px;
   border-top: 1px solid #f3f4f6;
 }
 
@@ -431,9 +428,9 @@
   font-size: 13px;
   font-weight: 600;
   color: #ffffff;
-  background-color: #3b82f6;
+  background-color: #3b82f6; /* blue-500 */
   border: none;
-  border-radius: 6px;
+  border-radius: 24px; /* More oval shape */
   padding: 10px 16px;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
@@ -460,9 +457,9 @@
   font-size: 13px;
   font-weight: 600;
   color: #ffffff;
-  background-color: #059669;
+  background-color: rgb(48, 172, 130); /* segment-green */
   border: none;
-  border-radius: 6px;
+  border-radius: 24px; /* More oval shape */
   padding: 10px 16px;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
@@ -470,18 +467,18 @@
 }
 
 .current-user__update-button:hover {
-  background-color: #047857;
+  background-color: rgba(48, 172, 130, 0.8); /* segment-green with opacity */
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(5, 150, 105, 0.2);
+  box-shadow: 0 4px 8px rgba(48, 172, 130, 0.2);
 }
 
 .current-user__update-button:active {
-  background-color: #065f46;
+  background-color: rgba(48, 172, 130, 0.9); /* segment-green with opacity */
   transform: translateY(0);
 }
 
 .current-user__update-button:focus {
-  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
+  box-shadow: 0 0 0 3px rgba(48, 172, 130, 0.2);
 }/* Scrollbar for content */
 .current-user__content::-webkit-scrollbar {
   width: 4px;
@@ -631,12 +628,12 @@
   }
 
   .current-user__toggle--enabled {
-    border-color: #10b981;
-    color: #10b981;
+    border-color: rgb(48, 172, 130); /* segment-green */
+    color: rgb(48, 172, 130); /* segment-green */
   }
 
   .current-user__toggle--enabled:hover {
-    background-color: #10b981;
+    background-color: rgb(48, 172, 130); /* segment-green */
   }
 
   .current-user__toggle--disabled {
@@ -696,24 +693,24 @@
   }
   
   .current-user__update-button {
-    background-color: #059669;
+    background-color: rgb(48, 172, 130); /* segment-green */
   }
   
   .current-user__update-button:hover {
-    background-color: #047857;
+    background-color: rgba(48, 172, 130, 0.9); /* segment-green with opacity */
   }
 }
 
 /* Dark Mode Styles - Events Level 1 */
 .dark-mode .current-user {
-  background: #081F47; /* blue-850 */
-  border-color: #191F36; /* blue-900 */
+  background: rgb(26, 31, 52); /* Twilio secondary blue */
+  border-color: #000D25; /* blue-900 */
   color: #F3F4F7; /* grey-50 */
   box-shadow: 0 0 10px rgba(24, 102, 238, 0.4), 0 0 40px rgba(24, 102, 238, 0.2);
 }
 
 .dark-mode .current-user__header {
-  background-color: #081F47; /* blue-850 */
+  background-color: rgb(26, 31, 52); /* Twilio secondary blue */
   border-bottom-color: rgba(77, 87, 119, 0.3); /* grey-600 with opacity */
 }
 
@@ -745,11 +742,15 @@
 
 .dark-mode .current-user__random-user-button,
 .dark-mode .current-user__update-button {
-  background: #1866EE; /* blue-500 */
-  color: #F3F4F7; /* grey-50 */
+  background: #3b82f6; /* blue-500 for random user button */
+  color: #ffffff;
+}
+
+.dark-mode .current-user__update-button {
+  background: rgb(48, 172, 130); /* segment-green for update button */
 }
 
 .dark-mode .current-user__random-user-button:hover,
 .dark-mode .current-user__update-button:hover {
-  background: #081F47; /* blue-850 */
+  opacity: 0.8;
 }

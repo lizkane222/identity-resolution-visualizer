@@ -34,11 +34,25 @@ function App() {
   const [highlightedEventIndices, setHighlightedEventIndices] = useState([]);
   const [unifySpaceSlug, setUnifySpaceSlug] = useState('');
   
-  // Dark mode state
+  // Persistent profile API results
+  const [profileApiResults, setProfileApiResults] = useState(() => {
+    try {
+      const saved = localStorage.getItem('profileApiResults');
+      return saved ? JSON.parse(saved) : {};
+    } catch (error) {
+      console.error('Error loading profile API results from localStorage:', error);
+      return {};
+    }
+  });
+  
+  // Dark mode state - Temporarily disabled
+  /*
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     return saved ? JSON.parse(saved) : false;
   });
+  */
+  const isDarkMode = false; // Hardcoded to false for now
 
   // Brand mode state (segment vs twilio)
   const [brandMode, setBrandMode] = useState(() => {
@@ -64,7 +78,8 @@ function App() {
     return null;
   });
 
-  // Apply dark mode class to document
+  // Apply dark mode class to document - Temporarily disabled
+  /*
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark-mode');
@@ -73,6 +88,7 @@ function App() {
     }
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
   }, [isDarkMode]);
+  */
 
   // Apply glow mode styles to document
   useEffect(() => {
@@ -145,7 +161,17 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Toggle dark mode
+  // Persist profile API results to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('profileApiResults', JSON.stringify(profileApiResults));
+    } catch (error) {
+      console.error('Error saving profile API results to localStorage:', error);
+    }
+  }, [profileApiResults]);
+
+  // Toggle dark mode - Temporarily disabled
+  /*
   const handleToggleDarkMode = () => {
     // Clear glow mode when switching to dark/light mode
     if (currentGlowMode) {
@@ -153,11 +179,12 @@ function App() {
     }
     setIsDarkMode(prev => !prev);
   };
+  */
 
   // Handle glow mode change
   const handleGlowModeChange = (glowMode) => {
     setCurrentGlowMode(glowMode);
-    setIsDarkMode(false); // Disable dark mode when glow mode is active
+    // setIsDarkMode(false); // Disable dark mode when glow mode is active - Commented out
   };
 
   // Load enabled identifiers from ID Resolution Config (localStorage)
@@ -293,14 +320,44 @@ function App() {
 
   // Handle clearing all events
   const handleClearEvents = () => {
-    if (window.confirm('Are you sure you want to clear all events?')) {
-      setEvents([]);
-    }
+    setEvents([]);
   };
 
   // Handle highlighting events
   const handleHighlightEvents = (eventIndices) => {
     setHighlightedEventIndices(eventIndices);
+  };
+
+  // Handle profile API results updates
+  const handleProfileApiResultsUpdate = (newResults) => {
+    setProfileApiResults(prevResults => {
+      const merged = { ...prevResults };
+      
+      Object.entries(newResults).forEach(([identifier, result]) => {
+        if (merged[identifier]) {
+          // If we already have data for this identifier, merge carefully
+          const existingResult = merged[identifier];
+          const mergedResult = {
+            ...result,
+            // Preserve and merge endpoint metadata
+            _endpoints: [
+              ...(existingResult._endpoints || [existingResult._endpoint || 'unknown']), 
+              ...(result._endpoints || [result._endpoint || 'unknown'])
+            ].filter((ep, index, arr) => arr.indexOf(ep) === index), // dedupe
+            _combinedData: {
+              ...(existingResult._combinedData || { [existingResult._endpoint || 'unknown']: existingResult.data }),
+              ...(result._combinedData || { [result._endpoint || 'unknown']: result.data })
+            }
+          };
+          merged[identifier] = mergedResult;
+        } else {
+          // First time seeing this identifier
+          merged[identifier] = result;
+        }
+      });
+      
+      return merged;
+    });
   };
 
   // Handle loading a preset event into EventBuilder
@@ -475,6 +532,13 @@ function App() {
                   identifierOptions={identifierOptions}
                   events={events}
                   onHighlightEvents={handleHighlightEvents}
+                  profileApiResults={profileApiResults}
+                  onProfileApiResultsUpdate={handleProfileApiResultsUpdate}
+                  onClearProfiles={() => {
+                    if (window.confirm('Clear all saved profile lookup results?')) {
+                      setProfileApiResults({});
+                    }
+                  }}
                 />
               </section>
             )}
@@ -544,6 +608,7 @@ function App() {
             events={events}
             identifierOptions={identifierOptions}
             unifySpaceSlug={unifySpaceSlug}
+            profileApiResults={profileApiResults}
             onClose={() => setCurrentPage('main')}
           />
         )}
@@ -554,6 +619,7 @@ function App() {
             events={events}
             identifierOptions={identifierOptions}
             unifySpaceSlug={unifySpaceSlug}
+            profileApiResults={profileApiResults}
             onClose={() => setCurrentPage('main')}
           />
         )}
@@ -574,7 +640,8 @@ function App() {
           )}
         </button>
         
-        {/* Light/Dark Mode Toggle */}
+        {/* Light/Dark Mode Toggle - Temporarily disabled */}
+        {/*
         <button 
           onClick={handleToggleDarkMode}
           className="app__floating-theme-button app__floating-theme-button--primary"
@@ -582,6 +649,7 @@ function App() {
         >
           {isDarkMode ? '☀️' : '🌙'}
         </button>
+        */}
         
         {/* Clear Glow Mode Button (only show when glow mode is active) */}
         {currentGlowMode && (

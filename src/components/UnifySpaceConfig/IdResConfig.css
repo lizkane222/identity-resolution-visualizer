@@ -301,8 +301,8 @@
 
 .idres-config__toggle-button--enabled {
   background: #dcfce7;
-  color: #166534;
-  border-color: #22c55e;
+  color: rgba(48, 172, 130, 0.8); /* segment-green with opacity */
+  border-color: rgb(48, 172, 130); /* segment-green */
 }
 
 .idres-config__toggle-button--enabled:hover {
@@ -327,6 +327,12 @@
 .idres-config__remove-button:hover {
   background: #fee2e2;
   border-color: #dc2626;
+}
+
+.idres-config__button-icon {
+  width: 14px;
+  height: 14px;
+  filter: brightness(0) saturate(100%) invert(17%) sepia(89%) saturate(2481%) hue-rotate(343deg) brightness(96%) contrast(95%);
 }
 
 .idres-config__identifier-details {
@@ -366,18 +372,28 @@
 .idres-config__location-item {
   display: flex;
   align-items: flex-start;
+  gap: 8px;
 }
 
-.idres-config__location-item code {
+.idres-config__location-label {
+  font-weight: bold;
+  min-width: 0;
+  font-size: 11px;
+  color: #374151;
+  flex-shrink: 0;
+}
+
+.idres-config__location-code {
   background: #f1f5f9;
   color: #475569;
-  padding: 6px 10px;
+  padding: 4px 8px;
   border-radius: 4px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 11px;
   border: 1px solid #cbd5e1;
   flex: 1;
   word-break: break-all;
+  display: inline-block;
 }
 
 .idres-config__add-custom {
@@ -514,168 +530,174 @@
 }
 
 /* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .idres-config__section {
-    background: #1f2937;
-    border-color: #374151;
-  }
-  
-  .idres-config__section-title {
-    color: #f9fafb;
-  }
-  
-  .idres-config__section-description {
-    color: #9ca3af;
-  }
-  
-  .idres-config__subsection-title {
-    color: #d1d5db;
-  }
-  
-  .idres-config__identifier {
-    background: #111827;
-    border-color: #374151;
-  }
-  
-  .idres-config__identifier:hover {
-    border-color: #4b5563;
-  }
-  
-  .idres-config__identifier--disabled {
-    background: #1f2937;
-  }
-  
-  .idres-config__identifier--custom {
-    background: #1e1b4b;
-    border-color: #7c3aed;
-  }
-  
-  .idres-config__identifier--custom:hover {
-    border-color: #8b5cf6;
-  }
-  
-  .idres-config__drag-handle {
-    color: #6b7280;
-  }
-  
-  .idres-config__identifier-priority {
-    background: #4b5563;
-    color: #d1d5db;
-  }
-  
-  .idres-config__identifier--custom .idres-config__identifier-priority {
-    background: #7c3aed;
-    color: white;
-  }
-  
-  .idres-config__identifier-name {
-    color: #f9fafb;
-  }
-  
-  .idres-config__identifier-id {
-    background: #1f2937;
-    color: #d1d5db;
-    border-color: #4b5563;
-  }
-  
-  .idres-config__expand-button,
-  .idres-config__toggle-button,
-  .idres-config__remove-button {
-    border-color: #4b5563;
-    color: #d1d5db;
-  }
-  
-  .idres-config__expand-button:hover {
-    background: #374151;
-    border-color: #6b7280;
-  }
-  
-  .idres-config__identifier-details {
-    border-top-color: #374151;
-  }
-  
-  .idres-config__details-title {
-    color: #d1d5db;
-  }
-  
-  .idres-config__location-item code {
-    background: #1f2937;
-    color: #d1d5db;
-    border-color: #4b5563;
-  }
-  
-  .idres-config__add-custom {
-    border-top-color: #374151;
-  }
-  
-  .idres-config__add-custom-input {
-    background: #111827;
-    border-color: #4b5563;
-    color: #f9fafb;
-  }
-  
-  .idres-config__add-custom-input:focus {
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-  }
-  
-  .idres-config__add-custom-help {
-    color: #9ca3af;
-  }
+.dark-mode .idres-config__section {
+  background: #1f2937;
+  border-color: #374151;
+}
 
-  .idres-config__control-label {
-    color: #9ca3af;
-  }
+.dark-mode .idres-config__section-title {
+  color: #f9fafb;
+}
 
-  .idres-config__limit-control {
-    background: #111827;
-    border-color: #4b5563;
-  }
+.dark-mode .idres-config__section-description {
+  color: #9ca3af;
+}
 
-  .idres-config__limit-button {
-    color: #9ca3af;
-  }
+.dark-mode .idres-config__subsection-title {
+  color: #d1d5db;
+}
 
-  .idres-config__limit-button:hover:not(:disabled) {
-    background: #374151;
-    color: #d1d5db;
-  }
+.dark-mode .idres-config__identifier {
+  background: #111827;
+  border-color: #374151;
+}
 
-  .idres-config__limit-button:disabled {
-    color: #4b5563;
-  }
+.dark-mode .idres-config__identifier:hover {
+  border-color: #4b5563;
+}
 
-  .idres-config__limit-value {
-    color: #d1d5db;
-  }
+.dark-mode .idres-config__identifier--disabled {
+  background: #1f2937;
+}
 
-  .idres-config__frequency-select {
-    background: #111827;
-    border-color: #4b5563;
-    color: #d1d5db;
-  }
+.dark-mode .idres-config__identifier--custom {
+  background: #1e1b4b;
+  border-color: #7c3aed;
+}
 
-  .idres-config__frequency-select:focus {
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
-  }
+.dark-mode .idres-config__identifier--custom:hover {
+  border-color: #8b5cf6;
+}
 
-  .idres-config__frequency-select:hover {
-    border-color: #6b7280;
-  }
+.dark-mode .idres-config__drag-handle {
+  color: #6b7280;
+}
 
-  .idres-config__restore-label {
-    color: #d1d5db;
-  }
+.dark-mode .idres-config__identifier-priority {
+  background: #4b5563;
+  color: #d1d5db;
+}
 
-  .idres-config__restore-bubble {
-    background: #1e3a8a;
-    color: #ddd6fe;
-    border-color: #3730a3;
-  }
+.dark-mode .idres-config__identifier--custom .idres-config__identifier-priority {
+  background: #7c3aed;
+  color: white;
+}
 
-  .idres-config__restore-bubble:hover {
-    background: #1e40af;
-    border-color: #4338ca;
-  }
+.dark-mode .idres-config__identifier-name {
+  color: #f9fafb;
+}
+
+.dark-mode .idres-config__identifier-id {
+  background: #1f2937;
+  color: #d1d5db;
+  border-color: #4b5563;
+}
+
+.dark-mode .idres-config__expand-button,
+.dark-mode .idres-config__toggle-button,
+.dark-mode .idres-config__remove-button {
+  border-color: #4b5563;
+  color: #d1d5db;
+}
+
+.dark-mode .idres-config__expand-button:hover {
+  background: #374151;
+  border-color: #6b7280;
+}
+
+.dark-mode .idres-config__button-icon {
+  filter: brightness(0) saturate(100%) invert(91%) sepia(7%) saturate(183%) hue-rotate(173deg) brightness(98%) contrast(88%);
+}
+
+.dark-mode .idres-config__identifier-details {
+  border-top-color: #374151;
+}
+
+.dark-mode .idres-config__details-title {
+  color: #d1d5db;
+}
+
+.dark-mode .idres-config__location-label {
+  color: #d1d5db;
+}
+
+.dark-mode .idres-config__location-code {
+  background: #1f2937;
+  color: #d1d5db;
+  border-color: #4b5563;
+}
+
+.dark-mode .idres-config__add-custom {
+  border-top-color: #374151;
+}
+
+.dark-mode .idres-config__add-custom-input {
+  background: #111827;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+.dark-mode .idres-config__add-custom-input:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.dark-mode .idres-config__add-custom-help {
+  color: #9ca3af;
+}
+
+.dark-mode .idres-config__control-label {
+  color: #9ca3af;
+}
+
+.dark-mode .idres-config__limit-control {
+  background: #111827;
+  border-color: #4b5563;
+}
+
+.dark-mode .idres-config__limit-button {
+  color: #9ca3af;
+}
+
+.dark-mode .idres-config__limit-button:hover:not(:disabled) {
+  background: #374151;
+  color: #d1d5db;
+}
+
+.dark-mode .idres-config__limit-button:disabled {
+  color: #4b5563;
+}
+
+.dark-mode .idres-config__limit-value {
+  color: #d1d5db;
+}
+
+.dark-mode .idres-config__frequency-select {
+  background: #111827;
+  border-color: #4b5563;
+  color: #d1d5db;
+}
+
+.dark-mode .idres-config__frequency-select:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+}
+
+.dark-mode .idres-config__frequency-select:hover {
+  border-color: #6b7280;
+}
+
+.dark-mode .idres-config__restore-label {
+  color: #d1d5db;
+}
+
+.dark-mode .idres-config__restore-bubble {
+  background: #1e3a8a;
+  color: #ddd6fe;
+  border-color: #3730a3;
+}
+
+.dark-mode .idres-config__restore-bubble:hover {
+  background: #1e40af;
+  border-color: #4338ca;
 }

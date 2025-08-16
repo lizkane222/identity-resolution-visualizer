@@ -3,7 +3,7 @@
 .unique-users-list {
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 2rem;
   padding: 16px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.2s ease-in-out;
@@ -167,8 +167,8 @@
 
 /* Dark Mode Styles - Events Level 1 */
 .dark-mode .unique-users-list {
-  background: #081F47; /* blue-850 */
-  border-color: #191F36; /* blue-900 */
+  background: rgb(26, 31, 52); /* Twilio secondary blue */
+  border-color: #000D25; /* blue-900 */
   color: #F3F4F7; /* grey-50 */
   box-shadow: 0 0 10px rgba(24, 102, 238, 0.4), 0 0 40px rgba(24, 102, 238, 0.2);
 }

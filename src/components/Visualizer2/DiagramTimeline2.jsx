@@ -3,7 +3,7 @@ import DiagramNode2 from './DiagramNode2';
 import { IdentitySimulation } from '../../utils/identitySimulation.js';
 import './DiagramTimeline2.css';
 
-const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug }) => {
+const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, onSimulationUpdate }) => {
   const [processedEvents, setProcessedEvents] = useState([]);
   const [simulation, setSimulation] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -60,6 +60,11 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug }) => {
       setProcessedEvents(processed);
       setSimulation(sim);
       setLoading(false);
+      
+      // Notify parent component about simulation update
+      if (onSimulationUpdate) {
+        onSimulationUpdate(sim);
+      }
     };
 
     if (events.length > 0) {
@@ -68,6 +73,11 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug }) => {
       setProcessedEvents([]);
       setSimulation(null);
       setLoading(false);
+      
+      // Notify parent component about simulation clear
+      if (onSimulationUpdate) {
+        onSimulationUpdate(null);
+      }
     }
   }, [events, identifierOptions]);
 

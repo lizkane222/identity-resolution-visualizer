@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { IdentitySimulation } from '../../utils/identitySimulation.js';
+import React, { useState } from 'react';
 import DiagramTimeline2 from './DiagramTimeline2.jsx';
 import './Visualizer2.css';
 
@@ -11,7 +10,7 @@ const Visualizer2 = ({
   onClose 
 }) => {
   // Load ID Resolution Config from localStorage
-  const [idResConfig, setIdResConfig] = useState(() => {
+  const [idResConfig] = useState(() => {
     try {
       const saved = localStorage.getItem('idres_config_identifiers');
       if (saved) {
@@ -26,6 +25,56 @@ const Visualizer2 = ({
       { id: 'anonymous_id', name: 'Anonymous ID', enabled: true, isCustom: false, limit: 10, frequency: 'Ever' },
     ];
   });
+
+  // Current simulation state
+  const [currentSimulation, setCurrentSimulation] = useState(null);
+
+  // Handle simulation updates from DiagramTimeline2
+  const handleSimulationUpdate = (simulation) => {
+    setCurrentSimulation(simulation);
+  };
+
+  // Render profiles from simulation
+  const renderSimulationProfiles = () => {
+    if (!currentSimulation || currentSimulation.profiles.length === 0) {
+      return (
+        <div className="visualizer2__empty-profiles">
+          <p>No profiles created yet. Process some events to see profiles.</p>
+        </div>
+      );
+    }
+
+    return currentSimulation.profiles.map((profile, index) => (
+      <div key={profile.id} className="visualizer2__profile-card">
+        <div className="visualizer2__profile-header">
+          <h4>{profile.id}</h4>
+          <span className="visualizer2__profile-actions">
+            {profile.history.length} action{profile.history.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        <div className="visualizer2__profile-identifiers">
+          {Object.entries(profile.identifiers).map(([type, values]) => (
+            <div key={type} className="visualizer2__identifier-row">
+              <span className="visualizer2__identifier-type">{type}:</span>
+              <span className="visualizer2__identifier-values">
+                {Array.from(values).join(', ')}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="visualizer2__profile-history">
+          <details>
+            <summary>History ({profile.history.length} events)</summary>
+            <ul className="visualizer2__history-list">
+              {profile.history.map((entry, i) => (
+                <li key={i} className="visualizer2__history-item">{entry}</li>
+              ))}
+            </ul>
+          </details>
+        </div>
+      </div>
+    ));
+  };
 
   return (
     <div className="visualizer2">
@@ -53,9 +102,9 @@ const Visualizer2 = ({
           <button
             className="visualizer2__back-button"
             onClick={onClose}
-            title="Back to Main App"
+            title="Back to Builder"
           >
-            ← Back to Main
+            ← Back to Builder
           </button>
         </div>
       </div>
@@ -91,15 +140,6 @@ const Visualizer2 = ({
                 <span className="visualizer2__stat-value">{idResConfig.length}</span>
               </div>
             </div>
-
-            {/* Process Button */}
-            <button 
-              className="visualizer2__process-button"
-              onClick={processEvents}
-              disabled={isProcessing || events.length === 0}
-            >
-              {isProcessing ? 'Processing...' : 'Reprocess Events'}
-            </button>
           </div>
 
           {/* Profiles Section */}
@@ -131,6 +171,7 @@ const Visualizer2 = ({
                 isCustom: config.isCustom
               }))}
               unifySpaceSlug={unifySpaceSlug}
+              onSimulationUpdate={handleSimulationUpdate}
             />
           )}
         </div>

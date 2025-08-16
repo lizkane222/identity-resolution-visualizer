@@ -48,7 +48,7 @@ body {
   width: 20vw;
   max-width: 20vw;
   min-width: 300px;
-  background-color: #ffffff;
+  background-color: #ffffff; /* white */
   border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
@@ -126,10 +126,10 @@ body {
 .app__config-button:hover,
 .app__lookup-button:hover {
   background: #f9fafb;
-  border-color: #4fb58b; /* Segment green */
-  color: #4fb58b; /* Segment green */
+  border-color: rgb(48, 172, 130); /* segment-green */
+  color: rgb(48, 172, 130); /* segment-green */
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(79, 181, 139, 0.2); /* Segment green shadow */
+  box-shadow: 0 2px 4px rgba(48, 172, 130, 0.2); /* segment-green shadow */
 }
 
 .app__theme-button:hover {
@@ -218,6 +218,12 @@ body {
   height: 16px;
   flex-shrink: 0;
   display: block;
+}
+
+/* Default icon colors - apply consistent grey color to all config and lookup icons */
+.app__config-button .app__button-icon:not(.app__button-icon--color),
+.app__lookup-button .app__button-icon:not(.app__button-icon--color) {
+  filter: brightness(0) saturate(100%) invert(34%) sepia(3%) saturate(469%) hue-rotate(185deg) brightness(97%) contrast(92%);
 }
 
 .app__brand-icon {
@@ -368,7 +374,7 @@ body {
 .app__builder-buttons-section {
   display: flex;
   gap: 16px;
-  margin: 0 24px 32px 24px;
+  margin: 0 24px 0 24px;
   align-items: flex-start;
   min-height: 350px;
 }
@@ -383,6 +389,31 @@ body {
   flex: 0 0 250px;
   max-height: 35vh;
   overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 2rem;
+  padding: 16px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+/* Scrollbar styling for Product Events container to respect border-radius */
+.app__product-events-container::-webkit-scrollbar-track {
+  border-radius: 2rem;
+  margin: 2rem 0;
+}
+
+.app__product-events-container::-webkit-scrollbar-thumb {
+  border-radius: 2rem;
+}
+
+.app__core-events-container::-webkit-scrollbar-track {
+  border-radius: 2rem;
+  margin: 2rem 0;
+}
+
+.app__core-events-container::-webkit-scrollbar-thumb {
+  border-radius: 2rem;
 }
 
 /* Statistics Dashboard */
@@ -432,7 +463,7 @@ body {
   justify-content: center;
   min-height: 40px;
   margin-top: auto;
-  background-color: #ffffff;
+  background-color: #f8fafc;
 }
 
 .app__footer-text {
@@ -612,7 +643,7 @@ body {
   }
   
   .app__sidebar {
-    background-color: #1e293b;
+    background-color: #1f2937; /* grey-800 */
     border-right-color: #334155;
   }
 
@@ -643,7 +674,7 @@ body {
   }
   
   .app__title {
-    color: #f1f5f9;
+    color: #ffffff;
   }
   
   .app__subtitle {
@@ -670,6 +701,7 @@ body {
   
   .app__footer {
     border-top-color: #334155;
+    background-color: #0f172a;
   }
   
   .app__footer-text {
@@ -679,16 +711,16 @@ body {
 
 /* Manual dark mode - overrides system preference */
 .dark-mode body {
-  background-color: #191F36; /* blue-900 */
+  background-color: #000D25; /* blue-900 */
   color: #F3F4F7; /* grey-50 */
 }
 
 .dark-mode .app {
-  background-color: #191F36; /* blue-900 */
+  background-color: #000D25; /* blue-900 */
 }
 
 .dark-mode .app__sidebar {
-  background-color: #191F36; /* blue-900 */
+  background-color: #1f2937; /* grey-800 */
   border-right-color: #334155;
 }
 
@@ -714,8 +746,8 @@ body {
 .dark-mode .app__config-button:hover,
 .dark-mode .app__lookup-button:hover {
   background: #4b5563;
-  border-color: #4fb58b; /* Segment green */
-  color: #4fb58b; /* Segment green */
+  border-color: rgb(48, 172, 130); /* segment-green */
+  color: rgb(48, 172, 130); /* segment-green */
 }
 
 .dark-mode .app__theme-button:hover {
@@ -724,7 +756,8 @@ body {
 }
 
 /* Dark mode icon colors - apply grey-50 filter to config icons but not colored icons */
-.dark-mode .app__button-icon:not(.app__button-icon--color) {
+.dark-mode .app__config-button .app__button-icon:not(.app__button-icon--color),
+.dark-mode .app__lookup-button .app__button-icon:not(.app__button-icon--color) {
   filter: brightness(0) saturate(100%) invert(98%) sepia(3%) saturate(312%) hue-rotate(198deg) brightness(99%) contrast(92%);
 }
 
@@ -781,12 +814,32 @@ body {
   box-shadow: 0 4px 12px rgba(192, 132, 252, 0.4);
 }
 
+.dark-mode .app__core-events-container,
+.dark-mode .app__product-events-container {
+  background: rgb(26, 31, 52); /* Twilio secondary blue */
+  border-color: #374151;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .app__product-events-container::-webkit-scrollbar-track,
+.dark-mode .app__core-events-container::-webkit-scrollbar-track {
+  background: #1f2937;
+  border-radius: 2rem;
+  margin: 2rem 0;
+}
+
+.dark-mode .app__product-events-container::-webkit-scrollbar-thumb,
+.dark-mode .app__core-events-container::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 2rem;
+}
+
 .dark-mode .app__visualize2-button:disabled {
   background: #4b5563;
 }
 
 .dark-mode .app__title {
-  color: #F3F4F7; /* grey-50 */
+  color: #ffffff !important;
 }
 
 .dark-mode .app__subtitle {
@@ -812,8 +865,8 @@ body {
 }
 
 .dark-mode .app__footer {
-  border-top-color: #334155;
-  background-color: #191F36; /* blue-900 */
+  border-top-color: #334155 !important;
+  background-color: #191F36 !important;
 }
 
 .dark-mode .app__footer-text {
@@ -833,7 +886,7 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 3px;
+  border-radius: 2rem;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -847,6 +900,7 @@ body {
   
   ::-webkit-scrollbar-thumb {
     background: #475569;
+    border-radius: 2rem;
   }
   
   ::-webkit-scrollbar-thumb:hover {
@@ -861,6 +915,7 @@ body {
 
 .dark-mode ::-webkit-scrollbar-thumb {
   background: #475569;
+  border-radius: 2rem;
 }
 
 .dark-mode ::-webkit-scrollbar-thumb:hover {
@@ -887,7 +942,7 @@ body {
 }
 
 .glow-mode .app__sidebar {
-  background: var(--glow-component-bg) !important;
+  background: #ffffff !important; /* white */
   border-right: 1px solid var(--glow-border) !important;
   box-shadow: 0 0 20px var(--glow-shadow) !important;
 }
@@ -1002,6 +1057,7 @@ body {
 
 .glow-mode ::-webkit-scrollbar-thumb {
   background: var(--glow-border) !important;
+  border-radius: 2rem;
   box-shadow: 0 0 5px var(--glow-color) !important;
 }
 
@@ -1049,7 +1105,7 @@ body {
 }
 
 .segment-mode .app__sidebar {
-  background-color: #f8fafc;
+  background-color: #ffffff; /* white */
   border-right: 1px solid #e5e7eb;
 }
 
@@ -1082,6 +1138,11 @@ body {
   color: white;
 }
 
+.segment-mode .app__footer {
+  background-color: #ffffff;
+  border-top-color: #e5e7eb;
+}
+
 /* Twilio Mode - Bold, dynamic with blue/red accents */
 .twilio-mode {
   --primary-color: #dc2626;
@@ -1103,7 +1164,7 @@ body {
 }
 
 .twilio-mode .app__sidebar {
-  background-color: #0f172a;
+  background-color: #0f172a; /* slate-900 */
   border-right: 1px solid #334155;
 }
 
@@ -1134,6 +1195,19 @@ body {
 .twilio-mode .app__visualize2-button {
   background: linear-gradient(135deg, #dc2626 0%, #7c2d12 100%);
   color: white;
+}
+
+.twilio-mode .app__title {
+  color: #ffffff;
+}
+
+.twilio-mode .app__footer {
+  background-color: #020d23;
+  border-top-color: #334155;
+}
+
+.twilio-mode .app__footer-text {
+  color: #cbd5e1;
 }
 
 @media (max-width: 480px) {

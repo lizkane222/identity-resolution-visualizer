@@ -75,9 +75,9 @@ const Visualizer = ({
           <button
             className="visualizer__back-button"
             onClick={onClose}
-            title="Back to Main App"
+            title="Back to Builder"
           >
-            ← Back to Main
+            ← Back to Builder
           </button>
         </div>
       </div>

@@ -24,6 +24,9 @@
     "dev": "concurrently \"npm run server\" \"npm start\"",
     "dev-prod": "concurrently \"npm run server\" \"npm run serve-build\"",
     "serve-build": "serve -s build -l 3000",
+    "stop": "pkill -f \"node server/server.js\" && pkill -f \"react-scripts start\"",
+    "stop-server": "pkill -f \"node server/server.js\"",
+    "stop-client": "pkill -f \"react-scripts start\"",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
