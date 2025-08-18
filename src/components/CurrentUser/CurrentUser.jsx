@@ -9,14 +9,26 @@ import {
 } from '../../utils/idResolutionConfig.js';
 import './CurrentUser.css';
 
-// UUID generation utility
-
+// UUID generation utility with enhanced randomness
 const generateUUID = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0;
-    var v = c === 'x' ? r : ((r & 0x3) | 0x8);
+  // Use crypto.randomUUID() if available (modern browsers)
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  
+  // Fallback to enhanced random generation with timestamp and additional entropy
+  const timestamp = Date.now().toString(16);
+  const randomPart = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
+  
+  // Add additional entropy by incorporating timestamp and performance.now()
+  const extraEntropy = (typeof performance !== 'undefined' ? performance.now() : Math.random() * 1000000).toString(16).replace('.', '');
+  
+  // Replace some characters with timestamp/entropy for additional uniqueness
+  return randomPart.replace(/^......../, timestamp.substring(0, 8)).replace(/........$/, extraEntropy.substring(0, 8));
 };
 
 function getOrPersistUserId() {
@@ -405,40 +417,69 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
     }
   };
 
+  const handleRegenerateId = (fieldName) => {
+    const newId = generateUUID();
+    setIdentifierFields(prevFields => {
+      const updatedFields = {
+        ...prevFields,
+        [fieldName]: newId
+      };
+      
+      // Trigger update to parent components with the new data
+      if (onUserUpdate) {
+        const allTraits = { ...traitFields, ...customTraits };
+        const filteredIdentifiers = { ...updatedFields };
+        Object.keys(updatedFields).forEach(key => {
+          const hasToggle = key === 'userId' || key === 'anonymousId';
+          if (hasToggle && !fieldToggles[key]) {
+            filteredIdentifiers[key] = '';
+          }
+        });
+        const allFields = { ...filteredIdentifiers, ...allTraits };
+        
+        const userData = {
+          ...allFields,
+          _toggles: fieldToggles
+        };
+        
+        setTimeout(() => onUserUpdate(userData), 0);
+      }
+      
+      return updatedFields;
+    });
+  };
+
   const handleToggleField = (fieldName) => {
     setFieldToggles(prev => {
       const newToggles = { ...prev, [fieldName]: !prev[fieldName] };
-      // If toggling ON userId, get or persist UUID if not present
+      // If toggling ON userId, always generate a new UUID
       if (fieldName === 'userId' && newToggles[fieldName]) {
-        const currentUserId = identifierFields.userId;
-        if (!currentUserId || currentUserId.trim() === '') {
-          const newUserId = getOrPersistUserId();
-          setIdentifierFields(prevFields => {
-            const updatedFields = {
-              ...prevFields,
-              userId: newUserId
+        const newUserId = generateUUID(); // Always generate new UUID instead of persisting
+        setIdentifierFields(prevFields => {
+          const updatedFields = {
+            ...prevFields,
+            userId: newUserId
+          };
+          if (onUserUpdate) {
+            const allIdentifiers = { ...updatedFields };
+            const allTraits = { ...traitFields, ...customTraits };
+            const filteredIdentifiers = { ...allIdentifiers };
+            Object.keys(allIdentifiers).forEach(key => {
+              const hasToggle = key === 'userId' || key === 'anonymousId';
+              if (hasToggle && !newToggles[key]) {
+                filteredIdentifiers[key] = '';
+              }
+            });
+            const allFields = { ...filteredIdentifiers, ...allTraits };
+            const userData = {
+              ...allFields,
+              _toggles: newToggles
             };
-            if (onUserUpdate) {
-              const allIdentifiers = { ...updatedFields };
-              const allTraits = { ...traitFields, ...customTraits };
-              const filteredIdentifiers = { ...allIdentifiers };
-              Object.keys(allIdentifiers).forEach(key => {
-                const hasToggle = key === 'userId' || key === 'anonymousId';
-                if (hasToggle && !newToggles[key]) {
-                  filteredIdentifiers[key] = '';
-                }
-              });
-              const allFields = { ...filteredIdentifiers, ...allTraits };
-              const userData = {
-                ...allFields,
-                _toggles: newToggles
-              };
-              setTimeout(() => onUserUpdate(userData), 0);
-            }
-            return updatedFields;
-          });
-          return newToggles;
-        }
+            setTimeout(() => onUserUpdate(userData), 0);
+          }
+          return updatedFields;
+        });
+        return newToggles;
       }
       
       // If toggling off userId, generate anonymousId UUID if not present and anonymousId is enabled
@@ -570,6 +611,19 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
                 title={`${isToggleEnabled ? 'Disable' : 'Enable'} ${displayName}`}
               >
                 {isToggleEnabled ? '✓' : '✗'}
+              </button>
+            )}
+            {hasToggle && isToggleEnabled && (
+              <button
+                onClick={() => handleRegenerateId(fieldName)}
+                className="current-user__regenerate"
+                title={`Generate new ${displayName}`}
+              >
+                <img 
+                  src="/assets/Arrow-cycle.svg" 
+                  alt="Regenerate" 
+                  className="current-user__regenerate-icon"
+                />
               </button>
             )}
             {!isEmpty && !fieldDisabled && (

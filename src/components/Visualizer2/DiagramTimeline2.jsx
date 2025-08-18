@@ -207,31 +207,67 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                 const profileId = event.simulationResult.profile.id;
                 
                 // Try to find the corresponding real profile with segmentId
-                const realProfile = profiles.find(p => p.id === profileId || p.segmentId === profileId);
+                const realProfile = profiles.find(p => {
+                  // Match by segmentId, profile ID, or any identifier from the event
+                  return p.id === profileId || 
+                         p.segmentId === profileId ||
+                         (event.identifiers && Object.values(event.identifiers).some(eventIdValue => 
+                           p.identifiers && Object.values(p.identifiers).flat().includes(eventIdValue)
+                         ));
+                });
                 
-                // Determine what to display - prefer segmentId from real profile data
-                let displayName, segmentId;
-                if (realProfile?.segmentId) {
-                  // We have real segment data
+                // Determine what to display - prefer real profile data when available
+                let displayName, segmentId, identifiers = {};
+                if (realProfile) {
+                  // We have real profile data - use it!
                   segmentId = realProfile.segmentId;
-                  displayName = segmentId;
+                  displayName = realProfile.segmentId || realProfile.id;
+                  identifiers = realProfile.identifiers || {};
                 } else {
-                  // No real segment data, create a cleaner display name
+                  // No real profile data, create a cleaner display name
                   segmentId = null;
                   displayName = profileId.replace(/^profile_/, 'Profile '); // Convert profile_1 to Profile 1
+                  identifiers = event.identifiers || {};
                 }
                 
-                profilesMap.set(profileId, {
-                  id: profileId, // Keep for internal referencing
-                  segmentId: segmentId, // Use for display when available
-                  identities: event.identifiers ? Object.keys(event.identifiers).length : 0,
-                  events: 1,
-                  first_seen: event.timestamp || Date.now(),
-                  last_seen: event.timestamp || Date.now(),
-                  identifiers: event.identifiers || {},
-                  displayName: displayName, // Show segmentId or cleaned up profile name
-                  initials: displayName.slice(-2).toUpperCase() // Use last 2 chars for initials
-                });
+                // Use the real profile's segmentId as the key if available, otherwise use simulation profileId
+                const mapKey = realProfile?.segmentId || profileId;
+                
+                if (!profilesMap.has(mapKey)) {
+                  profilesMap.set(mapKey, {
+                    id: mapKey, // Use segmentId or profileId for consistency
+                    segmentId: segmentId, // Use real segmentId when available
+                    identities: identifiers ? Object.keys(identifiers).length : 0,
+                    events: 1,
+                    first_seen: event.timestamp || Date.now(),
+                    last_seen: event.timestamp || Date.now(),
+                    identifiers: identifiers, // Use real profile identifiers
+                    displayName: displayName, // Show segmentId or cleaned up profile name
+                    initials: displayName.slice(-2).toUpperCase(), // Use last 2 chars for initials
+                    realProfile: realProfile // Store reference for debugging
+                  });
+                } else {
+                  // Update existing profile with additional event
+                  const existingProfile = profilesMap.get(mapKey);
+                  existingProfile.events += 1;
+                  existingProfile.last_seen = event.timestamp || Date.now();
+                  
+                  // Merge identifiers if we have new ones
+                  if (event.identifiers) {
+                    Object.entries(event.identifiers).forEach(([type, value]) => {
+                      if (!existingProfile.identifiers[type]) {
+                        existingProfile.identifiers[type] = [];
+                      }
+                      if (Array.isArray(existingProfile.identifiers[type])) {
+                        if (!existingProfile.identifiers[type].includes(value)) {
+                          existingProfile.identifiers[type].push(value);
+                        }
+                      } else if (existingProfile.identifiers[type] !== value) {
+                        existingProfile.identifiers[type] = [existingProfile.identifiers[type], value];
+                      }
+                    });
+                  }
+                }
               }
               return profilesMap;
             }, new Map());
@@ -259,10 +295,12 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                     <div className="visualizer2__profile-header">
                       <div className="visualizer2__profile-avatar">👤</div>
                       <div className="visualizer2__profile-info">
-                        <h4>{profile.displayName || profile.segmentId || profile.id}</h4>
-                        <div className="visualizer2__profile-id" style={{ display: 'none' }}>Profile ID: {profile.id}</div>
+                        <h4>{profile.segmentId || profile.displayName || profile.id}</h4>
                         {profile.segmentId && (
                           <div className="visualizer2__segment-id">Segment ID: {profile.segmentId}</div>
+                        )}
+                        {!profile.segmentId && profile.id && (
+                          <div className="visualizer2__profile-id">Profile ID: {profile.id}</div>
                         )}
                       </div>
                     </div>
@@ -270,13 +308,22 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                     <div className="visualizer2__profile-stats">
                       <div className="visualizer2__profile-stat">
                         <div className="visualizer2__profile-stat-value">
-                          {profile.identifiers ? Object.keys(profile.identifiers).length : (profile.firstIdentifier ? 1 : 0)}
+                          {profile.identifiers ? Object.keys(profile.identifiers).length : 0}
                         </div>
                         <div className="visualizer2__profile-stat-label">Identifiers</div>
                       </div>
                       <div className="visualizer2__profile-stat">
                         <div className="visualizer2__profile-stat-value">
-                          {profile.events ? profile.events.length : (profile.eventCount || 0)}
+                          {processedEvents.filter(event => {
+                            const eventProfileId = event.simulationResult?.profile?.id;
+                            // Match by profile ID, segmentId, or if this profile was derived from the event
+                            return eventProfileId === profile.id || 
+                                   eventProfileId === profile.segmentId ||
+                                   (profile.realProfile && (
+                                     eventProfileId === profile.realProfile.id || 
+                                     eventProfileId === profile.realProfile.segmentId
+                                   ));
+                          }).length}
                         </div>
                         <div className="visualizer2__profile-stat-label">Events</div>
                       </div>
@@ -284,22 +331,35 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                     
                     <div className="visualizer2__profile-identifiers">
                       <div className="visualizer2__identifiers-label">Identifiers</div>
-                      {profile.identifiers ? 
-                        Object.entries(profile.identifiers).map(([type, value]) => (
-                          <div key={type} className={`visualizer2__identifier-row ${type === 'email' ? 'visualizer2__identifier-row--email' : ''}`}>
-                            <span className="visualizer2__identifier-type">{type}:</span>
-                            <span className="visualizer2__identifier-values">
-                              {Array.isArray(value) ? value.join(', ') : value}
-                            </span>
-                          </div>
-                        )) : 
-                        profile.firstIdentifier && (
-                          <div className="visualizer2__identifier-row">
-                            <span className="visualizer2__identifier-type">{profile.firstIdentifier[0]}:</span>
-                            <span className="visualizer2__identifier-values">{profile.firstIdentifier[1]}</span>
-                          </div>
-                        )
-                      }
+                      {profile.identifiers && Object.keys(profile.identifiers).length > 0 ? (
+                        // Display all identifiers from external_ids endpoint
+                        Object.entries(profile.identifiers)
+                          .sort(([typeA], [typeB]) => {
+                            // Sort by priority from Identity Resolution Config
+                            const priorityA = identifierOptions.findIndex(opt => opt.value === typeA || opt.value === typeA.replace('_', ''));
+                            const priorityB = identifierOptions.findIndex(opt => opt.value === typeB || opt.value === typeB.replace('_', ''));
+                            
+                            // If both found in config, sort by priority (lower index = higher priority)
+                            if (priorityA !== -1 && priorityB !== -1) return priorityA - priorityB;
+                            // If only one found in config, prioritize it
+                            if (priorityA !== -1) return -1;
+                            if (priorityB !== -1) return 1;
+                            // If neither found, sort alphabetically
+                            return typeA.localeCompare(typeB);
+                          })
+                          .map(([type, values]) => (
+                            <div key={type} className={`visualizer2__identifier-row ${type === 'email' ? 'visualizer2__identifier-row--email' : ''}`}>
+                              <span className="visualizer2__identifier-type">{type}:</span>
+                              <span className="visualizer2__identifier-values">
+                                {Array.isArray(values) ? values.join(', ') : values}
+                              </span>
+                            </div>
+                          ))
+                      ) : (
+                        <div className="visualizer2__identifier-row visualizer2__identifier-row--empty">
+                          <span className="visualizer2__identifier-empty">No identifiers found</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   );

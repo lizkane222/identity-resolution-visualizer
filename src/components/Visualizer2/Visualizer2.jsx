@@ -109,6 +109,7 @@ const Visualizer2 = ({
       <div key={profile.id} className="visualizer2__profile-card">
         <div className="visualizer2__profile-header">
           <h4>{profile.id}</h4>
+          <h4>{profile.segmentId}</h4>
           <span className="visualizer2__profile-actions">
             {Object.keys(profile.identifiers).length} identifier{Object.keys(profile.identifiers).length !== 1 ? 's' : ''}
           </span>

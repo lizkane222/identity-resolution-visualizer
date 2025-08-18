@@ -209,6 +209,41 @@
   color: white;
 }
 
+/* Regenerate Button */
+.current-user__regenerate {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: all 0.2s ease-in-out;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+}
+
+.current-user__regenerate:hover {
+  background-color: rgba(99, 102, 241, 0.1); /* purple with low opacity */
+  transform: rotate(180deg);
+}
+
+.current-user__regenerate-icon {
+  width: 14px;
+  height: 14px;
+  transition: all 0.2s ease-in-out;
+  stroke-width: 3; /* Your desired thickness */
+  /* Use CSS filter to colorize the SVG to purple like lookup button */
+  filter: invert(45%) sepia(69%) saturate(959%) hue-rotate(217deg) brightness(108%) contrast(92%);
+}
+
+.current-user__regenerate:hover .current-user__regenerate-icon {
+  /* Slightly darker purple on hover */
+  filter: invert(37%) sepia(69%) saturate(959%) hue-rotate(217deg) brightness(98%) contrast(92%);
+}
+
 .current-user__value {
   font-size: 12px;
   color: #111827;
@@ -683,6 +718,10 @@
     color: #dc2626;
     background-color: #1f2937;
   }
+
+  .current-user__regenerate:hover {
+    background-color: rgba(99, 102, 241, 0.2); /* purple with slightly higher opacity for dark mode */
+  }
   
   .current-user__random-user-button {
     background-color: #3b82f6;
@@ -753,4 +792,8 @@
 .dark-mode .current-user__random-user-button:hover,
 .dark-mode .current-user__update-button:hover {
   opacity: 0.8;
+}
+
+.dark-mode .current-user__regenerate:hover {
+  background-color: rgba(99, 102, 241, 0.2); /* purple with opacity for Events Level 1 dark mode */
 }

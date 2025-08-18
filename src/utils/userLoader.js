@@ -30,10 +30,11 @@ export const formatUserForCurrentUser = (userData) => {
   const originalEmail = userData.email || '';
   const modifiedEmail = originalEmail.replace('@', `+${randomInt}@`);
   
-  // Modify phone number's last 4 digits to simulate a new user variant
+  // Modify phone number's last 7 digits to simulate a new user variant (keeping area code + first digit of exchange)
   const originalPhone = userData.phone || '';
-  const modifiedPhone = originalPhone ? originalPhone.replace(/\d{4}$/, () => {
-    return Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  const modifiedPhone = originalPhone ? originalPhone.replace(/\d{7}$/, () => {
+    // Generate 7 random digits for the phone number (exchange last 2 digits + 4-digit number)
+    return Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
   }) : '';
   
   // Modify username to add 3 random digits to simulate a new user variant
@@ -58,15 +59,28 @@ export const formatUserForCurrentUser = (userData) => {
 };
 
 /**
- * Generate a random UUID for user ID
+ * Generate a cryptographically strong random UUID for user ID
  * @returns {string} A UUID string
  */
 const generateUserId = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
+  // Use crypto.randomUUID() if available (modern browsers)
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  
+  // Fallback to enhanced random generation with timestamp and additional entropy
+  const timestamp = Date.now().toString(16);
+  const randomPart = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = (Math.random() * 16) | 0;
     const v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
+  
+  // Add additional entropy by incorporating timestamp and performance.now()
+  const extraEntropy = (typeof performance !== 'undefined' ? performance.now() : Math.random() * 1000000).toString(16).replace('.', '');
+  
+  // Replace some characters with timestamp/entropy for additional uniqueness
+  return randomPart.replace(/^......../, timestamp.substring(0, 8)).replace(/........$/, extraEntropy.substring(0, 8));
 };
 
 /**
