@@ -220,10 +220,10 @@ html.template-14 body {
 /* Universal Glow Effects for All Components */
 
 /* Apply glow to all major containers and cards */
-  --accent-glow: #dc2626;
+  /* --accent-glow: #dc2626;
   --glow-opacity: 0.4;
   --glow-strength: 20px;
-}
+ */
 
 html.red-450 body {
   background: linear-gradient(135deg, #fff1f2, #ffe4e6);

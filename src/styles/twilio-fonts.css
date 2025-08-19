@@ -1,18 +1,154 @@
-/* Twilio Sans Mono Font Definitions - CDN with comprehensive font weights */
+/* Twilio Sans Mono Font Definitions */
 
-:root {
-  /* Primary Twilio font stack - CDN fonts first, then fallbacks */
-  --twilio-font-family: 'TwilioSansMono', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
-  
-  /* Font weights available in Twilio Sans Mono */
-  --twilio-font-weight-light: 300;
-  --twilio-font-weight-regular: 400;
-  --twilio-font-weight-medium: 500;
-  --twilio-font-weight-retina: 550;
-  --twilio-font-weight-semibold: 600;
-  --twilio-font-weight-bold: 700;
-  --twilio-font-weight-extrabold: 800;
-  --twilio-font-weight-heavy: 900;
+/* Light (300) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Regular (400) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Medium (500) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Retina (550) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-Retina.woff2") format("woff2");
+  font-weight: 550;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Semibold (600) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Bold (700) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Extrabold (800) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-Extrabold.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Heavy (900) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-Heavy.woff2") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* TRUE italics */
+
+/* Light Italic (300) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-LightItl.woff2") format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Regular Italic (400) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-RegularItl.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Medium Italic (500) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-MediumItl.woff2") format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Retina Italic (550) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-RetinaItl.woff2") format("woff2");
+  font-weight: 550;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Semibold Italic (600) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-SemiboldItl.woff2") format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Bold Italic (700) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-BoldItl.woff2") format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Extrabold Italic (800) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-ExtraboldItl.woff2") format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Heavy Italic (900) */
+@font-face {
+  font-family: "TwilioSansMono";
+  src: url("../../public/fonts/Twilio-Sans-Mono/WOFF2/TwilioSansMono-HeavyItl.woff2") format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Prevent faux styles if a face is missing */
+:root { 
+  font-synthesis: none; 
 }
 
 :root {

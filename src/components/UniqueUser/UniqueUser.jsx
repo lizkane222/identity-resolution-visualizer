@@ -3,7 +3,7 @@ import { isIdentifierField, getIdentifierDisplayName, getConfiguredIdentifiers }
 import './UniqueUser.css';
 
 const UniqueUser = ({ user, eventCount, eventIndices = [], isActive, onHighlightEvents }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const { userId, anonymousIds = [], email, traits = {}, identifierValues = {} } = user;
   
   // For backward compatibility, handle both old anonymousId and new anonymousIds array

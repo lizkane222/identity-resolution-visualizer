@@ -2,83 +2,160 @@ import React, { useMemo } from 'react';
 import UniqueUser from '../UniqueUser/UniqueUser.jsx';
 import './UniqueUsersList.css';
 
-const UniqueUsersList = ({ events, currentUser, onHighlightEvents }) => {
-  // Extract unique users from events
+const UniqueUsersList = ({ events, currentUser, onHighlightEvents, onAddEventToList }) => {
+  // Extract unique users from events using proper identity resolution logic
   const uniqueUsers = useMemo(() => {
     const usersMap = new Map();
     
-    // Process events to build user profiles
+    // Process events to build user profiles with proper identity resolution merging
     events.forEach((event, eventIndex) => {
       try {
         const parsed = JSON.parse(event.rawData);
+        // Extract identifiers (not all fields) - only pull identifier fields
         const userId = parsed.userId || parsed.user_id || parsed.userID;
         const anonymousId = parsed.anonymousId || parsed.anonymous_id;
-        const email = parsed.traits?.email || parsed.properties?.email || parsed.email;
-        const phone = parsed.traits?.phone || parsed.properties?.phone || parsed.phone;
         
-        // Extract all potential identifier fields from traits and properties
-        const allIdentifierFields = {
-          ...parsed.traits,
-          ...parsed.properties,
+        // For traits, only use actual traits fields, not track event properties
+        const userTraits = parsed.traits || {};
+        const contextTraits = parsed.context?.traits || {};
+        const allTraits = { ...userTraits, ...contextTraits };
+        
+        // Extract identifier values from traits and specific fields only
+        const email = allTraits.email || parsed.email;
+        const phone = allTraits.phone || parsed.phone;
+        
+        // Only collect identifier fields for identity resolution, not all properties
+        const identifierFields = {
           userId,
           anonymousId,
           email,
-          phone
+          phone,
+          // Add other identifier fields from traits (not properties)
+          ...Object.fromEntries(
+            Object.entries(allTraits).filter(([key, value]) => {
+              // Only include fields that are likely identifiers (not arbitrary trait data)
+              const identifierKeywords = ['id', 'email', 'phone', 'username', 'account'];
+              return identifierKeywords.some(keyword => key.toLowerCase().includes(keyword));
+            })
+          )
         };
         
-        // Find existing user to merge with based on the hierarchy:
-        // 1. If event has userId, find user with same userId
-        // 2. If event has anonymousId, find user with same anonymousId (regardless of whether they have userId)
-        // 3. If event has email, find user with same email and matching userId or anonymousId
-        let existingUserKey = null;
+        // IMPROVED LOGIC: Find all users that match ANY identifier from this event
+        const matchingUserKeys = new Set();
         
         for (const [key, existingUser] of usersMap.entries()) {
-          // Priority 1: Match by userId if current event has userId
+          let hasMatch = false;
+          
+          // Check for userId match
           if (userId && existingUser.identifierValues.userId && existingUser.identifierValues.userId.includes(userId)) {
-            existingUserKey = key;
-            break;
+            hasMatch = true;
           }
           
-          // Priority 2: Match by anonymousId if current event has anonymousId
+          // Check for anonymousId match
           if (anonymousId && existingUser.identifierValues.anonymousId && existingUser.identifierValues.anonymousId.includes(anonymousId)) {
-            existingUserKey = key;
-            break;
+            hasMatch = true;
+          }
+          
+          // Check for email match
+          if (email && existingUser.identifierValues.email && existingUser.identifierValues.email.includes(email)) {
+            hasMatch = true;
+          }
+          
+          // Check for phone match
+          if (phone && existingUser.identifierValues.phone && existingUser.identifierValues.phone.includes(phone)) {
+            hasMatch = true;
+          }
+          
+          if (hasMatch) {
+            matchingUserKeys.add(key);
           }
         }
         
-        // If no match found by userId or anonymousId, check email matching
-        if (!existingUserKey && email) {
-          for (const [key, existingUser] of usersMap.entries()) {
-            if (existingUser.identifierValues.email && existingUser.identifierValues.email.includes(email) &&
-                ((userId && existingUser.identifierValues.userId && existingUser.identifierValues.userId.includes(userId)) ||
-                 (anonymousId && existingUser.identifierValues.anonymousId && existingUser.identifierValues.anonymousId.includes(anonymousId)))) {
-              existingUserKey = key;
-              break;
-            }
-          }
-        }
+        let targetUserKey = null;
         
-        // If no existing user found, create a new key
-        if (!existingUserKey) {
+        if (matchingUserKeys.size === 0) {
+          // No matches found - create new user
           if (userId) {
-            existingUserKey = `user:${userId}`;
+            targetUserKey = `user:${userId}`;
           } else if (anonymousId) {
-            existingUserKey = `anon:${anonymousId}`;
+            targetUserKey = `anon:${anonymousId}`;
           } else if (email) {
-            existingUserKey = `email:${email}`;
+            targetUserKey = `email:${email}`;
           } else {
-            existingUserKey = `anonymous:${eventIndex}`;
+            targetUserKey = `anonymous:${eventIndex}`;
+          }
+        } else if (matchingUserKeys.size === 1) {
+          // Single match - use existing user
+          targetUserKey = Array.from(matchingUserKeys)[0];
+        } else {
+          // Multiple matches - MERGE USERS (this is the key fix!)
+          const userKeysArray = Array.from(matchingUserKeys);
+          targetUserKey = userKeysArray[0]; // Use first user as the target
+          
+          // Merge all other matching users into the target user
+          const targetUser = usersMap.get(targetUserKey);
+          
+          for (let i = 1; i < userKeysArray.length; i++) {
+            const userKeyToMerge = userKeysArray[i];
+            const userToMerge = usersMap.get(userKeyToMerge);
+            
+            // Merge identifier values
+            Object.entries(userToMerge.identifierValues).forEach(([fieldName, fieldValues]) => {
+              if (!targetUser.identifierValues[fieldName]) {
+                targetUser.identifierValues[fieldName] = [];
+              }
+              fieldValues.forEach(value => {
+                if (!targetUser.identifierValues[fieldName].includes(value)) {
+                  targetUser.identifierValues[fieldName].push(value);
+                }
+              });
+            });
+            
+            // Merge legacy fields
+            if (userToMerge.userId && !targetUser.userId) {
+              targetUser.userId = userToMerge.userId;
+            }
+            if (userToMerge.email && !targetUser.email) {
+              targetUser.email = userToMerge.email;
+            }
+            if (userToMerge.anonymousIds) {
+              userToMerge.anonymousIds.forEach(anonId => {
+                if (!targetUser.anonymousIds.includes(anonId)) {
+                  targetUser.anonymousIds.push(anonId);
+                }
+              });
+            }
+            
+            // Merge event data
+            targetUser.eventCount += userToMerge.eventCount;
+            targetUser.eventIndices.push(...userToMerge.eventIndices);
+            
+            // Merge traits and properties
+            targetUser.traits = { ...targetUser.traits, ...userToMerge.traits };
+            targetUser.properties = { ...targetUser.properties, ...userToMerge.properties };
+            
+            // Update timestamps
+            if (new Date(userToMerge.firstSeen) < new Date(targetUser.firstSeen)) {
+              targetUser.firstSeen = userToMerge.firstSeen;
+            }
+            if (new Date(userToMerge.lastSeen) > new Date(targetUser.lastSeen)) {
+              targetUser.lastSeen = userToMerge.lastSeen;
+            }
+            
+            // Remove the merged user
+            usersMap.delete(userKeyToMerge);
           }
         }
         
-        if (!usersMap.has(existingUserKey)) {
-          usersMap.set(existingUserKey, {
+        // Create user if it doesn't exist
+        if (!usersMap.has(targetUserKey)) {
+          usersMap.set(targetUserKey, {
             userId: userId || null,
             anonymousIds: anonymousId ? [anonymousId] : [], // Store as array for backward compatibility
             email: email || null,
             identifierValues: {}, // New structure to store all unique values per identifier type
-            traits: parsed.traits || {},
-            properties: parsed.properties || {},
+            traits: allTraits || {}, // Only actual traits, not track properties
+            properties: parsed.properties || {}, // Track properties stored separately
             eventCount: 0,
             eventIndices: [],
             firstSeen: event.timestamp,
@@ -87,13 +164,13 @@ const UniqueUsersList = ({ events, currentUser, onHighlightEvents }) => {
         }
         
         // Update user data
-        const user = usersMap.get(existingUserKey);
+        const user = usersMap.get(targetUserKey);
         user.eventCount++;
         user.eventIndices.push(eventIndex);
         user.lastSeen = event.timestamp;
         
-        // Collect all unique identifier values for this user
-        Object.entries(allIdentifierFields).forEach(([fieldName, fieldValue]) => {
+        // Collect all unique identifier values for this user (not properties)
+        Object.entries(identifierFields).forEach(([fieldName, fieldValue]) => {
           if (fieldValue !== null && fieldValue !== undefined && fieldValue !== '') {
             // Initialize array for this identifier type if it doesn't exist
             if (!user.identifierValues[fieldName]) {
@@ -113,12 +190,12 @@ const UniqueUsersList = ({ events, currentUser, onHighlightEvents }) => {
           user.userId = userId;
           
           // Update the key if we're upgrading from anon/email to userId
-          if (existingUserKey.startsWith('anon:') || existingUserKey.startsWith('email:')) {
+          if (targetUserKey.startsWith('anon:') || targetUserKey.startsWith('email:')) {
             const newKey = `user:${userId}`;
             if (!usersMap.has(newKey)) {
               usersMap.set(newKey, user);
-              usersMap.delete(existingUserKey);
-              existingUserKey = newKey;
+              usersMap.delete(targetUserKey);
+              targetUserKey = newKey;
             }
           }
         }
@@ -133,11 +210,16 @@ const UniqueUsersList = ({ events, currentUser, onHighlightEvents }) => {
           user.email = email;
         }
         
-        // Merge traits and properties
-        if (parsed.traits) {
-          user.traits = { ...user.traits, ...parsed.traits };
+        // Only merge actual traits (from traits object or context.traits), not track event properties
+        if (allTraits && Object.keys(allTraits).length > 0) {
+          user.traits = { ...user.traits, ...allTraits };
         }
+        
+        // Store properties separately (don't mix with traits)
         if (parsed.properties) {
+          if (!user.properties) {
+            user.properties = {};
+          }
           user.properties = { ...user.properties, ...parsed.properties };
         }
         

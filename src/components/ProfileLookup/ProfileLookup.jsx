@@ -8,7 +8,8 @@ const ProfileLookup = ({
   onHighlightEvents,
   profileApiResults = {},
   onProfileApiResultsUpdate,
-  onClearProfiles
+  onClearProfiles,
+  onAddEventToList
 }) => {
   const [selectedIdentifiers, setSelectedIdentifiers] = useState([]);
   const [customIdentifiers, setCustomIdentifiers] = useState([]);
@@ -794,6 +795,7 @@ const ProfileLookup = ({
                     profileApiResults={profileApiResults}
                     events={events}
                     onHighlightEvents={onHighlightEvents}
+                    onAddEventToList={onAddEventToList}
                   />
                 )}
                 {Object.keys(profileApiResults).length > 0 && onClearProfiles && (

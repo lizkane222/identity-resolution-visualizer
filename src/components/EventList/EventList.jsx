@@ -3,7 +3,15 @@ import { sendAppEventsToSegment } from '../../utils/segmentAPI';
 import { getSourceIcon } from '../../utils/sourceIcons';
 import './EventList.css';
 
-const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highlightedEventIndices = [] }) => {
+const EventList = ({ 
+  events, 
+  onRemoveEvent, 
+  onClearEvents, 
+  onEditEvent, 
+  highlightedEventIndices = [],
+  checkpointIndex: propCheckpointIndex = -1,
+  onCheckpointChange
+}) => {
   // Editing state
   const [editingEventId, setEditingEventId] = useState(null);
   const [editingValue, setEditingValue] = useState('');
@@ -53,8 +61,10 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
   const [simulationLogExpanded, setSimulationLogExpanded] = useState(true);
   const [simulationCompleted, setSimulationCompleted] = useState(false);
   
-  // Checkpoint state - only one checkpoint at a time
-  const [checkpointIndex, setCheckpointIndex] = useState(-1); // -1 means start from beginning
+  // Checkpoint state - use props if provided, otherwise use local state for backward compatibility
+  const [localCheckpointIndex, setLocalCheckpointIndex] = useState(-1);
+  const checkpointIndex = onCheckpointChange ? propCheckpointIndex : localCheckpointIndex;
+  const setCheckpointIndex = onCheckpointChange ? onCheckpointChange : setLocalCheckpointIndex;
   const [isDraggingCheckpoint, setIsDraggingCheckpoint] = useState(false);
   
   // Refs for scrolling functionality
@@ -82,6 +92,13 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
       });
     }
   }, [checkpointIndex]);
+
+  // Reset checkpoint if it's beyond the current events list
+  useEffect(() => {
+    if (checkpointIndex >= events.length && events.length > 0) {
+      setCheckpointIndex(events.length - 1);
+    }
+  }, [events.length, checkpointIndex, setCheckpointIndex]);
 
   // ... (keep all the existing handler functions like handleRun, handleTimeout, etc.)
   // For brevity, I'll include just the essential parts of the component structure
@@ -245,34 +262,45 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
     const eventElements = eventsList.querySelectorAll('.event-list__event');
     const mouseY = e.clientY;
     
+    // Get the bounds of the events container to handle padding area
+    const eventsListRect = eventsList.getBoundingClientRect();
+    
     let newCheckpointIndex = -1;
     
-    // Check position relative to each event
-    for (let i = 0; i < eventElements.length; i++) {
-      const eventRect = eventElements[i].getBoundingClientRect();
-      const eventMiddle = eventRect.top + eventRect.height / 2;
-      
-      if (mouseY < eventMiddle) {
-        newCheckpointIndex = i - 1;
-        break;
-      }
-    }
-    
-    // If we didn't find a position above any event, allow checkpoint to go beyond the last event
-    if (newCheckpointIndex === -1 && eventElements.length > 0) {
-      const lastEventRect = eventElements[eventElements.length - 1].getBoundingClientRect();
-      const lastEventBottom = lastEventRect.bottom;
-      
-      // If mouse is below the last event, set checkpoint after all events
-      if (mouseY > lastEventBottom) {
-        newCheckpointIndex = eventElements.length; // Allow beyond last event
+    // If there are no events, allow checkpoint at -1
+    if (eventElements.length === 0) {
+      newCheckpointIndex = -1;
+    } else {
+      // Check if mouse is above the first event (in the padding area)
+      const firstEventRect = eventElements[0].getBoundingClientRect();
+      if (mouseY < firstEventRect.top) {
+        newCheckpointIndex = -1; // Before first event
       } else {
-        newCheckpointIndex = eventElements.length - 1;
+        // Check position relative to each event
+        for (let i = 0; i < eventElements.length; i++) {
+          const eventRect = eventElements[i].getBoundingClientRect();
+          const eventMiddle = eventRect.top + eventRect.height / 2;
+          
+          if (mouseY < eventMiddle) {
+            newCheckpointIndex = i - 1;
+            break;
+          }
+        }
+        
+        // If we didn't find a position above any event, check if we're below the last event
+        if (newCheckpointIndex === -1) {
+          const lastEventRect = eventElements[eventElements.length - 1].getBoundingClientRect();
+          if (mouseY > lastEventRect.bottom) {
+            newCheckpointIndex = eventElements.length; // After last event
+          } else {
+            newCheckpointIndex = eventElements.length - 1; // At last event
+          }
+        }
       }
     }
     
     // Allow checkpoint to go beyond the last event
-    const maxIndex = sortedEvents.length; // Changed from length - 1 to length
+    const maxIndex = sortedEvents.length; // Allow beyond last event
     const minIndex = -1; // -1 means start from beginning
     
     setCheckpointIndex(Math.max(minIndex, Math.min(maxIndex, newCheckpointIndex)));
@@ -458,7 +486,7 @@ const EventList = ({ events, onRemoveEvent, onClearEvents, onEditEvent, highligh
   return (
     <div className="event-list event-list--sidebar">
       <div className="event-list__header">
-        <h2 className="event-list__title">Events ({events.length})</h2>
+        <h2 className="event-list__title">Event Simulator ({events.length})</h2>
         {events.length > 0 && (
           <button
             onClick={onClearEvents}

@@ -360,6 +360,7 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  padding-top: 40px; /* Add space above first event for checkpoint dragging */
 }
 
 .event-list__empty-state {
@@ -914,7 +915,7 @@
 
 /* Simulation Log */
 .event-list__log-section {
-  /* margin-top: 24px; */
+  margin-top: 12px;
 }
 
 .event-list__log-title {

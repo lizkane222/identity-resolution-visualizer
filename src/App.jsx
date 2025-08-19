@@ -34,6 +34,17 @@ function App() {
   const [highlightedEventIndices, setHighlightedEventIndices] = useState([]);
   const [unifySpaceSlug, setUnifySpaceSlug] = useState('');
   
+  // Persistent checkpoint state for EventList
+  const [eventListCheckpoint, setEventListCheckpoint] = useState(() => {
+    try {
+      const saved = localStorage.getItem('eventListCheckpoint');
+      return saved ? JSON.parse(saved) : -1;
+    } catch (error) {
+      console.error('Error loading checkpoint from localStorage:', error);
+      return -1;
+    }
+  });
+  
   // Persistent profile API results
   const [profileApiResults, setProfileApiResults] = useState(() => {
     try {
@@ -435,6 +446,26 @@ function App() {
     ));
   };
 
+  // Handle checkpoint change in EventList
+  const handleCheckpointChange = (checkpointIndex) => {
+    setEventListCheckpoint(checkpointIndex);
+    try {
+      localStorage.setItem('eventListCheckpoint', JSON.stringify(checkpointIndex));
+    } catch (error) {
+      console.error('Error saving checkpoint to localStorage:', error);
+    }
+  };
+
+  // Handle CSV upload start - set checkpoint to above first event
+  const handleCSVUploadStart = () => {
+    setEventListCheckpoint(-1);
+    try {
+      localStorage.setItem('eventListCheckpoint', JSON.stringify(-1));
+    } catch (error) {
+      console.error('Error saving checkpoint to localStorage:', error);
+    }
+  };
+
   return (
     <div className="app">
       {/* Left Sidebar - Event List (Hidden in Visualizer) */}
@@ -451,6 +482,8 @@ function App() {
             onClearEvents={handleClearEvents}
             highlightedEventIndices={highlightedEventIndices}
             onEditEvent={handleEditEvent}
+            checkpointIndex={eventListCheckpoint}
+            onCheckpointChange={handleCheckpointChange}
           />
         </aside>
       )}
@@ -579,6 +612,7 @@ function App() {
                   onHighlightEvents={handleHighlightEvents}
                   profileApiResults={profileApiResults}
                   onProfileApiResultsUpdate={handleProfileApiResultsUpdate}
+                  onAddEventToList={handleSaveEvent}
                   onClearProfiles={() => {
                     if (window.confirm('Clear all saved profile lookup results?')) {
                       setProfileApiResults({});
@@ -602,6 +636,7 @@ function App() {
               events={events}
               currentUser={currentUser}
               onHighlightEvents={handleHighlightEvents}
+              onAddEventToList={handleSaveEvent}
             />
           </div>
         </section>
@@ -619,6 +654,7 @@ function App() {
               userUpdateTrigger={userUpdateTrigger}
               sourceConfigUpdateTrigger={sourceConfigUpdateTrigger}
               onCurrentUserUpdate={handleCurrentUserUpdateFromPayload}
+              onCSVUploadStart={handleCSVUploadStart}
             />
           </div>
 

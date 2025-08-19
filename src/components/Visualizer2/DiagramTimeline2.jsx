@@ -3,7 +3,255 @@ import DiagramNode2 from './DiagramNode2';
 import { IdentitySimulation } from '../../utils/identitySimulation.js';
 import './DiagramTimeline2.css';
 
-const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileApiResults = {}, onSimulationUpdate }) => {
+// Helper function to generate comprehensive analysis
+function generateComprehensiveAnalysis(processedEvents, simulation) {
+  const analysis = {
+    eventSequence: [],
+    profileEvolution: {},
+    keyInsights: [],
+    finalState: {},
+    downloadData: {}
+  };
+
+  let profileCounter = 0;
+  const profileMap = new Map();
+
+  processedEvents.forEach((event, index) => {
+    const eventNum = index + 1;
+    const action = event.simulationResult?.actionDetails || event.action;
+    const eventType = event.eventData?.event || event.eventData?.type || 'Unknown';
+    const timestamp = new Date(event.timestamp).toLocaleString();
+    
+    // Extract identifiers for display
+    const identifiersList = Object.entries(event.identifiers).map(([key, identifier]) => 
+      `${key}: ${identifier.value || identifier}`
+    ).join(', ');
+
+    let profileAction = '';
+    let profileId = '';
+    
+    if (action.type === 'create_new') {
+      profileCounter++;
+      profileId = `Profile ${profileCounter}`;
+      profileMap.set(action.profileStats?.profileId || `profile_${profileCounter}`, profileId);
+      profileAction = `🆕 **Create New Profile** (${profileId})`;
+    } else if (action.type === 'add_event_to_existing') {
+      const simProfileId = action.profileStats?.profileId || action.profiles?.[0]?.id;
+      profileId = profileMap.get(simProfileId) || `Profile ${profileCounter}`;
+      profileAction = `➕ **Add Event to Existing Profile** (${profileId})`;
+    } else if (action.type === 'add_identifier_to_existing') {
+      const simProfileId = action.profileStats?.profileId || action.profiles?.[0]?.id;
+      profileId = profileMap.get(simProfileId) || `Profile ${profileCounter}`;
+      profileAction = `🔗 **Add Identifier to Existing Profile** (${profileId})`;
+    } else if (action.type === 'merge_profiles') {
+      // For merges, we need to update the profile mapping
+      const baseProfileId = action.profileStats?.profileId;
+      if (baseProfileId && action.simulationLogs) {
+        // Find which profiles were merged
+        const mergeLog = action.simulationLogs.find(log => log.includes('Starting merge'));
+        if (mergeLog) {
+          const merged = mergeLog.match(/Starting merge of profiles: (.+)/);
+          if (merged) {
+            const profileIds = merged[1].split(', ');
+            // Map all merged profiles to the same display name
+            const primaryProfile = profileMap.get(baseProfileId) || `Profile ${Object.keys(profileMap).length + 1}`;
+            profileIds.forEach(id => {
+              const fullId = `profile_${id}`;
+              if (!profileMap.has(fullId)) {
+                profileMap.set(fullId, `Profile ${Object.keys(profileMap).length + 1}`);
+              }
+            });
+            profileMap.set(baseProfileId, primaryProfile);
+          }
+        }
+      }
+      profileId = profileMap.get(baseProfileId) || 'Merged Profile';
+      profileAction = `🔀 **Merge Profiles** → ${profileId}`;
+    }
+
+    const eventAnalysis = {
+      eventNumber: eventNum,
+      eventType,
+      timestamp,
+      identifiers: identifiersList,
+      expectedAction: profileAction,
+      reason: action.reason,
+      detailedReason: action.detailedReason,
+      profileState: profileId,
+      mergeDirection: action.mergeTarget || null,
+      processingLog: action.processingLog || null,
+      droppedIdentifiers: action.droppedIdentifiers || [],
+      conflictingIdentifiers: action.conflictingIdentifiers || []
+    };
+
+    analysis.eventSequence.push(eventAnalysis);
+  });
+
+  // Generate key insights
+  const totalEvents = processedEvents.length;
+  const createActions = processedEvents.filter(e => {
+    const actionType = e.simulationResult?.actionDetails?.type || e.action?.type;
+    return actionType === 'create_new';
+  }).length;
+  const addActions = processedEvents.filter(e => {
+    const actionType = e.simulationResult?.actionDetails?.type || e.action?.type;
+    return actionType && actionType.includes('add_');
+  }).length;
+  const mergeActions = processedEvents.filter(e => {
+    const actionType = e.simulationResult?.actionDetails?.type || e.action?.type;
+    return actionType === 'merge_profiles';
+  }).length;
+  const totalProfiles = Array.from(new Set(profileMap.values())).length;
+
+  analysis.keyInsights = [
+    `<img src="/assets/bar-graph_search.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Chart" /> **Total Events Processed:** ${totalEvents}`,
+    `<img src="/assets/User-plus.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="New Profile" /> **New Profiles Created:** ${createActions}`,
+    `<img src="/assets/User-Checkmark.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Addition" /> **Addition Actions:** ${addActions}`,
+    `<img src="/assets/Unified-Profiles.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Merge" /> **Profile Merges:** ${mergeActions}`,
+    `<img src="/assets/User-Profile.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Profile" /> **Final Profile Count:** ${totalProfiles}`
+  ];
+
+  // Final state
+  analysis.finalState = {
+    totalProfiles,
+    profileMappings: Object.fromEntries(profileMap),
+    lastProcessedAt: new Date().toISOString()
+  };
+
+  // Prepare download data
+  analysis.downloadData = {
+    analysis: analysis.eventSequence,
+    insights: analysis.keyInsights,
+    finalState: analysis.finalState,
+    generatedAt: new Date().toISOString(),
+    eventCount: totalEvents
+  };
+
+  return analysis;
+}
+
+// Helper function to get profile statistics
+function getProfileStats(profile, logs) {
+  if (!profile) return null;
+  
+  return {
+    profileId: profile.id,
+    identifierCount: Object.keys(profile.identifiers || {}).length,
+    totalIdentifierValues: Object.values(profile.identifiers || {}).reduce((sum, set) => sum + set.size, 0),
+    createdAt: profile.metadata?.created_at || new Date().toISOString(),
+    actionHistory: logs || []
+  };
+}
+
+// Helper function to extract conflicting identifiers from simulation logs
+const getConflictingIdentifiersFromLogs = (logs) => {
+  const conflicting = [];
+  logs.forEach(log => {
+    const conflictMatch = log.match(/Dropped identifier type '([^']+)'/);
+    if (conflictMatch) {
+      conflicting.push(conflictMatch[1]);
+    }
+  });
+  return conflicting;
+};
+
+// Helper function to create enhanced merge description
+const getMergeDescriptionForProfile = (profile, logs, profileApiResults = {}) => {
+  if (!profile || !logs) {
+    return 'Profiles merged successfully';
+  }
+
+  // Try to extract merge information from logs
+  const mergeLog = logs.find(log => log.includes('Merged profile') || log.includes('Starting merge'));
+  
+  if (!mergeLog) {
+    return 'Profiles merged successfully';
+  }
+
+  // For simplicity in Visualizer2, return basic merge description
+  return 'Profiles merged successfully';
+};
+
+// Helper function to convert IdentitySimulation result to DiagramNode action format
+const convertSimulationResultToAction = (simulationResult, profileApiResults = {}) => {
+  const { action, profile, dropped, logs } = simulationResult;
+  
+  // Map IdentitySimulation actions to DiagramNode action types
+  let actionType;
+  let reason = '';
+  let description = '';
+  let detailedReason = '';
+  
+  switch (action) {
+    case 'create':
+      actionType = 'create_new';
+      reason = 'No existing profiles match event identifiers';
+      description = logs.length > 0 ? logs[logs.length - 1] : 'Created new profile for event';
+      detailedReason = 'No identifiers in this event matched any existing profiles in the system.';
+      break;
+      
+    case 'add':
+      // Determine if this is adding new identifiers or just events
+      const addedIdentifiersLog = logs.find(log => log.includes('Added identifiers'));
+      const hasNewIdentifiers = addedIdentifiersLog !== undefined;
+      
+      if (hasNewIdentifiers) {
+        actionType = 'add_identifier_to_existing';
+        reason = 'Adding new identifier to existing profile';
+        description = addedIdentifiersLog || 'New identifier added to existing profile';
+        detailedReason = 'Event contains identifiers that match an existing profile, plus new identifiers that will be added to that profile.';
+      } else {
+        actionType = 'add_event_to_existing';
+        reason = 'Adding event to existing profile (no new identifiers)';
+        description = logs.length > 0 ? logs[logs.length - 1] : 'Event added to existing profile';
+        detailedReason = 'All identifiers in this event already exist on a single profile. Event will be added without changing profile identifiers.';
+      }
+      break;
+      
+    case 'merge':
+      actionType = 'merge_profiles';
+      reason = 'Multiple profiles need to be merged';
+      detailedReason = 'Event identifiers span multiple existing profiles, requiring them to be merged into one.';
+      
+      // Enhanced merge description with profile direction
+      const mergeDescription = getMergeDescriptionForProfile(profile, logs, profileApiResults);
+      description = typeof mergeDescription === 'string' ? mergeDescription : mergeDescription.action;
+      
+      return {
+        type: actionType,
+        reason,
+        detailedReason,
+        description,
+        mergeTarget: typeof mergeDescription === 'object' ? mergeDescription.target : null,
+        processingLog: typeof mergeDescription === 'object' ? mergeDescription.processingLog : null,
+        droppedIdentifiers: dropped || [],
+        conflictingIdentifiers: getConflictingIdentifiersFromLogs(logs),
+        profiles: [profile], // IdentitySimulation returns the merged profile
+        simulationLogs: logs,
+        profileStats: getProfileStats(profile, logs)
+      };
+      
+    default:
+      actionType = 'create_new';
+      reason = 'Unknown action type';
+      description = 'Fallback to creating new profile';
+      detailedReason = 'Unable to determine appropriate action, defaulting to profile creation.';
+  }
+
+  return {
+    type: actionType,
+    reason,
+    detailedReason,
+    description,
+    droppedIdentifiers: dropped || [],
+    conflictingIdentifiers: getConflictingIdentifiersFromLogs(logs),
+    profiles: profile ? [profile] : [],
+    simulationLogs: logs,
+    profileStats: getProfileStats(profile, logs)
+  };
+};
+
+const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileApiResults = {}, onSimulationUpdate, onAnalysisUpdate }) => {
   const [processedEvents, setProcessedEvents] = useState([]);
   const [simulation, setSimulation] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -142,12 +390,19 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
         // Process through simulation
         const result = sim.processEvent({ identifiers: eventIdentifiers });
         
+        // Convert simulation result to detailed action format
+        const actionDetails = convertSimulationResultToAction(result, profileApiResults);
+        
         // Create processed event with simulation results
         const processedEvent = {
           ...event,
           eventData: JSON.parse(event.rawData),
           identifiers: eventIdentifiers,
-          simulationResult: result,
+          simulationResult: {
+            ...result,
+            actionDetails: actionDetails,
+            action: actionDetails.type // Use the detailed action type
+          },
           sequenceNumber: i + 1,
           timestamp: event.timestamp || new Date(event.createdAt).getTime()
         };
@@ -162,6 +417,12 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
       // Notify parent component about simulation update
       if (onSimulationUpdate) {
         onSimulationUpdate(sim);
+      }
+
+      // Generate comprehensive analysis for the sidebar
+      if (onAnalysisUpdate) {
+        const analysis = generateComprehensiveAnalysis(processed, sim);
+        onAnalysisUpdate(analysis);
       }
     };
 
@@ -179,6 +440,22 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
       }
     }
   }, [events, stableIdentifierOptionsString]);
+
+  // Listen for analysis trigger events
+  useEffect(() => {
+    const handleAnalysisTrigger = async () => {
+      if (processedEvents.length > 0 && simulation && onAnalysisUpdate) {
+        const analysis = generateComprehensiveAnalysis(processedEvents, simulation);
+        onAnalysisUpdate(analysis);
+      }
+    };
+
+    document.addEventListener('triggerAnalysis', handleAnalysisTrigger);
+    
+    return () => {
+      document.removeEventListener('triggerAnalysis', handleAnalysisTrigger);
+    };
+  }, [processedEvents, simulation, onAnalysisUpdate]);
 
   if (loading) {
     return (
@@ -295,7 +572,29 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                     <div className="visualizer2__profile-header">
                       <div className="visualizer2__profile-avatar">👤</div>
                       <div className="visualizer2__profile-info">
-                        <h4>{profile.segmentId || profile.displayName || profile.id}</h4>
+                        <h5>
+                          {/* Display Profile # as primary identifier */}
+                          {profile.displayName && profile.displayName.startsWith('Profile ') 
+                            ? profile.displayName 
+                            : profile.id && profile.id.startsWith('Profile ') 
+                              ? profile.id 
+                              : `Profile ${profile.id || profile.segmentId}`
+                          }
+                          {/* Show full name if available from traits */}
+                          {(() => {
+                            // Check if we have a real profile with traits data
+                            const realProfile = profile.realProfile;
+                            if (realProfile && realProfile.metadata && realProfile.metadata.traits) {
+                              const traits = realProfile.metadata.traits;
+                              const firstName = traits.firstName || traits.first_name;
+                              const lastName = traits.lastName || traits.last_name;
+                              if (firstName && lastName) {
+                                return ` - ${firstName} ${lastName}`;
+                              }
+                            }
+                            return '';
+                          })()}
+                        </h5>
                         {profile.segmentId && (
                           <div className="visualizer2__segment-id">Segment ID: {profile.segmentId}</div>
                         )}

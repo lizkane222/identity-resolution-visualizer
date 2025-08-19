@@ -2,6 +2,7 @@
 
 :root {
   --twilio-font-family: 'TwilioSansMono', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+  --twilio-font-weight-heavy : 800;
 }
 
 * {

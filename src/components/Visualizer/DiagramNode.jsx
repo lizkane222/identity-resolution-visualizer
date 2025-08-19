@@ -9,7 +9,10 @@ const DiagramNode = ({ event, sequenceNumber, isLast, identifierOptions, positio
       case 'create_new':
         return '🆕';
       case 'add_to_existing':
+      case 'add_event_to_existing':
         return '➕';
+      case 'add_identifier_to_existing':
+        return '🔗';
       case 'merge_profiles':
         return '🔀';
       default:
@@ -22,7 +25,10 @@ const DiagramNode = ({ event, sequenceNumber, isLast, identifierOptions, positio
       case 'create_new':
         return '#e1f5fe';
       case 'add_to_existing':
+      case 'add_event_to_existing':
         return '#f3e5f5';
+      case 'add_identifier_to_existing':
+        return '#fff3e0';
       case 'merge_profiles':
         return '#e8f5e8';
       default:
@@ -130,12 +136,55 @@ const DiagramNode = ({ event, sequenceNumber, isLast, identifierOptions, positio
             <span className="diagram-node__action-title">
               {event.action.type === 'create_new' && 'Create New Profile'}
               {event.action.type === 'add_to_existing' && 'Add to Existing Profile'}
+              {event.action.type === 'add_event_to_existing' && 'Add Event to Existing Profile'}
+              {event.action.type === 'add_identifier_to_existing' && 'Add Identifier to Existing Profile'}
               {event.action.type === 'merge_profiles' && 'Merge Profiles'}
             </span>
           </div>
+          
+          {/* Action Reason */}
+          <div className="diagram-node__action-reason">
+            <strong>Reason:</strong> {event.action.reason}
+          </div>
+          
+          {/* Detailed Explanation */}
+          {event.action.detailedReason && (
+            <div className="diagram-node__detailed-reason">
+              {event.action.detailedReason}
+            </div>
+          )}
+          
           <div className="diagram-node__action-description">
             {event.action.description}
           </div>
+          
+          {/* Enhanced Merge Information */}
+          {event.action.type === 'merge_profiles' && event.action.mergeTarget && (
+            <div className="diagram-node__merge-details">
+              <div className="diagram-node__merge-target">
+                <strong>Merge Direction:</strong> {event.action.mergeTarget}
+              </div>
+              {event.action.processingLog && (
+                <div className="diagram-node__processing-log">
+                  <strong>Processing Log:</strong> {event.action.processingLog}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Profile Statistics */}
+          {event.action.profileStats && (
+            <div className="diagram-node__profile-stats">
+              <div className="diagram-node__stats-row">
+                <span className="diagram-node__stat-label">Final Profile:</span>
+                <span className="diagram-node__stat-value">{event.action.profileStats.profileId}</span>
+              </div>
+              <div className="diagram-node__stats-row">
+                <span className="diagram-node__stat-label">Total Identifiers:</span>
+                <span className="diagram-node__stat-value">{event.action.profileStats.totalIdentifierValues}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Logic Explanation */}

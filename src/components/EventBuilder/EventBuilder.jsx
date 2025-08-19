@@ -104,7 +104,7 @@ function processMessageIdForSegment(payload) {
 
 
 
-const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventInfoChange, userUpdateTrigger, sourceConfigUpdateTrigger, onCurrentUserUpdate }, ref) => {
+const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventInfoChange, userUpdateTrigger, sourceConfigUpdateTrigger, onCurrentUserUpdate, onCSVUploadStart }, ref) => {
   const [rawText, setRawText] = useState('');
   const [formattedText, setFormattedText] = useState('');
   const [isValid, setIsValid] = useState(true);
@@ -596,6 +596,11 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
   const handleCSVUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
+    // Notify parent that CSV upload is starting to set checkpoint
+    if (onCSVUploadStart) {
+      onCSVUploadStart();
+    }
     
     const reader = new FileReader();
     reader.onload = (evt) => {

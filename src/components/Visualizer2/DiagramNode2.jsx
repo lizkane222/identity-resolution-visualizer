@@ -18,10 +18,16 @@ const DiagramNode2 = ({
   const getActionIcon = (actionType) => {
     switch (actionType) {
       case 'create':
+      case 'create_new':
         return <img src="/assets/User-plus.svg" alt="Create" className="diagram-node2__action-icon-svg" />;
       case 'add':
-        return <img src="/assets/User-Checkmark.svg" alt="Add" className="diagram-node2__action-icon-svg" />;
+      case 'add_to_existing':
+      case 'add_event_to_existing':
+        return <img src="/assets/User-Checkmark.svg" alt="Add Event" className="diagram-node2__action-icon-svg" />;
+      case 'add_identifier_to_existing':
+        return <img src="/assets/Connections.svg" alt="Add Identifier" className="diagram-node2__action-icon-svg" />;
       case 'merge':
+      case 'merge_profiles':
         return <img src="/assets/Unified-profiles.svg" alt="Merge" className="diagram-node2__action-icon-svg" />;
       default:
         return '❓';
@@ -31,10 +37,16 @@ const DiagramNode2 = ({
   const getActionColor = (actionType) => {
     switch (actionType) {
       case 'create':
+      case 'create_new':
         return '#e1f5fe';
       case 'add':
+      case 'add_to_existing':
+      case 'add_event_to_existing':
         return '#f3e5f5';
+      case 'add_identifier_to_existing':
+        return '#fff3e0';
       case 'merge':
+      case 'merge_profiles':
         return '#e8f5e8';
       default:
         return '#f5f5f5';
@@ -180,9 +192,10 @@ const DiagramNode2 = ({
           <div className="diagram-node2__action-header">
             <span className="diagram-node2__action-icon">{getActionIcon(event.simulationResult.action)}</span>
             <span className="diagram-node2__action-title">
-              {event.simulationResult.action === 'create' && 'Create New Profile'}
-              {event.simulationResult.action === 'add' && 'Add to Existing Profile'}
-              {event.simulationResult.action === 'merge' && 'Merge Profiles'}
+              {(event.simulationResult.action === 'create' || event.simulationResult.action === 'create_new') && 'Create New Profile'}
+              {(event.simulationResult.action === 'add' || event.simulationResult.action === 'add_to_existing' || event.simulationResult.action === 'add_event_to_existing') && 'Add Event to Existing Profile'}
+              {event.simulationResult.action === 'add_identifier_to_existing' && 'Add Identifier to Existing Profile'}
+              {(event.simulationResult.action === 'merge' || event.simulationResult.action === 'merge_profiles') && 'Merge Profiles'}
             </span>
           </div>
           <div className="diagram-node2__action-description">

@@ -342,6 +342,38 @@
   font-size: 0.75rem;
   overflow: hidden;
   position: relative;
+  justify-content: space-between;
+}
+
+.unique-profile__event-content {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.unique-profile__add-event-button {
+  background: rgb(48, 172, 130);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.unique-profile__add-event-button:hover {
+  background: rgb(34, 150, 110);
+  transform: scale(1.1);
 }
 
 .unique-profile__event--expanded {

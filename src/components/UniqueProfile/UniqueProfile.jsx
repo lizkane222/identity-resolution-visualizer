@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { getConfiguredIdentifiers, getIdentifierDisplayName } from '../../utils/idResolutionConfig';
 import './UniqueProfile.css';
 
-const UniqueProfile = ({ profile, onHighlightEvents }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+const UniqueProfile = ({ profile, onHighlightEvents, onAddEventToList }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
   const [expandedEvents, setExpandedEvents] = useState(new Set());
 
   // Debug logging for profile data
@@ -99,6 +99,96 @@ const UniqueProfile = ({ profile, onHighlightEvents }) => {
 
   const formatTime = (dateString) => {
     return new Date(dateString).toLocaleTimeString();
+  };
+
+    // Convert profile event to EventList format
+  const convertProfileEventToEventData = (event, segmentId) => {
+    // Extract identifiers from the event's external_ids
+    const identifiers = {};
+    
+    // Extract userId from external_ids if available
+    if (event.external_ids && Array.isArray(event.external_ids)) {
+      event.external_ids.forEach(extId => {
+        if (extId.type === 'user_id') {
+          identifiers.userId = extId.id;
+        } else if (extId.type === 'anonymous_id') {
+          identifiers.anonymousId = extId.id;
+        } else if (extId.type === 'email') {
+          identifiers.email = extId.id;
+        }
+        // Store all identifiers for reference
+        identifiers[extId.type] = extId.id;
+      });
+    }
+    
+    // Extract segment_id from event's related.users field if available
+    const eventSegmentId = event.related && event.related.users && event.related.users[0];
+    const finalSegmentId = eventSegmentId || segmentId;
+    
+    // Create the event payload in Segment format
+    const eventPayload = {
+      type: event.type || 'track',
+      event: event.event || event.type || 'Profile Event',
+      userId: identifiers.userId || event.userId || event.user_id || undefined,
+      anonymousId: identifiers.anonymousId || event.anonymousId || event.anonymous_id || undefined,
+      timestamp: event.timestamp || new Date().toISOString(),
+      properties: {
+        ...(event.properties || {}),
+        // Include external_ids in properties for reference
+        ...(event.external_ids && { external_ids: event.external_ids })
+      },
+      traits: event.traits || undefined,
+      context: {
+        ...(event.context || {}),
+        source: {
+          id: event.source_id || 'profile-api',
+          name: 'Profile API'
+        },
+        // Add segment_id from the related.users field
+        ...(finalSegmentId && { segment_id: finalSegmentId }),
+        // Include all identifiers for identity resolution
+        identifiers: identifiers
+      },
+      messageId: event.message_id || event.messageId || `profile-event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      // Include original external_ids and related data for identity resolution
+      external_ids: event.external_ids || [],
+      related: event.related || {}
+    };
+
+    // Remove undefined fields
+    Object.keys(eventPayload).forEach(key => {
+      if (eventPayload[key] === undefined) {
+        delete eventPayload[key];
+      }
+    });
+
+    return {
+      id: `profile-event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      rawData: JSON.stringify(eventPayload, null, 2),
+      writeKey: '', // Will need to be set by user
+      sourceType: 'profile-api',
+      sourceName: 'Profile API Event',
+      timestamp: event.timestamp || new Date().toISOString(),
+      // Include segment_id at the top level for identity resolution
+      segment_id: finalSegmentId,
+      external_ids: event.external_ids || [],
+      related: event.related || {}
+    };
+  };
+
+  // Handle adding event to EventList
+  const handleAddEvent = (event, index) => {
+    if (!onAddEventToList) return;
+    
+    // Extract segment_id from the event's related.users field first, fallback to profile data
+    const eventSegmentId = event.related && event.related.users && event.related.users[0];
+    const profileSegmentId = profile.segmentId || 
+                            (profile.related && profile.related.users && profile.related.users[0]);
+    
+    const segmentId = eventSegmentId || profileSegmentId || null;
+    
+    const eventData = convertProfileEventToEventData(event, segmentId);
+    onAddEventToList(eventData);
   };
 
   return (
@@ -236,22 +326,36 @@ const UniqueProfile = ({ profile, onHighlightEvents }) => {
                     onClick={(e) => handleEventClick(e, index)}
                     style={{ cursor: 'pointer' }}
                   >
-                    <span className="unique-profile__event-type">
-                      {event.event || event.type || 'Event'}
-                    </span>
-                    {event.timestamp && (
-                      <span className="unique-profile__event-time">
-                        {formatTime(event.timestamp)}
+                    <div className="unique-profile__event-content">
+                      <span className="unique-profile__event-type">
+                        {event.event || event.type || 'Event'}
                       </span>
-                    )}
-                    {event.properties && Object.keys(event.properties).length > 0 && (
-                      <span className="unique-profile__event-props">
-                        {Object.keys(event.properties).length} properties
+                      {event.timestamp && (
+                        <span className="unique-profile__event-time">
+                          {formatTime(event.timestamp)}
+                        </span>
+                      )}
+                      {event.properties && Object.keys(event.properties).length > 0 && (
+                        <span className="unique-profile__event-props">
+                          {Object.keys(event.properties).length} properties
+                        </span>
+                      )}
+                      <span className="unique-profile__event-expand">
+                        {isEventExpanded ? '▼' : '▶'}
                       </span>
+                    </div>
+                    {onAddEventToList && (
+                      <button
+                        className="unique-profile__add-event-button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddEvent(event, index);
+                        }}
+                        title="Add this event to the Event List for visualization"
+                      >
+                        +
+                      </button>
                     )}
-                    <span className="unique-profile__event-expand">
-                      {isEventExpanded ? '▼' : '▶'}
-                    </span>
                   </div>
                   
                   {isEventExpanded && (

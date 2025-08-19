@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import UniqueProfile from '../UniqueProfile/UniqueProfile.jsx';
 import './UniqueProfilesList.css';
 
-const UniqueProfilesList = ({ profileApiResults, events, onHighlightEvents }) => {
+const UniqueProfilesList = ({ events, profileApiResults, onHighlightEvents, onAddEventToList }) => {
   // Add debugging for incoming data
   console.group('🔍 [UNIQUE PROFILES LIST] Processing profile API results');
   console.log(`📦 Received profileApiResults:`, profileApiResults);
@@ -388,6 +388,7 @@ const UniqueProfilesList = ({ profileApiResults, events, onHighlightEvents }) =>
                 key={profile.id || index}
                 profile={profile}
                 onHighlightEvents={onHighlightEvents}
+                onAddEventToList={onAddEventToList}
               />
             ))}
           </div>
