@@ -174,19 +174,34 @@ const ProfileLookup = ({
             const maxProfileWaitTime = 5 * 60 * 1000; // 5 minutes max wait for profile creation
             const profileRetryDelay = 15000; // 15 seconds for 404 retries
             
+            // For events endpoint pagination - collect all pages
+            let allData = null;
+            let currentCursor = queryParams.next || '';
+            let paginationCount = 0;
+            const maxPaginationPages = 50; // Safety limit to prevent infinite loops
+            
             do {
-              response = await fetch(url, { signal: controller.signal });
+              // Update URL with current cursor for pagination
+              let currentUrl = url;
+              if (endpoint === 'events' && currentCursor && paginationCount > 0) {
+                const urlObj = new URL(url);
+                urlObj.searchParams.set('next', currentCursor);
+                currentUrl = urlObj.toString();
+              }
+              
+              response = await fetch(currentUrl, { signal: controller.signal });
               data = await response.json();
               
               // Get the actual Segment API endpoint from the server response
               const segmentEndpoint = data._segmentApiEndpoint || `https://profiles.segment.com/v1/spaces/{space_id}/collections/users/profiles/${identifier}/${endpoint}${queryString}`;
               
               // Single comprehensive log per request
-              console.log(`📡 [Profile API] ${endpoint.toUpperCase()} Request:`, {
+              console.log(`📡 [Profile API] ${endpoint.toUpperCase()} Request${paginationCount > 0 ? ` (Page ${paginationCount + 1})` : ''}:`, {
                 identifier: identifier,
                 segmentEndpoint: segmentEndpoint,
                 status: `${response.status} ${response.statusText}`,
                 responseBody: data,
+                cursor: data.cursor || null,
                 timestamp: new Date().toISOString()
               });
               
@@ -250,6 +265,51 @@ const ProfileLookup = ({
                     delete updated[errorKey];
                     return updated;
                   });
+                }
+                
+                // Handle pagination for events endpoint
+                if (endpoint === 'events' && data.cursor?.has_more && paginationCount < maxPaginationPages) {
+                  // First page - initialize allData
+                  if (allData === null) {
+                    allData = { ...data };
+                    // Ensure data property exists and is an array
+                    if (!allData.data) {
+                      allData.data = [];
+                    }
+                    // Convert to array if it's not already
+                    if (!Array.isArray(allData.data)) {
+                      allData.data = [allData.data];
+                    }
+                  } else {
+                    // Subsequent pages - merge data
+                    if (data.data) {
+                      const newEvents = Array.isArray(data.data) ? data.data : [data.data];
+                      allData.data = allData.data.concat(newEvents);
+                    }
+                    // Update cursor info
+                    allData.cursor = data.cursor;
+                  }
+                  
+                  // Check if we need to fetch more pages
+                  if (data.cursor?.has_more && data.cursor?.next) {
+                    currentCursor = data.cursor.next;
+                    paginationCount++;
+                    console.log(`📄 [Profile API] Fetching next page for ${identifier}/events (Page ${paginationCount + 1}, Cursor: ${currentCursor.substring(0, 20)}...)`);
+                    continue; // Continue the do-while loop to fetch next page
+                  } else {
+                    // No more pages or missing cursor data
+                    data = allData; // Use the combined data
+                    console.log(`✅ [Profile API] Completed pagination for ${identifier}/events (${paginationCount + 1} total pages, ${allData.data.length} total events)`);
+                  }
+                } else if (endpoint === 'events' && paginationCount >= maxPaginationPages) {
+                  // Hit pagination limit - use what we have and warn user
+                  data = allData || data;
+                  console.warn(`⚠️ [Profile API] Pagination limit reached for ${identifier}/events (${maxPaginationPages} pages). Some events may not be included.`);
+                  // Add a warning to the data object
+                  data._paginationWarning = `Reached maximum pagination limit of ${maxPaginationPages} pages. Some events may not be included.`;
+                } else if (endpoint === 'events' && paginationCount === 0) {
+                  // Single page response for events endpoint
+                  allData = data;
                 }
                 
                 // If traits endpoint returns empty data but we know profiles exist from previous calls, retry
@@ -719,7 +779,7 @@ const ProfileLookup = ({
               </p>
               {selectedEndpoints.includes('traits') && (
                 <p className="profile-lookup__help">
-                  💡 <strong>Note:</strong> If you just sent identify events via simulation, traits may take 30-60 seconds to appear in Segment's Profile API. 
+                  💡 <strong>Note:</strong> If you just sent identify events via simulation, traits may take 30-60 seconds (sometimes longer) to appear in Segment's Profile API. 
                   The system will automatically retry up to 3 times with delays if no traits are found initially.
                 </p>
               )}
@@ -737,7 +797,7 @@ const ProfileLookup = ({
             className="profile-lookup__button"
           >
             {isLoading ? 'Looking up...' : 
-             `Lookup ${selectedEndpoints.length > 1 ? `${selectedEndpoints.length} Endpoints` : selectedEndpoints[0] || 'Endpoints'} for ${selectedIdentifiers.length} Profile${selectedIdentifiers.length > 1 ? 's' : ''}`
+             `Lookup ${selectedEndpoints.length > 1 ? `${selectedEndpoints.length} Endpoints` : selectedEndpoints[0] || 'Endpoints'} by ${selectedIdentifiers.length} Identifier${selectedIdentifiers.length > 1 ? 's' : ''}`
             }
           </button>
 

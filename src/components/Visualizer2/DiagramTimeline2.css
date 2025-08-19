@@ -33,19 +33,25 @@
 /* Timeline Container */
 .diagram-timeline2__timeline-container {
   position: relative;
-  padding: 20px;
-  min-height: 1400px;
+  padding: 20px 20px 20px 20px; /* Reduced top padding by default */
+  min-height: 800px; /* Reduced from 1400px */
   min-width: fit-content; /* Only use space needed for content */
   display: flex;
   flex-direction: column;
+  transition: padding-top 0.3s ease; /* Smooth transition when payload expands */
+}
+
+/* Responsive padding when payload is expanded */
+.diagram-timeline2__timeline-container--expanded {
+  padding-top: 200px; /* Extra padding only when payload is visible */
 }
 
 /* Horizontal Timeline Line */
 .diagram-timeline2__timeline-line {
   position: absolute;
-  top: 850px; /* Adjusted position: 450px + 400px offset for event nodes */
+  top: 660px; /* Mathematically centered: 400px (event top) + 195px (above height) + 20px (margin) + 25px (circle center) */
   left: 20px;
-  right: 0; /* Remove right padding to prevent margin issues */
+  /* right: 0; Remove this to allow width to be controlled by inline styles */
   height: 3px;
   background: linear-gradient(
     to right,
@@ -53,8 +59,15 @@
     #7c3aed
   ) !important;
   border-radius: 2px;
+  min-width : 175%;
   z-index: 1;
-  min-width: 100%; /* Ensure line extends full width */
+  /* min-width: 100%; Remove this to allow width to be controlled by inline styles */
+  transition: top 0.3s ease; /* Smooth transition when layout changes */
+}
+
+/* Timeline line position when payload is expanded */
+.diagram-timeline2__timeline-container--expanded .diagram-timeline2__timeline-line {
+  top: 760px; /* Mathematically centered for expanded state: 500px (expanded event top) + 195px + 20px + 25px + 20px adjustment */
 }
 
 /* Events Container */
@@ -75,17 +88,24 @@
   flex-direction: row;
   flex-wrap: wrap;
   gap: 15px;
-  width: 100%; /* Use available width, not viewport width */
-  position: relative;
-  overflow: visible; /* Allow overflow to be handled by parent */
+  position: fixed; /* Fixed positioning to stay in viewport */
+  top: 70px; /* Below header */
+  left: 25vw; /* Start after sidebar (25vw sidebar width + extra) */
+  /* left: 20vw;  */ /* Start after sidebar (20vw sidebar width) */
+  right: 0; /* Extend to right edge */
+  width: calc(80vw - 40px); /* Available width minus sidebar and padding */
+  overflow: visible;
   align-items: flex-start;
-  justify-content: flex-start; /* Start from left */
-  padding: 20px;
+  justify-content: center; /* Center the profile cards */
+  padding: 25px;
+  z-index: 1; /* Much lower z-index so events definitely appear in front */
+  /* padding: 25px 0 25px 100px; */
   background: #f8f9fa;
   border-radius: 0;
   border: none;
   border-bottom: 1px solid #e5e7eb;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  z-index: 50; /* Below header but above content */
 }
 
 /* Individual Profile Card Styling (based on UniqueUser - expanded by default) */
@@ -197,6 +217,47 @@
   margin-bottom: 8px;
 }
 
+/* Profile Target - matching event node styling */
+.diagram-timeline2__events .visualizer2__profile-target {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.diagram-timeline2__events .visualizer2__target-arrow {
+  font-size: 16px;
+  color: #4f46e5;
+  font-weight: bold;
+}
+
+.diagram-timeline2__events .visualizer2__target-profile {
+  font-weight: 600;
+  color: #4f46e5;
+  background: #f0f9ff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+}
+
+/* Segment ID */
+.diagram-timeline2__events .visualizer2__segment-id {
+  font-size: 11px;
+  color: #6b7280;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: initial;
+  word-break: break-all;
+  margin-bottom: 8px;
+}
+
+/* Segment ID with white text */
+.diagram-timeline2__events .visualizer2__segment-id--white {
+  color: #ffffff !important;
+}
+
 /* Profile Stats */
 .diagram-timeline2__events .visualizer2__profile-stats {
   display: flex;
@@ -264,7 +325,7 @@
 
 .diagram-timeline2__events .visualizer2__identifier-values {
   color: #374151;
-  font-size: 10px;
+  font-size: 12px;
   flex: 1;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   white-space: normal; /* Expanded state - show full values */
@@ -274,13 +335,27 @@
   min-width: 0;
 }
 
-/* Special styling for email identifiers */
-.diagram-timeline2__events .visualizer2__identifier-row--email .visualizer2__identifier-values {
-  color: #3b82f6;
-  background-color: #eff6ff;
+/* Matching identifier highlighting */
+.diagram-timeline2__events .visualizer2__identifier-row--matching {
+  animation: identifierGlow 1.5s ease-in-out infinite alternate;
+}
+
+.diagram-timeline2__events .visualizer2__identifier-values--matching {
+  color: #3b82f6 !important;
+  background-color: rgba(59, 130, 246, 0.1);
   border-radius: 4px;
-  border: 1px solid #bfdbfe;
   padding: 2px 6px;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+  font-weight: 600;
+}
+
+@keyframes identifierGlow {
+  0% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+  }
 }
 
 /* Event Nodes Container */
@@ -291,10 +366,17 @@
   width: fit-content; /* Only use space needed for nodes */
   min-width: fit-content; /* Ensure we can expand horizontally */
   position: absolute;
-  top: 400px; /* Moved further down to avoid overlapping with profiles list */
+  top: 400px; /* Reduced from 400px for tighter spacing */
   left: 20px; /* Start from left edge with padding */
   gap: 20px; /* Add consistent spacing between nodes */
   overflow: visible; /* Allow overflow to be handled by parent */
+  transition: top 0.3s ease; /* Smooth transition when layout changes */
+  z-index: 20; /* Much higher z-index to appear above profiles list */
+}
+
+/* Event nodes position when payload is expanded */
+.diagram-timeline2__timeline-container--expanded .diagram-timeline2__event-nodes {
+  top: 500px; /* Move further down when payload is expanded (400px + 100px) */
 }
 
 /* Dark mode support */
@@ -339,6 +421,16 @@
   color: #F3F4F7; /* grey-50 */
 }
 
+.dark-mode .diagram-timeline2__events .visualizer2__target-arrow,
+.dark-mode .diagram-timeline2__events .visualizer2__target-profile {
+  color: #1866EE; /* blue-500 */
+}
+
+.dark-mode .diagram-timeline2__events .visualizer2__target-profile {
+  background: rgba(8, 31, 71, 0.5); /* blue-850 with opacity */
+  border-color: #1866EE; /* blue-500 */
+}
+
 .dark-mode .diagram-timeline2__events .visualizer2__profile-stat-value {
   color: #F3F4F7; /* grey-50 */
 }
@@ -363,10 +455,11 @@
   color: #F3F4F7; /* grey-50 */
 }
 
-.dark-mode .diagram-timeline2__events .visualizer2__identifier-row--email .visualizer2__identifier-values {
-  color: #1866EE; /* blue-500 */
-  background-color: rgba(8, 31, 71, 0.5); /* blue-850 with opacity */
-  border-color: #1866EE; /* blue-500 */
+/* Dark mode matching identifier highlighting */
+.dark-mode .diagram-timeline2__events .visualizer2__identifier-values--matching {
+  color: #60a5fa !important;
+  background-color: rgba(96, 165, 250, 0.2);
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.4);
 }
 
 /* Brand mode support */
@@ -419,10 +512,21 @@
   }
 }
 
-.segment-mode .diagram-timeline2__events .visualizer2__identifier-row--email .visualizer2__identifier-values {
+.segment-mode .diagram-timeline2__events .visualizer2__target-arrow,
+.segment-mode .diagram-timeline2__events .visualizer2__target-profile {
   color: #4fb58b;
+}
+
+.segment-mode .diagram-timeline2__events .visualizer2__target-profile {
   background-color: #f0fdf4;
   border-color: #4fb58b;
+}
+
+/* Segment mode matching identifier highlighting */
+.segment-mode .diagram-timeline2__events .visualizer2__identifier-values--matching {
+  color: #4fb58b !important;
+  background-color: rgba(79, 181, 139, 0.1);
+  box-shadow: 0 0 8px rgba(79, 181, 139, 0.3);
 }
 
 .twilio-mode .diagram-timeline2 {
@@ -525,16 +629,27 @@
   color: #cbd5e1;
 }
 
-.twilio-mode .diagram-timeline2__events .visualizer2__identifier-row--email .visualizer2__identifier-values {
+/* Twilio mode matching identifier highlighting */
+.twilio-mode .diagram-timeline2__events .visualizer2__identifier-values--matching {
+  color: #dc2626 !important;
+  background-color: rgba(220, 38, 38, 0.1);
+  box-shadow: 0 0 8px rgba(220, 38, 38, 0.3);
+}
+
+.twilio-mode .diagram-timeline2__events .visualizer2__target-arrow,
+.twilio-mode .diagram-timeline2__events .visualizer2__target-profile {
   color: #dc2626;
-  background-color: #fef2f2;
+}
+
+.twilio-mode .diagram-timeline2__events .visualizer2__target-profile {
+  background: #1e293b;
   border-color: #dc2626;
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .diagram-timeline2__timeline-container {
-    padding: 20px 10px;
+    padding: 160px 10px 20px 10px;
   }
   
   .diagram-timeline2__timeline-line {
@@ -552,6 +667,14 @@
   }
   
   .diagram-timeline2__profiles-list {
+    left: 0; /* No sidebar on mobile */
+    width: calc(100vw - 40px); /* Full width minus padding */
     padding: 15px 10px;
   }
+}
+
+/* Adjustments for full-width visualizer (no sidebar) */
+.app__main--full-width .diagram-timeline2__profiles-list {
+  left: 0; /* No sidebar offset */
+  width: calc(100vw - 40px); /* Full viewport width minus padding */
 }

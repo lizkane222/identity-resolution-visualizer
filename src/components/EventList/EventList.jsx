@@ -76,8 +76,18 @@ const EventList = ({
   const setStopCheckpointIndex = onStopCheckpointChange ? onStopCheckpointChange : setLocalStopCheckpointIndex;
   const [isDraggingStopCheckpoint, setIsDraggingStopCheckpoint] = useState(false);
   const [showStopCheckpoint, setShowStopCheckpoint] = useState(false);
-  const [checkpointManuallyMoved, setCheckpointManuallyMoved] = useState(false);
-  const [stopCheckpointManuallyMoved, setStopCheckpointManuallyMoved] = useState(false);
+  
+  // Initialize checkpointManuallyMoved based on whether we have a persistent checkpoint
+  const [checkpointManuallyMoved, setCheckpointManuallyMoved] = useState(() => {
+    // If we have a persistent checkpoint that's not -1, consider it manually moved
+    return onCheckpointChange && propCheckpointIndex !== -1;
+  });
+  
+  // Initialize stopCheckpointManuallyMoved based on whether we have a persistent stop checkpoint
+  const [stopCheckpointManuallyMoved, setStopCheckpointManuallyMoved] = useState(() => {
+    // If we have a persistent stop checkpoint that's not -1, consider it manually moved
+    return onStopCheckpointChange && propStopCheckpointIndex !== -1;
+  });
   
   // Event drag and reorder state
   const [isDraggingEvent, setIsDraggingEvent] = useState(false);

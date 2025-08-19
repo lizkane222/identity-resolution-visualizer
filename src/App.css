@@ -57,6 +57,7 @@ body {
   top: 0;
   height: 100vh;
   overflow: hidden;
+  z-index: 10; /* Lower than header */
 }
 
 /* Main Content Area */
@@ -81,7 +82,7 @@ body {
   padding: 12px 24px;
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000; /* Higher than sidebar */
 }
 
 .app__header-content {

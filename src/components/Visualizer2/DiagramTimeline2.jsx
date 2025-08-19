@@ -173,7 +173,7 @@ const getMergeDescriptionForProfile = (profile, logs, profileApiResults = {}) =>
 };
 
 // Helper function to convert IdentitySimulation result to DiagramNode action format
-const convertSimulationResultToAction = (simulationResult, profileApiResults = {}) => {
+const convertSimulationResultToAction = (simulationResult, profileApiResults = {}, currentEvent = null, previousEvents = [], currentIndex = 0) => {
   const { action, profile, dropped, logs } = simulationResult;
   
   // Map IdentitySimulation actions to DiagramNode action types
@@ -184,27 +184,121 @@ const convertSimulationResultToAction = (simulationResult, profileApiResults = {
   
   switch (action) {
     case 'create':
+      // Check if this is a case where we should correct the simulation's decision
+      // Case 1: ALL identifiers already exist on a single profile
+      // Case 2: Event contains existing identifiers + new ones (should merge, not create)
+      if (currentEvent && previousEvents.length > 0) {
+        const currentIdentifiers = extractIdentifiersFromEvent(currentEvent, []);
+        
+        // Find profiles that share any identifiers with this event
+        const profilesWithSharedIdentifiers = new Map();
+        let targetProfile = null;
+        
+        for (let i = 0; i < previousEvents.length; i++) {
+          const prevEvent = previousEvents[i];
+          const prevIdentifiers = extractIdentifiersFromEvent(prevEvent, []);
+          const prevProfileId = prevEvent.simulationResult?.profile?.id;
+          const prevProfile = prevEvent.simulationResult?.profile;
+          
+          if (!prevProfileId) continue;
+          
+          // Check for any shared identifiers
+          const sharedIdentifiers = [];
+          const newIdentifiers = [];
+          
+          Object.entries(currentIdentifiers).forEach(([type, value]) => {
+            if (prevIdentifiers[type] === value) {
+              sharedIdentifiers.push({type, value});
+            } else if (!Object.values(prevIdentifiers).includes(value)) {
+              newIdentifiers.push({type, value});
+            }
+          });
+          
+          if (sharedIdentifiers.length > 0) {
+            if (!profilesWithSharedIdentifiers.has(prevProfileId)) {
+              profilesWithSharedIdentifiers.set(prevProfileId, {
+                shared: [],
+                new: [],
+                totalEvents: 0,
+                profile: prevProfile // Store the actual profile object
+              });
+            }
+            const profileData = profilesWithSharedIdentifiers.get(prevProfileId);
+            profileData.shared.push(...sharedIdentifiers);
+            profileData.new.push(...newIdentifiers);
+            profileData.totalEvents++;
+            
+            // Set target profile for override
+            if (!targetProfile) {
+              targetProfile = prevProfile;
+            }
+          }
+        }
+        
+        // Case 1: All identifiers exist on single profile
+        const allIdentifiersMatch = Array.from(profilesWithSharedIdentifiers.values()).some(profileData => {
+          const currentIdentifierCount = Object.keys(currentIdentifiers).length;
+          const sharedCount = profileData.shared.length;
+          return sharedCount === currentIdentifierCount && currentIdentifierCount > 0;
+        });
+        
+        if (allIdentifiersMatch && targetProfile) {
+          return {
+            type: 'add_event_to_existing',
+            reason: 'Adding event to existing profile (all identifiers match)',
+            detailedReason: 'All identifiers in this event already exist on a single existing profile, so it should be added to that profile instead of creating a new one.',
+            description: 'All identifiers in this event already exist on a single profile',
+            droppedIdentifiers: dropped || [],
+            conflictingIdentifiers: getConflictingIdentifiersFromLogs(logs),
+            profiles: [targetProfile], // Override with correct profile
+            simulationLogs: logs,
+            profileStats: getProfileStats(targetProfile, logs)
+          };
+        }
+        
+        // Case 2: Event has both existing and new identifiers (merge scenario)
+        const hasSharedAndNewIdentifiers = Array.from(profilesWithSharedIdentifiers.values()).some(profileData => {
+          return profileData.shared.length > 0 && profileData.new.length > 0;
+        });
+        
+        if (hasSharedAndNewIdentifiers && profilesWithSharedIdentifiers.size === 1 && targetProfile) {
+          return {
+            type: 'add_identifier_to_existing',
+            reason: 'Adding new identifiers to existing profile (merge scenario)',
+            detailedReason: 'This event contains identifiers that already exist on a profile plus new identifiers that should be added to that same profile (merge scenario).',
+            description: 'Event contains existing identifiers plus new identifiers - merging with existing profile',
+            droppedIdentifiers: dropped || [],
+            conflictingIdentifiers: getConflictingIdentifiersFromLogs(logs),
+            profiles: [targetProfile], // Override with correct profile
+            simulationLogs: logs,
+            profileStats: getProfileStats(targetProfile, logs)
+          };
+        }
+      }
+      
+      // Trust the simulation's decision for other cases
       actionType = 'create_new';
-      reason = 'No existing profiles match event identifiers';
+      reason = 'Simulation determined new profile is needed';
       description = logs.length > 0 ? logs[logs.length - 1] : 'Created new profile for event';
-      detailedReason = 'No identifiers in this event matched any existing profiles in the system.';
+      detailedReason = 'The identity simulation determined that a new profile should be created based on identifier limits, conflicts, or lack of matching profiles.';
       break;
       
     case 'add':
-      // Determine if this is adding new identifiers or just events
+      // Trust the simulation's decision about whether this adds identifiers or just events
       const addedIdentifiersLog = logs.find(log => log.includes('Added identifiers'));
-      const hasNewIdentifiers = addedIdentifiersLog !== undefined;
       
-      if (hasNewIdentifiers) {
+      if (addedIdentifiersLog) {
+        // Simulation explicitly mentioned adding identifiers
         actionType = 'add_identifier_to_existing';
         reason = 'Adding new identifier to existing profile';
-        description = addedIdentifiersLog || 'New identifier added to existing profile';
-        detailedReason = 'Event contains identifiers that match an existing profile, plus new identifiers that will be added to that profile.';
+        description = 'New identifier added to existing profile';
+        detailedReason = 'The simulation determined that new identifiers should be added to an existing profile.';
       } else {
+        // Just adding event to existing profile
         actionType = 'add_event_to_existing';
-        reason = 'Adding event to existing profile (no new identifiers)';
+        reason = 'Adding event to existing profile';
         description = logs.length > 0 ? logs[logs.length - 1] : 'Event added to existing profile';
-        detailedReason = 'All identifiers in this event already exist on a single profile. Event will be added without changing profile identifiers.';
+        detailedReason = 'The simulation determined that this event should be added to an existing profile without new identifiers.';
       }
       break;
       
@@ -257,6 +351,26 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
   const [loading, setLoading] = useState(true);
   const [hoveredProfileId, setHoveredProfileId] = useState(null);
   const [hoveredEventProfileId, setHoveredEventProfileId] = useState(null);
+  const [hoveredEventIdentifiers, setHoveredEventIdentifiers] = useState(null);
+  const [expandedNodes, setExpandedNodes] = useState(new Set());
+
+  // Helper function to check if an identifier matches between event and profile
+  const isIdentifierMatching = (identifierType, identifierValues, eventIdentifiers) => {
+    if (!eventIdentifiers || !eventIdentifiers[identifierType]) {
+      return false;
+    }
+    
+    const eventValues = eventIdentifiers[identifierType];
+    const profileValues = Array.isArray(identifierValues) ? identifierValues : [identifierValues];
+    const eventValuesArray = Array.isArray(eventValues) ? eventValues : [eventValues];
+    
+    // Check if any profile values match any event values
+    return profileValues.some(profileValue => 
+      eventValuesArray.some(eventValue => 
+        String(profileValue).toLowerCase() === String(eventValue).toLowerCase()
+      )
+    );
+  };
 
   // Create stable reference for identifierOptions to prevent infinite re-renders
   const stableIdentifierOptionsString = JSON.stringify(identifierOptions);
@@ -391,7 +505,13 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
         const result = sim.processEvent({ identifiers: eventIdentifiers });
         
         // Convert simulation result to detailed action format
-        const actionDetails = convertSimulationResultToAction(result, profileApiResults);
+        const actionDetails = convertSimulationResultToAction(
+          result, 
+          profileApiResults, 
+          event, 
+          processed, // previous events processed so far
+          i // current index
+        );
         
         // Create processed event with simulation results
         const processedEvent = {
@@ -469,7 +589,7 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
   return (
     <div className="diagram-timeline2">
       <div 
-        className="diagram-timeline2__timeline-container"
+        className={`diagram-timeline2__timeline-container ${expandedNodes.size > 0 ? 'diagram-timeline2__timeline-container--expanded' : ''}`}
         style={{
           minWidth: processedEvents.length > 0 
             ? `${Math.max(320, processedEvents.length * 200 + 40)}px` 
@@ -521,13 +641,15 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                   identifiers = event.identifiers || {};
                 }
                 
-                // Use the real profile's segmentId as the key if available, otherwise use simulation profileId
-                const mapKey = realProfile?.segmentId || profileId;
+                // Use segmentId as primary key when available, fallback to simulation profileId
+                // This prevents duplicate profiles when multiple simulation profiles map to same real profile
+                const mapKey = segmentId || profileId;
                 
                 if (!profilesMap.has(mapKey)) {
                   profilesMap.set(mapKey, {
-                    id: mapKey, // Use segmentId or profileId for consistency
-                    segmentId: segmentId, // Use real segmentId when available
+                    id: mapKey, // Use segmentId when available, fallback to simulation profileId
+                    segmentId: segmentId, // Store real segmentId separately  
+                    simulationProfileIds: [profileId], // Track all simulation profile IDs that map to this real profile
                     identities: identifiers ? Object.keys(identifiers).length : 0,
                     events: 1,
                     first_seen: event.timestamp || Date.now(),
@@ -542,6 +664,11 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                   const existingProfile = profilesMap.get(mapKey);
                   existingProfile.events += 1;
                   existingProfile.last_seen = event.timestamp || Date.now();
+                  
+                  // Track additional simulation profile IDs that map to this real profile
+                  if (!existingProfile.simulationProfileIds.includes(profileId)) {
+                    existingProfile.simulationProfileIds.push(profileId);
+                  }
                   
                   // Merge identifiers if we have new ones
                   if (event.identifiers) {
@@ -570,14 +697,24 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
               <div className="diagram-timeline2__profiles-list">
                 {displayProfiles.map((profile, idx) => {
                   // Check if this profile should be highlighted due to event node hover
-                  const isEventHighlighted = hoveredEventProfileId && hoveredEventProfileId === profile.id;
+                  // Now check against all simulation profile IDs that map to this real profile
+                  const isEventHighlighted = hoveredEventProfileId && (
+                    hoveredEventProfileId === profile.id ||
+                    (profile.simulationProfileIds && profile.simulationProfileIds.includes(hoveredEventProfileId))
+                  );
                   
                   return (
                   <div 
                     key={profile.id || idx} 
                     className={`visualizer2__profile-card ${isEventHighlighted ? 'visualizer2__profile-card--highlighted' : ''}`}
                     onMouseEnter={() => {
+                      // Set hover state for both the main profile ID and all simulation profile IDs
                       setHoveredProfileId(profile.id);
+                      // Also consider the simulation profile IDs for event highlighting
+                      if (profile.simulationProfileIds && profile.simulationProfileIds.length > 0) {
+                        // Use the first simulation profile ID for event hover consistency
+                        setHoveredProfileId(profile.simulationProfileIds[0]);
+                      }
                     }}
                     onMouseLeave={() => {
                       setHoveredProfileId(null);
@@ -586,34 +723,36 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                     <div className="visualizer2__profile-header">
                       <div className="visualizer2__profile-avatar">👤</div>
                       <div className="visualizer2__profile-info">
-                        <h5>
-                          {/* Display Profile # as primary identifier */}
-                          {profile.displayName && profile.displayName.startsWith('Profile ') 
-                            ? profile.displayName 
-                            : profile.id && profile.id.startsWith('Profile ') 
-                              ? profile.id 
-                              : `Profile ${profile.id || profile.segmentId}`
-                          }
-                          {/* Show full name if available from traits */}
-                          {(() => {
-                            // Check if we have a real profile with traits data
-                            const realProfile = profile.realProfile;
-                            if (realProfile && realProfile.metadata && realProfile.metadata.traits) {
-                              const traits = realProfile.metadata.traits;
-                              const firstName = traits.firstName || traits.first_name;
-                              const lastName = traits.lastName || traits.last_name;
-                              if (firstName && lastName) {
-                                return ` - ${firstName} ${lastName}`;
+                        {/* Profile Target - matching event node exactly */}
+                        <div className="visualizer2__profile-target">
+                          {/* <span className="visualizer2__target-arrow">→</span> */}
+                          <span className="visualizer2__target-profile">
+                            {(() => {
+                              // Use the EXACT same logic as event nodes
+                              const firstSimProfileId = profile.simulationProfileIds?.[0];
+                              if (firstSimProfileId && firstSimProfileId.startsWith('profile_')) {
+                                return firstSimProfileId.replace(/^profile_/, 'Profile ');
                               }
-                            }
-                            return '';
-                          })()}
-                        </h5>
-                        {profile.segmentId && (
-                          <div className="visualizer2__segment-id">Segment ID: {profile.segmentId}</div>
-                        )}
-                        {!profile.segmentId && profile.id && (
-                          <div className="visualizer2__profile-id">Profile ID: {profile.id}</div>
+                              if (profile.id && profile.id.startsWith('profile_')) {
+                                return profile.id.replace(/^profile_/, 'Profile ');
+                              }
+                              // If we have a segment ID that doesn't follow profile_ pattern, find the profile number
+                              if (profile.segmentId) {
+                                // Try to find the corresponding simulation profile ID
+                                for (const simId of (profile.simulationProfileIds || [])) {
+                                  if (simId.startsWith('profile_')) {
+                                    return simId.replace(/^profile_/, 'Profile ');
+                                  }
+                                }
+                              }
+                              return 'Profile 1'; // Fallback
+                            })()}
+                          </span>
+                        </div>
+                        
+                        {/* Show Segment ID with white text styling */}
+                        {profile.segmentId && !profile.segmentId.startsWith('profile_') && (
+                          <div className="visualizer2__segment-id visualizer2__segment-id--white">Segment ID: {profile.segmentId}</div>
                         )}
                       </div>
                     </div>
@@ -629,9 +768,10 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                         <div className="visualizer2__profile-stat-value">
                           {processedEvents.filter(event => {
                             const eventProfileId = event.simulationResult?.profile?.id;
-                            // Match by profile ID, segmentId, or if this profile was derived from the event
+                            // Match by profile ID, segmentId, or any of the simulation profile IDs that map to this real profile
                             return eventProfileId === profile.id || 
                                    eventProfileId === profile.segmentId ||
+                                   (profile.simulationProfileIds && profile.simulationProfileIds.includes(eventProfileId)) ||
                                    (profile.realProfile && (
                                      eventProfileId === profile.realProfile.id || 
                                      eventProfileId === profile.realProfile.segmentId
@@ -660,14 +800,20 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                             // If neither found, sort alphabetically
                             return typeA.localeCompare(typeB);
                           })
-                          .map(([type, values]) => (
-                            <div key={type} className={`visualizer2__identifier-row ${type === 'email' ? 'visualizer2__identifier-row--email' : ''}`}>
-                              <span className="visualizer2__identifier-type">{type}:</span>
-                              <span className="visualizer2__identifier-values">
-                                {Array.isArray(values) ? values.join(', ') : values}
-                              </span>
-                            </div>
-                          ))
+                          .map(([type, values]) => {
+                            // Check if this identifier matches between event and profile
+                            const isMatching = isEventHighlighted && hoveredEventIdentifiers && 
+                              isIdentifierMatching(type, values, hoveredEventIdentifiers);
+                            
+                            return (
+                              <div key={type} className={`visualizer2__identifier-row ${isMatching ? 'visualizer2__identifier-row--matching' : ''}`}>
+                                <span className="visualizer2__identifier-type">{type}:</span>
+                                <span className={`visualizer2__identifier-values ${isMatching ? 'visualizer2__identifier-values--matching' : ''}`}>
+                                  {Array.isArray(values) ? values.join(', ') : values}
+                                </span>
+                              </div>
+                            );
+                          })
                       ) : (
                         <div className="visualizer2__identifier-row visualizer2__identifier-row--empty">
                           <span className="visualizer2__identifier-empty">No identifiers found</span>
@@ -696,9 +842,21 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                   hoveredProfileId={hoveredProfileId}
                   onEventHover={(profileId) => {
                     setHoveredEventProfileId(profileId);
+                    setHoveredEventIdentifiers(event.identifiers);
                   }}
                   onEventHoverLeave={() => {
                     setHoveredEventProfileId(null);
+                    setHoveredEventIdentifiers(null);
+                  }}
+                  onPayloadExpand={() => {
+                    setExpandedNodes(prev => new Set([...prev, event.id]));
+                  }}
+                  onPayloadCollapse={() => {
+                    setExpandedNodes(prev => {
+                      const newSet = new Set(prev);
+                      newSet.delete(event.id);
+                      return newSet;
+                    });
                   }}
                 />
               );

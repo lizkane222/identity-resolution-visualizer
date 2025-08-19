@@ -11,9 +11,22 @@ const DiagramNode2 = ({
   simulation,
   hoveredProfileId,
   onEventHover,
-  onEventHoverLeave
+  onEventHoverLeave,
+  onPayloadExpand,
+  onPayloadCollapse
 }) => {
   const [expanded, setExpanded] = useState(false);
+
+  const handleExpandToggle = () => {
+    const newExpanded = !expanded;
+    setExpanded(newExpanded);
+    
+    if (newExpanded && onPayloadExpand) {
+      onPayloadExpand();
+    } else if (!newExpanded && onPayloadCollapse) {
+      onPayloadCollapse();
+    }
+  };
 
   const getActionIcon = (actionType) => {
     switch (actionType) {
@@ -23,12 +36,13 @@ const DiagramNode2 = ({
       case 'add':
       case 'add_to_existing':
       case 'add_event_to_existing':
-        return <img src="/assets/User-Checkmark.svg" alt="Add Event" className="diagram-node2__action-icon-svg" />;
       case 'add_identifier_to_existing':
-        return <img src="/assets/Connections.svg" alt="Add Identifier" className="diagram-node2__action-icon-svg" />;
+        return <img src="/assets/User-Checkmark.svg" alt="Add to Profile" className="diagram-node2__action-icon-svg" />;
       case 'merge':
       case 'merge_profiles':
         return <img src="/assets/Unified-profiles.svg" alt="Merge" className="diagram-node2__action-icon-svg" />;
+      case 'dual_action':
+        return <img src="/assets/User-Checkmark.svg" alt="Add to Profile" className="diagram-node2__action-icon-svg" />;
       default:
         return '❓';
     }
@@ -42,12 +56,13 @@ const DiagramNode2 = ({
       case 'add':
       case 'add_to_existing':
       case 'add_event_to_existing':
-        return '#f3e5f5';
       case 'add_identifier_to_existing':
-        return '#fff3e0';
+        return '#f3e5f5';
       case 'merge':
       case 'merge_profiles':
         return '#e8f5e8';
+      case 'dual_action':
+        return '#f3e5f5'; // Same as add actions
       default:
         return '#f5f5f5';
     }
@@ -107,7 +122,7 @@ const DiagramNode2 = ({
         </div>
 
         {/* Event Details */}
-        <div className="diagram-node2__event-card" onClick={() => setExpanded(!expanded)}>
+        <div className="diagram-node2__event-card" onClick={handleExpandToggle}>
           <div className="diagram-node2__event-header">
             <span className="diagram-node2__event-type">{eventType}</span>
             <span className="diagram-node2__event-time">{formatTimestamp(event.timestamp)}</span>
@@ -133,25 +148,6 @@ const DiagramNode2 = ({
           </div>
         </div>
 
-        {/* Profiles Section - Show current simulation profiles */}
-        {simulation && simulation.profiles.length > 0 && (
-          <div className="diagram-node2__profiles-card">
-            <h5>Current Profiles ({simulation.profiles.length})</h5>
-            <div className="diagram-node2__profiles-list">
-              {simulation.profiles.map((profile, index) => (
-                <div key={profile.id || index} className="diagram-node2__profile-item">
-                  <span className="diagram-node2__profile-id">
-                    {profile.segmentId || profile.id.replace(/^profile_/, 'Profile ')}
-                  </span>
-                  <span className="diagram-node2__profile-meta">
-                    {Object.keys(profile.identifiers).length} identifier types
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Connection Line to Timeline */}
         <div className="diagram-node2__connection-line diagram-node2__connection-line--above"></div>
       </div>
@@ -160,7 +156,7 @@ const DiagramNode2 = ({
       <div className="diagram-node2__timeline-node">
         <div 
           className={`diagram-node2__node-circle ${isProfileHighlighted ? 'diagram-node2__node-circle--highlighted' : ''}`} 
-          onClick={() => setExpanded(!expanded)}
+          onClick={handleExpandToggle}
           onMouseEnter={() => {
             if (onEventHover && event.simulationResult?.profile?.id) {
               onEventHover(event.simulationResult.profile.id);
@@ -174,9 +170,9 @@ const DiagramNode2 = ({
         >
           <span className="diagram-node2__sequence">{sequenceNumber}</span>
         </div>
-        <div className="diagram-node2__node-label">
+        {/* <div className="diagram-node2__node-label">
           Event #{sequenceNumber}
-        </div>
+        </div> */}
       </div>
 
       {/* Below Timeline: Resolution Results */}
@@ -185,29 +181,60 @@ const DiagramNode2 = ({
         <div className="diagram-node2__connection-line diagram-node2__connection-line--below"></div>
 
         {/* Action Result */}
-        <div 
-          className="diagram-node2__action-card"
-          style={{ backgroundColor: getActionColor(event.simulationResult.action) }}
-        >
-          <div className="diagram-node2__action-header">
-            <span className="diagram-node2__action-icon">{getActionIcon(event.simulationResult.action)}</span>
-            <span className="diagram-node2__action-title">
-              {(event.simulationResult.action === 'create' || event.simulationResult.action === 'create_new') && 'Create New Profile'}
-              {(event.simulationResult.action === 'add' || event.simulationResult.action === 'add_to_existing' || event.simulationResult.action === 'add_event_to_existing') && 'Add Event to Existing Profile'}
-              {event.simulationResult.action === 'add_identifier_to_existing' && 'Add Identifier to Existing Profile'}
-              {(event.simulationResult.action === 'merge' || event.simulationResult.action === 'merge_profiles') && 'Merge Profiles'}
-            </span>
-          </div>
-          <div className="diagram-node2__action-description">
-            Result: {event.simulationResult.profile.segmentId || 
-                     event.simulationResult.profile.id.replace(/^profile_/, 'Profile ')}
-          </div>
-          {event.simulationResult.dropped.length > 0 && (
-            <div className="diagram-node2__action-dropped">
-              <strong>Dropped:</strong> {event.simulationResult.dropped.join(', ')}
+        {event.simulationResult.action === 'dual_action' ? (
+          // Handle dual actions
+          <div className="diagram-node2__dual-actions">
+            <div 
+              className="diagram-node2__action-card"
+              style={{ backgroundColor: getActionColor('add_identifier_to_existing') }}
+            >
+              <div className="diagram-node2__action-header">
+                <span className="diagram-node2__action-icon">{getActionIcon('add_identifier_to_existing')}</span>
+                <span className="diagram-node2__action-title">Add Identifier to Existing Profile</span>
+              </div>
+              <div className="diagram-node2__action-description">
+                {event.simulationResult.primaryAction?.description || 'New identifier added to existing profile'}
+              </div>
             </div>
-          )}
-        </div>
+            <div 
+              className="diagram-node2__action-card"
+              style={{ backgroundColor: getActionColor('add_event_to_existing'), marginTop: '8px' }}
+            >
+              <div className="diagram-node2__action-header">
+                <span className="diagram-node2__action-icon">{getActionIcon('add_event_to_existing')}</span>
+                <span className="diagram-node2__action-title">Add Event to Existing Profile</span>
+              </div>
+              <div className="diagram-node2__action-description">
+                {event.simulationResult.secondaryAction?.description || 'Event added to existing profile'}
+              </div>
+            </div>
+          </div>
+        ) : (
+          // Handle single actions
+          <div 
+            className="diagram-node2__action-card"
+            style={{ backgroundColor: getActionColor(event.simulationResult.action) }}
+          >
+            <div className="diagram-node2__action-header">
+              <span className="diagram-node2__action-icon">{getActionIcon(event.simulationResult.action)}</span>
+              <span className="diagram-node2__action-title">
+                {(event.simulationResult.action === 'create' || event.simulationResult.action === 'create_new') && 'Create New Profile'}
+                {(event.simulationResult.action === 'add' || event.simulationResult.action === 'add_to_existing' || event.simulationResult.action === 'add_event_to_existing') && 'Add Event to Existing Profile'}
+                {event.simulationResult.action === 'add_identifier_to_existing' && 'Add Identifier to Existing Profile'}
+                {(event.simulationResult.action === 'merge' || event.simulationResult.action === 'merge_profiles') && 'Merge Profiles'}
+              </span>
+            </div>
+            <div className="diagram-node2__action-description">
+              Result: {event.simulationResult.profile.segmentId || 
+                       event.simulationResult.profile.id.replace(/^profile_/, 'Profile ')}
+            </div>
+            {event.simulationResult.dropped.length > 0 && (
+              <div className="diagram-node2__action-dropped">
+                <strong>Dropped:</strong> {event.simulationResult.dropped.join(', ')}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Dropped Identifiers Section */}
         {event.simulationResult.dropped.length > 0 && (

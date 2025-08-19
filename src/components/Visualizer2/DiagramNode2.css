@@ -7,6 +7,7 @@
   width: 300px;
   margin: 0; /* Remove horizontal margin - using gap in parent */
   flex-shrink: 0; /* Prevent nodes from shrinking */
+  z-index: 15; /* Higher z-index to appear above profiles list */
 }
 
 /* Above Timeline Section */
@@ -15,7 +16,7 @@
   flex-direction: column;
   align-items: center;
   margin-bottom: 20px;
-  height: 420px; /* Height to position timeline node at 450px (420 + 20 + 25) */
+  height: 195px; /* Adjusted to position timeline node exactly at 220px (195 + 20 + 25px circle center) */
   justify-content: flex-end; /* Push content to bottom to meet timeline */
 }
 
@@ -37,6 +38,8 @@
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
   width: 100%;
   animation: slideDown 0.3s ease;
+  position: relative;
+  z-index: 25; /* Highest z-index for payload cards to appear above everything */
 }
 
 .diagram-node2__payload-card h5 {
@@ -86,6 +89,8 @@
 .diagram-node2__event-card {
   cursor: pointer;
   transition: all 0.2s ease;
+  position: relative;
+  z-index: 20; /* High z-index for event cards to appear above profiles */
 }
 
 .diagram-node2__event-card:hover {
@@ -247,12 +252,13 @@
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
   transition: all 0.3s ease;
-  /* Position the circle to align with timeline line */
-  transform: translateY(-15px);
+  /* Position the circle center to align with timeline line */
+  /* Move up by 2px to account for any browser default spacing */
+  transform: translateY(-2px);
 }
 
 .diagram-node2__node-circle:hover {
-  transform: translateY(-15px) scale(1.15);
+  transform: translateY(-2px) scale(1.15);
   box-shadow: 
     0 0 20px rgba(59, 130, 246, 0.6),  /* #3b82f6 - blue-500 */
     0 0 40px rgba(59, 130, 246, 0.4),
@@ -262,7 +268,7 @@
 
 /* Highlighted state when profile is hovered */
 .diagram-node2__node-circle--highlighted {
-  transform: translateY(-15px) scale(1.15);
+  transform: translateY(-2px) scale(1.15);
   box-shadow: 
     0 0 20px rgba(59, 130, 246, 0.6),  /* #3b82f6 - blue-500 */
     0 0 40px rgba(59, 130, 246, 0.4),
@@ -533,7 +539,7 @@
 }
 
 .segment-mode .diagram-node2__node-circle:hover {
-  transform: translateY(-15px) scale(1.15);
+  transform: translateY(0px) scale(1.15);
   box-shadow: 
     0 0 20px rgba(79, 181, 139, 0.6),  /* #4fb58b - segment green */
     0 0 40px rgba(79, 181, 139, 0.4),
@@ -637,7 +643,7 @@
 }
 
 .twilio-mode .diagram-node2__node-circle:hover {
-  transform: translateY(-15px) scale(1.15);
+  transform: translateY(0px) scale(1.15);
   box-shadow: 
     0 0 20px rgba(220, 38, 38, 0.6),  /* #dc2626 - twilio red */
     0 0 40px rgba(220, 38, 38, 0.4),
@@ -762,4 +768,26 @@
     height: 40px;
     font-size: 14px;
   }
+}
+
+/* Dual Actions Styling */
+.diagram-node2__dual-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.diagram-node2__dual-actions .diagram-node2__action-card {
+  position: relative;
+}
+
+.diagram-node2__dual-actions .diagram-node2__action-card:first-child::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 8px;
+  background-color: #ddd;
 }

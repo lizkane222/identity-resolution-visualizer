@@ -1080,7 +1080,7 @@
 
 /* Floating Back Button */
 .visualizer2__back-button-floating {
-  position: absolute;
+  position: fixed;
   top: 5.8rem;
   right: 1rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
