@@ -44,6 +44,17 @@ function App() {
       return -1;
     }
   });
+
+  // Persistent stop checkpoint state for EventList
+  const [eventListStopCheckpoint, setEventListStopCheckpoint] = useState(() => {
+    try {
+      const saved = localStorage.getItem('eventListStopCheckpoint');
+      return saved ? JSON.parse(saved) : -1;
+    } catch (error) {
+      console.error('Error loading stop checkpoint from localStorage:', error);
+      return -1;
+    }
+  });
   
   // Persistent profile API results
   const [profileApiResults, setProfileApiResults] = useState(() => {
@@ -456,13 +467,25 @@ function App() {
     }
   };
 
+  // Handle stop checkpoint change in EventList
+  const handleStopCheckpointChange = (stopCheckpointIndex) => {
+    setEventListStopCheckpoint(stopCheckpointIndex);
+    try {
+      localStorage.setItem('eventListStopCheckpoint', JSON.stringify(stopCheckpointIndex));
+    } catch (error) {
+      console.error('Error saving stop checkpoint to localStorage:', error);
+    }
+  };
+
   // Handle CSV upload start - set checkpoint to above first event
   const handleCSVUploadStart = () => {
     setEventListCheckpoint(-1);
+    setEventListStopCheckpoint(-1);
     try {
       localStorage.setItem('eventListCheckpoint', JSON.stringify(-1));
+      localStorage.setItem('eventListStopCheckpoint', JSON.stringify(-1));
     } catch (error) {
-      console.error('Error saving checkpoint to localStorage:', error);
+      console.error('Error saving checkpoints to localStorage:', error);
     }
   };
 
@@ -484,6 +507,8 @@ function App() {
             onEditEvent={handleEditEvent}
             checkpointIndex={eventListCheckpoint}
             onCheckpointChange={handleCheckpointChange}
+            stopCheckpointIndex={eventListStopCheckpoint}
+            onStopCheckpointChange={handleStopCheckpointChange}
           />
         </aside>
       )}
