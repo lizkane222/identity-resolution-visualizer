@@ -37,15 +37,15 @@ A comprehensive React application for building, simulating, and analyzing event 
 ## Getting Started
 
 ### Prerequisites
-- Node.js (v16+ recommended)
-- npm or yarn package manager
-- Segment workspace with Profile API access (optional, for API features)
+- **Node.js** (v16+ recommended)
+- **npm** package manager
+- **Segment workspace** with Profile API access (optional, for API features)
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/lizkane222/identity-resolution-visualizer.git
    cd identity_resolution_visualizer
    ```
 
@@ -54,33 +54,116 @@ A comprehensive React application for building, simulating, and analyzing event 
    npm install
    ```
 
-3. **Set up environment variables (optional)**
+3. **Configure environment variables**
+   
+   Create a `.env` file in the project root directory:
    ```bash
-   # .env file will be created automatically when you configure through the UI
-   # Or create manually with:
-   SEGMENT_SPACE_ID=your_space_id_here
-   SEGMENT_ACCESS_TOKEN=your_access_token_here
+   cp .env.example .env  # If example exists, or create manually
+   ```
+   
+   **Required Environment Variables:**
+   ```env
+   # React Development Configuration
+   SKIP_PREFLIGHT_CHECK=true
+   
+   # Segment Profile API Configuration (Required for API features)
+   SEGMENT_SPACE_ID=your_segment_space_id_here
+   SEGMENT_ACCESS_TOKEN=your_segment_access_token_here
+   
+   # Optional: Advanced Segment Configuration
+   SEGMENT_UNIFY_WORKSPACE_SLUG=your_workspace_slug
+   SEGMENT_UNIFY_SPACE_SLUG=your_unify_space_slug
+   SEGMENT_UNIFY_SPACE_FULL_URL=https://app.segment.com/your-workspace/unify/spaces/your-space/settings/api-access
+   
+   # Optional: Source Configuration (JSON string)
+   SEGMENT_SOURCES_CONFIG=[{"id":"javascript-source-1","name":"Your Source Name","type":"javascript","enabled":true,"settings":{"writeKey":"your_write_key"}}]
+   
+   # Optional: Integrations Configuration (JSON string)
+   SEGMENT_INTEGRATIONS_CONFIG={"personas":true}
    ```
 
 ### Development
 
-#### Run the full application (React + Backend server)
+#### 🚀 Quick Start - Run Full Application
 ```bash
 npm run dev
 ```
-This starts both the React frontend (port 3000) and Express backend server (port 3001).
+This command starts both the React frontend and Express backend server concurrently:
+- **Frontend**: [http://localhost:3000](http://localhost:3000) 
+- **Backend**: [http://localhost:8888](http://localhost:8888)
 
-#### Run frontend only
+#### Individual Component Commands
+
+**Frontend only (React development server):**
 ```bash
 npm start
 ```
-Runs just the React app at [http://localhost:3000](http://localhost:3000).
+Runs the React app at [http://localhost:3000](http://localhost:3000)
 
-#### Run backend server only  
+**Backend only (Express server):**
 ```bash
-npm run server
+npm run server  
 ```
-Starts the Express server at [http://localhost:3001](http://localhost:3001).
+Starts the Express server at [http://localhost:8888](http://localhost:8888)
+
+**Production build serving:**
+```bash
+npm run dev-prod
+```
+Serves the built React app with the backend server
+
+#### 🛑 Stop Commands
+```bash
+# Stop all processes (React + Backend)
+npm run stop
+
+# Stop only the backend server
+npm run stop-server
+
+# Stop only the React development server  
+npm run stop-client
+```
+
+### Environment Variables Guide
+
+#### Core Variables (Required for API Features)
+
+| Variable | Description | Example | Required |
+|----------|-------------|---------|----------|
+| `SEGMENT_SPACE_ID` | Your Segment space identifier | `spa_8hTmsKx9TQPcw2nRsKWB1D` | Yes* |
+| `SEGMENT_ACCESS_TOKEN` | Segment Profile API access token | `kuCb6ceAj0D3Sws8Bso2cVueFNlTqjWc...` | Yes* |
+| `SKIP_PREFLIGHT_CHECK` | Prevents React build warnings | `true` | Recommended |
+
+*Required only if you want to use the Profile API lookup features
+
+#### Optional Configuration Variables
+
+| Variable | Description | Format |
+|----------|-------------|--------|
+| `SEGMENT_UNIFY_WORKSPACE_SLUG` | Your Segment workspace identifier | String |
+| `SEGMENT_UNIFY_SPACE_SLUG` | Your Unify space slug | String |
+| `SEGMENT_UNIFY_SPACE_FULL_URL` | Direct link to your space settings | URL |
+| `SEGMENT_SOURCES_CONFIG` | Source configuration for event simulation | JSON Array |
+| `SEGMENT_INTEGRATIONS_CONFIG` | Integration settings | JSON Object |
+
+#### Getting Your Segment Credentials
+
+1. **Space ID**: Found in your Segment workspace URL or API settings
+2. **Access Token**: 
+   - Go to your Segment workspace
+   - Navigate to Settings → API Access
+   - Create a new access token with Profile API permissions
+   - Copy the token (it will only be shown once)
+
+### Port Configuration
+
+The application uses the following ports by default:
+
+- **React Frontend**: `3000`
+- **Express Backend**: `8888` 
+- **Proxy Configuration**: React proxies API calls to port `8888`
+
+**Note**: Port `8888` is configured in `server/server.js` and the React proxy in `package.json`
 
 ### Configuration
 
