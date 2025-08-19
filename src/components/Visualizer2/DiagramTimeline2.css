@@ -33,10 +33,9 @@
 /* Timeline Container */
 .diagram-timeline2__timeline-container {
   position: relative;
-  /* margin-top: 20px; */
-  /* padding: 80px 40px 120px 40px; */
-  overflow-x: auto;
-  min-height: 1400px; /* Increased height to ensure page is tall enough for smooth scrolling */
+  padding: 20px;
+  min-height: 1400px;
+  min-width: fit-content; /* Only use space needed for content */
   display: flex;
   flex-direction: column;
 }
@@ -45,8 +44,8 @@
 .diagram-timeline2__timeline-line {
   position: absolute;
   top: 850px; /* Adjusted position: 450px + 400px offset for event nodes */
-  left: 40px;
-  right: 40px;
+  left: 20px;
+  right: 0; /* Remove right padding to prevent margin issues */
   height: 3px;
   background: linear-gradient(
     to right,
@@ -55,6 +54,7 @@
   ) !important;
   border-radius: 2px;
   z-index: 1;
+  min-width: 100%; /* Ensure line extends full width */
 }
 
 /* Events Container */
@@ -62,12 +62,11 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start; /* Align to left instead of center */
   height: 100%;
-  min-width: fit-content; /* Only use space needed for content */
-  max-width: 100vw; /* Don't exceed viewport width */
+  min-width: fit-content;
+  width: 100%; /* Take full available width */
   z-index: 2;
-  margin: 0 auto; /* Center the container */
 }
 
 /* Profile Cards Container - Above Event Nodes */
@@ -76,23 +75,15 @@
   flex-direction: row;
   flex-wrap: wrap;
   gap: 15px;
-  width: 100vw; 
-  /* Full viewport width */
+  width: 100%; /* Use available width, not viewport width */
   position: relative;
-  /* left: 50%; */
-  /* right: 50%; */
-  /* margin-left: -50vw; */
-  /* margin-right: -50vw; */
-  overflow: hidden;
+  overflow: visible; /* Allow overflow to be handled by parent */
   align-items: flex-start;
-  justify-content: center; /* Center the profiles */
-  /* margin-bottom: 40px; */
+  justify-content: flex-start; /* Start from left */
   padding: 20px;
   background: #f8f9fa;
-  border-radius: 0; /* Remove border radius for full width */
+  border-radius: 0;
   border: none;
-   /* Remove border for full width */
-  /* border-top: 1px solid #e5e7eb; */
   border-bottom: 1px solid #e5e7eb;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
@@ -295,17 +286,15 @@
 /* Event Nodes Container */
 .diagram-timeline2__event-nodes {
   display: flex;
-  justify-content: center; /* Center nodes in viewport */
+  justify-content: flex-start; /* Start from left */
   align-items: flex-start;
   width: fit-content; /* Only use space needed for nodes */
-  max-width: calc(100vw - 80px); /* Leave margin for timeline line padding */
-  min-width: 320px; /* Minimum for at least one node */
+  min-width: fit-content; /* Ensure we can expand horizontally */
   position: absolute;
   top: 400px; /* Moved further down to avoid overlapping with profiles list */
-  left: 50%; /* Center horizontally */
-  transform: translateX(-50%); /* Center alignment */
+  left: 20px; /* Start from left edge with padding */
   gap: 20px; /* Add consistent spacing between nodes */
-  overflow-x: visible; /* Allow overflow when many nodes */
+  overflow: visible; /* Allow overflow to be handled by parent */
 }
 
 /* Dark mode support */
@@ -545,21 +534,24 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .diagram-timeline2__timeline-container {
-    padding: 60px 20px 100px 20px;
+    padding: 20px 10px;
   }
   
   .diagram-timeline2__timeline-line {
-    left: 20px;
-    right: 20px;
+    left: 10px;
+    right: 0;
   }
   
   .diagram-timeline2__events {
-    min-width: fit-content;
-    max-width: calc(100vw - 40px);
+    width: 100%;
   }
   
   .diagram-timeline2__event-nodes {
-    max-width: calc(100vw - 40px);
+    left: 10px;
     gap: 15px; /* Reduce gap on mobile */
+  }
+  
+  .diagram-timeline2__profiles-list {
+    padding: 15px 10px;
   }
 }

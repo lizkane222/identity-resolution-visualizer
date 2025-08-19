@@ -340,6 +340,16 @@ function App() {
     setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
   };
 
+  // Handle reordering events
+  const handleReorderEvents = (fromIndex, toIndex) => {
+    setEvents(prevEvents => {
+      const newEvents = [...prevEvents];
+      const [movedEvent] = newEvents.splice(fromIndex, 1);
+      newEvents.splice(toIndex, 0, movedEvent);
+      return newEvents;
+    });
+  };
+
   // Handle clearing all events
   const handleClearEvents = () => {
     setEvents([]);
@@ -502,6 +512,7 @@ function App() {
           <EventList 
             events={events}
             onRemoveEvent={handleRemoveEvent}
+            onReorderEvents={handleReorderEvents}
             onClearEvents={handleClearEvents}
             highlightedEventIndices={highlightedEventIndices}
             onEditEvent={handleEditEvent}

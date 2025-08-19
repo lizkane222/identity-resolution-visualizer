@@ -146,7 +146,7 @@
 
 /* Main Content Layout */
 .visualizer2__content {
-  display: flex;
+  display: block; /* Change from flex since sidebar is now fixed */
   flex: 1;
   min-height: calc(100vh - 80px); /* Ensure enough height for footer */
 }
@@ -158,7 +158,12 @@
   border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
-  /* Remove overflow-y and max-height to prevent nested scrolling */
+  position: fixed; /* Fix sidebar in place */
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 100; /* Ensure it stays above scrolling content */
+  overflow-y: auto; /* Allow sidebar content to scroll */
 }
 
 .visualizer2__sidebar-header {
@@ -458,9 +463,12 @@
 /* Main Content */
 .visualizer2__main-content {
   flex: 1;
-  /* Remove overflow-y to let the parent page handle scrolling */
   background: #fafafa;
-  min-height: calc(100vh - 80px); /* Ensure enough height */
+  min-height: calc(100vh - 80px);
+  overflow-x: auto; /* Enable horizontal scroll in main content */
+  overflow-y: auto; /* Enable vertical scroll */
+  position: relative;
+  margin-left: 350px; /* Account for fixed sidebar width */
 }
 
 .visualizer2__empty-state {
@@ -726,6 +734,10 @@
   border-right-color: #374151;
 }
 
+.dark-mode .visualizer2__main-content {
+  background: #111827;
+}
+
 .dark-mode .visualizer2__sidebar-header {
   background: #111827;
   border-bottom-color: #374151;
@@ -818,10 +830,6 @@
   color: #d1d5db;
 }
 
-.dark-mode .visualizer2__main-content {
-  background: #111827;
-}
-
 .dark-mode .visualizer2__timeline-item {
   background: #1f2937;
   border-color: #374151;
@@ -891,6 +899,10 @@
 .twilio-mode .visualizer2__sidebar {
   background: #0f172a;
   border-right-color: #1e293b;
+}
+
+.twilio-mode .visualizer2__main-content {
+  background: #020d23;
 }
 
 .twilio-mode .visualizer2__sidebar-header {
@@ -969,6 +981,11 @@
   color: #94a3b8;
 }
 
+/* Make icons white in Twilio mode */
+.twilio-mode .visualizer__insight-item img {
+  filter: brightness(0) invert(1);
+}
+
 .twilio-mode .visualizer2__stat-value {
   background: #1e293b;
   color: #f1f5f9;
@@ -1003,10 +1020,6 @@
 
 .twilio-mode .visualizer2__identifier-values {
   color: #94a3b8;
-}
-
-.twilio-mode .visualizer2__main-content {
-  background: #020d23;
 }
 
 .twilio-mode .visualizer2__timeline-item {
@@ -1094,4 +1107,25 @@
 .visualizer2__back-button-floating:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive adjustments for fixed sidebar */
+@media (max-width: 768px) {
+  .visualizer2__sidebar {
+    width: 300px; /* Reduce sidebar width on mobile */
+  }
+  
+  .visualizer2__main-content {
+    margin-left: 300px; /* Adjust main content margin */
+  }
+}
+
+@media (max-width: 600px) {
+  .visualizer2__sidebar {
+    width: 250px; /* Further reduce on smaller screens */
+  }
+  
+  .visualizer2__main-content {
+    margin-left: 250px;
+  }
 }

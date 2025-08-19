@@ -734,7 +734,7 @@ const Visualizer2 = ({
             {/* Analysis Section */}
             <div className="visualizer2__config-section">
               <div className="visualizer__analysis-header">
-                <h4>Identity Resolution Analysis</h4>
+                <h4>Identity <br/>Resolution <br/>Analysis</h4>
                 <button
                   className="visualizer__download-button"
                   onClick={handleAnalyzeClick}
@@ -775,8 +775,7 @@ const Visualizer2 = ({
                     <h5>Key Insights</h5>
                     <div className="visualizer__insights-list">
                       {analysisData.keyInsights.map((insight, index) => (
-                        <div key={index} className="visualizer__insight-item">
-                          {insight}
+                        <div key={index} className="visualizer__insight-item" dangerouslySetInnerHTML={{ __html: insight }}>
                         </div>
                       ))}
                     </div>

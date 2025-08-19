@@ -55,7 +55,7 @@
   align-items: center;
   padding: 20px;
   border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
+  /* background: #f9fafb; */
 }
 
 .visualizer__analysis-header h3 {
@@ -175,4 +175,22 @@
   .visualizer__analysis-sidebar {
     width: 100%;
   }
+}
+
+/* Twilio mode styles for Event Sequence Analysis */
+.twilio-mode .visualizer__sequence-item {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+.twilio-mode .visualizer__event-header {
+  color: #f1f5f9;
+}
+
+.twilio-mode .visualizer__event-details > div {
+  color: #cbd5e1;
+}
+
+.twilio-mode .visualizer__event-details strong {
+  color: #f1f5f9;
 }

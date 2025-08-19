@@ -34,15 +34,15 @@ function generateComprehensiveAnalysis(processedEvents, simulation) {
       profileCounter++;
       profileId = `Profile ${profileCounter}`;
       profileMap.set(action.profileStats?.profileId || `profile_${profileCounter}`, profileId);
-      profileAction = `🆕 **Create New Profile** (${profileId})`;
+      profileAction = `🆕 Create New Profile (${profileId})`;
     } else if (action.type === 'add_event_to_existing') {
       const simProfileId = action.profileStats?.profileId || action.profiles?.[0]?.id;
       profileId = profileMap.get(simProfileId) || `Profile ${profileCounter}`;
-      profileAction = `➕ **Add Event to Existing Profile** (${profileId})`;
+      profileAction = `➕ Add Event to Existing Profile (${profileId})`;
     } else if (action.type === 'add_identifier_to_existing') {
       const simProfileId = action.profileStats?.profileId || action.profiles?.[0]?.id;
       profileId = profileMap.get(simProfileId) || `Profile ${profileCounter}`;
-      profileAction = `🔗 **Add Identifier to Existing Profile** (${profileId})`;
+      profileAction = `🔗 Add Identifier to Existing Profile (${profileId})`;
     } else if (action.type === 'merge_profiles') {
       // For merges, we need to update the profile mapping
       const baseProfileId = action.profileStats?.profileId;
@@ -66,7 +66,7 @@ function generateComprehensiveAnalysis(processedEvents, simulation) {
         }
       }
       profileId = profileMap.get(baseProfileId) || 'Merged Profile';
-      profileAction = `🔀 **Merge Profiles** → ${profileId}`;
+      profileAction = `🔀 Merge Profiles → ${profileId}`;
     }
 
     const eventAnalysis = {
@@ -104,11 +104,11 @@ function generateComprehensiveAnalysis(processedEvents, simulation) {
   const totalProfiles = Array.from(new Set(profileMap.values())).length;
 
   analysis.keyInsights = [
-    `<img src="/assets/bar-graph_search.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Chart" /> **Total Events Processed:** ${totalEvents}`,
-    `<img src="/assets/User-plus.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="New Profile" /> **New Profiles Created:** ${createActions}`,
-    `<img src="/assets/User-Checkmark.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Addition" /> **Addition Actions:** ${addActions}`,
-    `<img src="/assets/Unified-Profiles.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Merge" /> **Profile Merges:** ${mergeActions}`,
-    `<img src="/assets/User-Profile.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Profile" /> **Final Profile Count:** ${totalProfiles}`
+    `<div style="text-align: center; margin-bottom: 8px;"><img src="/assets/bar-graph_search.svg" width="32" height="32" alt="Chart" /></div><div>Total Events Processed: ${totalEvents}</div>`,
+    `<div style="text-align: center; margin-bottom: 8px;"><img src="/assets/User-plus.svg" width="32" height="32" alt="New Profile" /></div><div>New Profiles Created: ${createActions}</div>`,
+    `<div style="text-align: center; margin-bottom: 8px;"><img src="/assets/User-Checkmark.svg" width="32" height="32" alt="Addition" /></div><div>Addition Actions: ${addActions}</div>`,
+    `<div style="text-align: center; margin-bottom: 8px;"><img src="/assets/Unified-Profiles.svg" width="32" height="32" alt="Merge" /></div><div>Profile Merges: ${mergeActions}</div>`,
+    `<div style="text-align: center; margin-bottom: 8px;"><img src="/assets/User-Profile.svg" width="32" height="32" alt="Profile" /></div><div>Final Profile Count: ${totalProfiles}</div>`
   ];
 
   // Final state
@@ -468,9 +468,23 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
 
   return (
     <div className="diagram-timeline2">
-      <div className="diagram-timeline2__timeline-container">
+      <div 
+        className="diagram-timeline2__timeline-container"
+        style={{
+          minWidth: processedEvents.length > 0 
+            ? `${Math.max(320, processedEvents.length * 200 + 40)}px` 
+            : '100%'
+        }}
+      >
         {/* Horizontal Timeline */}
-        <div className="diagram-timeline2__timeline-line"></div>
+        <div 
+          className="diagram-timeline2__timeline-line"
+          style={{
+            width: processedEvents.length > 0 
+              ? `${Math.max(320, processedEvents.length * 200 + 40)}px` 
+              : '100%'
+          }}
+        ></div>
 
         {/* Events and Profiles */}
         <div className="diagram-timeline2__events">

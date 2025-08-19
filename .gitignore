@@ -9,11 +9,12 @@
 
 # Ignore trash files
 trashFiles/
-src/components/EventList/EventListFixed.jsx
-src/components/EventBuilder/EventBuilder_backup.jsx
-src/components/EventList/EventListSimple.jsx
-src/components/EventBuilder/EventBuilder_test.jsx
-src/components/EventBuilder/EventBuilder_backup.jsx
+./src/components/EventList/EventListFixed.jsx
+./src/components/EventBuilder/EventBuilder_backup.jsx
+./src/components/EventList/EventListSimple.jsx
+./src/components/EventBuilder/EventBuilder_test.jsx
+./src/components/EventBuilder/EventBuilder_backup.jsx
+./src/components/UniqueProfilesList/UniqueProfilesList_corrupted.jsx
 
 # dependencies
 /node_modules

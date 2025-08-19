@@ -34,15 +34,15 @@ function generateComprehensiveAnalysis(processedEvents, simulation) {
       profileCounter++;
       profileId = `Profile ${profileCounter}`;
       profileMap.set(action.profileStats?.profileId || `profile_${profileCounter}`, profileId);
-      profileAction = `🆕 **Create New Profile** (${profileId})`;
+      profileAction = `🆕 Create New Profile (${profileId})`;
     } else if (action.type === 'add_event_to_existing') {
       const simProfileId = action.profileStats?.profileId || action.profiles?.[0]?.id;
       profileId = profileMap.get(simProfileId) || `Profile ${profileCounter}`;
-      profileAction = `➕ **Add Event to Existing Profile** (${profileId})`;
+      profileAction = `➕ Add Event to Existing Profile (${profileId})`;
     } else if (action.type === 'add_identifier_to_existing') {
       const simProfileId = action.profileStats?.profileId || action.profiles?.[0]?.id;
       profileId = profileMap.get(simProfileId) || `Profile ${profileCounter}`;
-      profileAction = `🔗 **Add Identifier to Existing Profile** (${profileId})`;
+      profileAction = `🔗 Add Identifier to Existing Profile (${profileId})`;
     } else if (action.type === 'merge_profiles') {
       // For merges, we need to update the profile mapping
       const baseProfileId = action.profileStats?.profileId;
@@ -66,7 +66,7 @@ function generateComprehensiveAnalysis(processedEvents, simulation) {
         }
       }
       profileId = profileMap.get(baseProfileId) || 'Merged Profile';
-      profileAction = `🔀 **Merge Profiles** → ${profileId}`;
+      profileAction = `🔀 Merge Profiles → ${profileId}`;
     }
 
     const eventAnalysis = {
@@ -95,11 +95,11 @@ function generateComprehensiveAnalysis(processedEvents, simulation) {
   const totalProfiles = Array.from(new Set(profileMap.values())).length;
 
   analysis.keyInsights = [
-    `<img src="/assets/bar-graph_search.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Chart" /> **Total Events Processed:** ${totalEvents}`,
-    `<img src="/assets/User-plus.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="New Profile" /> **New Profiles Created:** ${createActions}`,
-    `<img src="/assets/User-Checkmark.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Addition" /> **Addition Actions:** ${addActions}`,
-    `<img src="/assets/Unified-Profiles.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Merge" /> **Profile Merges:** ${mergeActions}`,
-    `<img src="/assets/User-Profile.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Profile" /> **Final Profile Count:** ${totalProfiles}`
+    `<img src="/assets/bar-graph_search.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Chart" /> Total Events Processed: ${totalEvents}`,
+    `<img src="/assets/User-plus.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="New Profile" /> New Profiles Created: ${createActions}`,
+    `<img src="/assets/User-Checkmark.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Addition" /> Addition Actions: ${addActions}`,
+    `<img src="/assets/Unified-Profiles.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Merge" /> Profile Merges: ${mergeActions}`,
+    `<img src="/assets/User-Profile.svg" width="16" height="16" style="vertical-align: middle; margin-right: 6px;" alt="Profile" /> Final Profile Count: ${totalProfiles}`
   ];
 
   // Final state

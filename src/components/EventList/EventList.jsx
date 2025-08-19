@@ -6,6 +6,7 @@ import './EventList.css';
 const EventList = ({ 
   events, 
   onRemoveEvent, 
+  onReorderEvents,
   onClearEvents, 
   onEditEvent, 
   highlightedEventIndices = [],
@@ -76,6 +77,12 @@ const EventList = ({
   const [isDraggingStopCheckpoint, setIsDraggingStopCheckpoint] = useState(false);
   const [showStopCheckpoint, setShowStopCheckpoint] = useState(false);
   const [checkpointManuallyMoved, setCheckpointManuallyMoved] = useState(false);
+  const [stopCheckpointManuallyMoved, setStopCheckpointManuallyMoved] = useState(false);
+  
+  // Event drag and reorder state
+  const [isDraggingEvent, setIsDraggingEvent] = useState(false);
+  const [draggedEventId, setDraggedEventId] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(-1);
   
   // Refs for scrolling functionality
   const eventsListRef = useRef(null);
@@ -122,19 +129,30 @@ const EventList = ({
       setCheckpointIndex(events.length - 1);
     }
     // Only reset stop checkpoint if it's beyond the valid range  
-    if (stopCheckpointIndex > events.length - 1 && events.length > 0) {
-      setStopCheckpointIndex(events.length - 1);
+    if (stopCheckpointIndex > events.length && events.length > 0) {
+      setStopCheckpointIndex(events.length);
     }
-    // Hide stop checkpoint if no events
+    // Show/hide stop checkpoint based on events
     if (events.length === 0) {
       setShowStopCheckpoint(false);
+      setStopCheckpointManuallyMoved(false);
       // Reset checkpoint to initial position when all events are cleared
       if (checkpointIndex !== -1) {
         setCheckpointIndex(-1);
         setCheckpointManuallyMoved(false);
       }
+    } else if (events.length > 0 && !showStopCheckpoint) {
+      // Auto-show stop checkpoint when events are added
+      setShowStopCheckpoint(true);
+      // Set stop checkpoint position at the end of all events (only when first showing)
+      if (stopCheckpointIndex === -1) {
+        setStopCheckpointIndex(events.length);
+      }
+    } else if (events.length > 0 && showStopCheckpoint && !stopCheckpointManuallyMoved) {
+      // Auto-move stop checkpoint to end when new events are added (unless manually positioned)
+      setStopCheckpointIndex(events.length);
     }
-  }, [events.length, checkpointIndex, setCheckpointIndex, stopCheckpointIndex, setStopCheckpointIndex]);
+  }, [events.length, checkpointIndex, setCheckpointIndex, stopCheckpointIndex, setStopCheckpointIndex, showStopCheckpoint, stopCheckpointManuallyMoved]);
 
   // Auto-reset checkpoint to top when new events are added (if not manually positioned)
   useEffect(() => {
@@ -143,36 +161,50 @@ const EventList = ({
     }
   }, [events.length]);
 
+  // Debug: Log stop checkpoint state changes (disabled to reduce console spam)
+  useEffect(() => {
+    // console.log('Stop checkpoint state changed:', { showStopCheckpoint, stopCheckpointIndex, eventsLength: events.length });
+  }, [showStopCheckpoint, stopCheckpointIndex, events.length]);
+
   // ... (keep all the existing handler functions like handleRun, handleTimeout, etc.)
   // For brevity, I'll include just the essential parts of the component structure
 
   // Handle running the event simulation
   const handleRun = async () => {
+    console.log('handleRun called, showStopCheckpoint:', showStopCheckpoint);
+    
     if (events.length === 0) {
       alert('No events to simulate. Please add some events first.');
       return;
     }
 
-    // Show stop checkpoint after run button is clicked
-    if (!showStopCheckpoint) {
-      setShowStopCheckpoint(true);
-      // Set initial stop checkpoint position to be after the start checkpoint
-      const initialStopPosition = Math.min(checkpointIndex + 3, sortedEvents.length - 1);
-      setStopCheckpointIndex(initialStopPosition);
-      return; // Don't start simulation yet, let user position the stop checkpoint
-    }
+    console.log('Starting simulation with stop checkpoint at:', stopCheckpointIndex);
 
     // Determine the range of events to process
     const startIndex = checkpointIndex + 1;
-    const endIndex = stopCheckpointIndex >= 0 ? stopCheckpointIndex + 1 : sortedEvents.length;
+    // If stop checkpoint is at or beyond the end, include all events after start
+    const endIndex = stopCheckpointIndex >= sortedEvents.length ? sortedEvents.length : stopCheckpointIndex + 1;
     
     // Get events to process (between start and stop checkpoints)
     const eventsToProcess = sortedEvents.slice(startIndex, endIndex);
+    
+    console.log(`Processing events from index ${startIndex} to ${endIndex} (${eventsToProcess.length} events)`);
     
     if (eventsToProcess.length === 0) {
       alert('No events to process between checkpoints. Adjust checkpoint positions to include events.');
       return;
     }
+
+    // Update checkpoints before starting simulation:
+    // Move start checkpoint to where stop checkpoint was
+    // Move stop checkpoint to the end of the event list
+    const newStartPosition = stopCheckpointIndex >= sortedEvents.length ? sortedEvents.length - 1 : stopCheckpointIndex;
+    const newStopPosition = sortedEvents.length;
+    
+    setCheckpointIndex(newStartPosition);
+    setStopCheckpointIndex(newStopPosition);
+    setCheckpointManuallyMoved(true); // Mark as manually positioned
+    setStopCheckpointManuallyMoved(false); // Allow auto-repositioning for future events
 
     setIsRunning(true);
     setCurrentEventIndex(-1);
@@ -308,6 +340,52 @@ const EventList = ({
     }
   };
 
+  // Event drag handlers
+  const handleEventDragStart = (e, eventId) => {
+    if (isRunning) {
+      e.preventDefault();
+      return;
+    }
+    
+    setIsDraggingEvent(true);
+    setDraggedEventId(eventId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.target.outerHTML);
+    
+    // Add visual feedback
+    e.target.style.opacity = '0.5';
+  };
+
+  const handleEventDragEnd = (e) => {
+    e.target.style.opacity = '1';
+    setIsDraggingEvent(false);
+    setDraggedEventId(null);
+    setDragOverIndex(-1);
+  };
+
+  const handleEventDragOver = (e, targetIndex) => {
+    e.preventDefault();
+    if (!isDraggingEvent || !draggedEventId) return;
+    
+    setDragOverIndex(targetIndex);
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleEventDrop = (e, targetIndex) => {
+    e.preventDefault();
+    if (!draggedEventId || !onReorderEvents) return;
+    
+    const draggedEventIndex = events.findIndex(event => event.id === draggedEventId);
+    if (draggedEventIndex === -1 || draggedEventIndex === targetIndex) return;
+    
+    // Call the reorder function
+    onReorderEvents(draggedEventIndex, targetIndex);
+    
+    setIsDraggingEvent(false);
+    setDraggedEventId(null);
+    setDragOverIndex(-1);
+  };
+
   // Handle checkpoint drag
   const handleCheckpointDrag = (e) => {
     e.preventDefault();
@@ -406,6 +484,7 @@ const EventList = ({
     const maxIndex = sortedEvents.length; // Allow beyond last event
     
     setStopCheckpointIndex(Math.max(minIndex, Math.min(maxIndex, newStopCheckpointIndex)));
+    setStopCheckpointManuallyMoved(true); // Mark as manually moved
   };
 
   // Handle mouse events for checkpoint dragging
@@ -669,8 +748,10 @@ const EventList = ({
               const isUserHighlighted = highlightedEventIndices.includes(index);
               const eventType = getEventType(event.rawData);
               const isBeforeCheckpoint = index <= checkpointIndex;
-              const isAfterStopCheckpoint = showStopCheckpoint && index >= stopCheckpointIndex;
-              const isInRange = showStopCheckpoint ? (index > checkpointIndex && index < stopCheckpointIndex) : !isBeforeCheckpoint;
+              // Events are excluded if they are after the stop checkpoint position
+              const isAfterStopCheckpoint = showStopCheckpoint && index > stopCheckpointIndex;
+              // Events are in range if they're after start checkpoint and not after stop checkpoint
+              const isInRange = index > checkpointIndex && !isAfterStopCheckpoint;
               
               // Parse rawData to extract event name
               let eventName = null;
@@ -683,8 +764,20 @@ const EventList = ({
 
               return (
                 <React.Fragment key={event.id}>
+                  {/* Drop zone indicator before this event */}
+                  {isDraggingEvent && dragOverIndex === index && (
+                    <div className="event-list__drop-indicator">
+                      <div className="event-list__drop-line"></div>
+                    </div>
+                  )}
+                  
                   <div
                     ref={currentEventIndex === index ? activeEventRef : null}
+                    draggable={!isRunning}
+                    onDragStart={(e) => handleEventDragStart(e, event.id)}
+                    onDragEnd={handleEventDragEnd}
+                    onDragOver={(e) => handleEventDragOver(e, index)}
+                    onDrop={(e) => handleEventDrop(e, index)}
                     className={`event-list__event ${
                       currentEventIndex === index ? 'event-list__event--active' : ''
                     } ${isExpanded ? 'event-list__event--expanded' : ''} ${
@@ -695,7 +788,14 @@ const EventList = ({
                       isAfterStopCheckpoint ? 'event-list__event--excluded' : ''
                     } ${
                       isInRange ? 'event-list__event--in-range' : ''
+                    } ${
+                      isDraggingEvent && draggedEventId === event.id ? 'event-list__event--dragging' : ''
+                    } ${
+                      isDraggingEvent && dragOverIndex === index ? 'event-list__event--drag-over' : ''
                     }`}
+                    style={{
+                      cursor: !isRunning ? 'grab' : 'default'
+                    }}
                   >
                     <div 
                       className="event-list__event-header"
@@ -860,6 +960,44 @@ const EventList = ({
                 </React.Fragment>
               );
             })}
+            
+            {/* Render stop checkpoint at the end only if it's positioned after all events */}
+            {showStopCheckpoint && stopCheckpointIndex >= sortedEvents.length && (
+              <div 
+                ref={stopCheckpointRef}
+                className={`event-list__stop-checkpoint ${
+                  isDraggingStopCheckpoint ? 'event-list__stop-checkpoint--dragging' : ''
+                }`}
+                onMouseDown={handleStopCheckpointMouseDown}
+                title="Drag to move stop checkpoint. Events above this line will be processed."
+                style={{
+                  cursor: isDraggingStopCheckpoint ? 'grabbing' : 'grab',
+                }}
+              >
+                <div className="event-list__stop-checkpoint-line"></div>
+                <div className="event-list__stop-checkpoint-handle">
+                  <span className="event-list__stop-checkpoint-icon">⋮⋮</span>
+                  <span className="event-list__stop-checkpoint-text">
+                    Stop Checkpoint - Simulation stops here.
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {/* Drop zone at the end for reordering */}
+            {isDraggingEvent && (
+              <div 
+                className="event-list__drop-zone-end"
+                onDragOver={(e) => handleEventDragOver(e, sortedEvents.length)}
+                onDrop={(e) => handleEventDrop(e, sortedEvents.length)}
+              >
+                {dragOverIndex === sortedEvents.length && (
+                  <div className="event-list__drop-indicator">
+                    <div className="event-list__drop-line"></div>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>
@@ -935,17 +1073,10 @@ const EventList = ({
               <div className="event-list__spinner"></div>
               Running...
             </>
-          ) : !showStopCheckpoint ? (
-            <>
-              Run Simulation
-              <span className="event-list__run-count">
-                (Set Range)
-              </span>
-            </>
           ) : (
             <>
               Run Simulation
-              {stopCheckpointIndex > checkpointIndex && (
+              {showStopCheckpoint && stopCheckpointIndex > checkpointIndex && (
                 <span className="event-list__run-count">
                   ({stopCheckpointIndex - checkpointIndex} events)
                 </span>

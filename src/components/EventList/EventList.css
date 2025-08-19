@@ -83,7 +83,8 @@
 }
 
 .event-list__checkpoint:hover .event-list__checkpoint-handle {
-  background: rgba(96, 165, 250, 0.7); /* Darker blue-450 on hover */
+  background: #111827; /* Darker blue-450 on hover */
+  /* background: rgba(96, 165, 250, 0.7); */ /* Darker blue-450 on hover */
   border-color: #3b82f6; /* blue-500 */
   color: #3b82f6; /* blue-500 */
   transform: translateY(-1px); /* Subtle lift on hover */
@@ -140,7 +141,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  background: rgba(239, 68, 68, 0.5); /* red-500 with 50% transparency */
+  /* background: rgba(239, 68, 68, 0.5); */   /* red-500 with 50% transparency */
   border: 1px solid #ef4444; /* red-500 */
   border-radius: 2rem;
   font-size: 12px;
@@ -152,7 +153,9 @@
 .event-list__stop-checkpoint:hover .event-list__stop-checkpoint-handle {
   background: rgba(239, 68, 68, 0.7); /* Darker red-500 on hover */
   border-color: #dc2626; /* red-600 */
-  color: #dc2626; /* red-600 */
+  color: #111827; /* red-600 */
+  /* color: #dc2626; */
+   /* red-600 */
   transform: translateY(-1px);
 }
 
@@ -1443,4 +1446,85 @@
 .dark-mode .event-list__order-label,
 .dark-mode .event-list__timeout-label {
   color: #F3F4F7; /* grey-50 */
+}
+
+/* Event drag and drop styles */
+.event-list__event--dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.event-list__event--drag-over {
+  border-top: 2px solid #3b82f6;
+  transform: translateY(2px);
+}
+
+.event-list__drop-indicator {
+  height: 4px;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  z-index: 1001;
+}
+
+.event-list__drop-line {
+  height: 2px;
+  background: #3b82f6;
+  border-radius: 1px;
+  position: relative;
+  animation: pulse 1s infinite;
+}
+
+.event-list__drop-line::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  background: #3b82f6;
+  border-radius: 50%;
+}
+
+.event-list__drop-line::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  background: #3b82f6;
+  border-radius: 50%;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.event-list__drop-zone-end {
+  min-height: 20px;
+  padding: 10px 0;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.event-list__drop-zone-end:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+/* Dark mode drag styles */
+.dark-mode .event-list__event--drag-over {
+  border-top-color: #60a5fa;
+}
+
+.dark-mode .event-list__drop-line {
+  background: #60a5fa;
+}
+
+.dark-mode .event-list__drop-line::before,
+.dark-mode .event-list__drop-line::after {
+  background: #60a5fa;
 }
