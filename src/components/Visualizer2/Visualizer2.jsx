@@ -108,6 +108,67 @@ const Visualizer2 = ({
 
   // Generate HTML for full-page analysis view
   const generateAnalysisHtml = (analysisData) => {
+    // Embed SVG icons as data URIs to avoid loading issues
+    const iconSvgs = {
+      download: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72" aria-hidden="true" role="img" class="iconify iconify--noto"><path d="M35.52 48.58c.4.4 1.05.4 1.45 0l14.46-14.46v-3.56L38.08 44.02c-.55.55-1.44.55-1.99 0L22.65 30.59v3.53l12.87 14.46z" fill="currentColor"/><path d="M15 33v28h42V33H15zm38 24H19V37h34v20z" fill="currentColor"/><path d="M35.99 11C28.26 11 22 17.26 22 24.99v6.73c-.01.07-.01.14 0 .21H12.5c-.83 0-1.5.67-1.5 1.5v28c0 .83.67 1.5 1.5 1.5h47c.83 0 1.5-.67 1.5-1.5v-28c0-.83-.67-1.5-1.5-1.5H50c.01-.07.01-.14 0-.21v-6.73C50 17.26 43.73 11 35.99 11zM47 24.99v6.52L36.43 42.08c-.88.88-2.31.88-3.19 0L22.68 31.51v-6.52c0-7.17 5.83-13 13-13s13 5.83 13 13z" fill="currentColor"/></svg>`)}`,
+      unknown: `data:image/svg+xml;base64,${btoa(`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10" stroke="#999999" stroke-width="2"/>
+        <path d="M9 9A3 3 0 0 1 15 9C15 11.5 12 11.5 12 13" stroke="#999999" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="12" cy="17" r="1" fill="#999999"/>
+      </svg>`)}`,
+      barGraph: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72" aria-hidden="true" role="img" class="iconify iconify--noto"><path d="M9 9h8v45H9V9zm13 9h8v36h-8V18zm13 7h8v29h-8V25zm13 6h8v23h-8V31z" fill="currentColor"/><path d="M13 13h1v36.5h-1V13zm13 9h1v27.5h-1V22zm13 7h1v20.5h-1V29zm13 6h1v14.5h-1V35z" fill="currentColor"/><ellipse cx="54.55" cy="15.69" rx="9.95" ry="9.95" fill="currentColor"/><path d="M58.8 20.77c-.56.56-1.24.84-2.04.84-.85 0-1.55-.31-2.1-.94l-3.25-3.25c-.4-.4-.4-1.04 0-1.44.4-.4 1.04-.4 1.44 0l3.15 3.15c.19.19.43.29.71.29.28 0 .5-.09.66-.28l6.94-7.67c.37-.41 1-.45 1.42-.08.41.37.45 1 .08 1.42l-7.01 7.96z" fill="white"/></svg>`)}`,
+      userPlus: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72" aria-hidden="true" role="img" class="iconify iconify--noto"><circle cx="28" cy="22" r="11" fill="currentColor" class="path-fill"/><ellipse cx="28" cy="48.5" rx="17" ry="11.5" fill="currentColor" class="path-fill"/><circle cx="54" cy="26" r="8" fill="currentColor" class="path-fill"/><path d="M52 27v6h-1v-6h-5v-1h5v-6h1v6h6v1h-6z" fill="white"/></svg>`)}`,
+      userCheck: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="73" height="72" viewBox="0 0 73 72" aria-hidden="true" role="img" class="iconify iconify--noto"><circle cx="28.5" cy="22" r="11" fill="currentColor" class="path-fill"/><ellipse cx="28.5" cy="48.5" rx="17" ry="11.5" fill="currentColor" class="path-fill"/><circle cx="54.5" cy="26" r="8" fill="currentColor" class="path-fill"/><path d="M58.8 30.77c-.56.56-1.24.84-2.04.84-.85 0-1.55-.31-2.1-.94l-3.25-3.25c-.4-.4-.4-1.04 0-1.44.4-.4 1.04-.4 1.44 0l3.15 3.15c.19.19.43.29.71.29.28 0 .5-.09.66-.28l6.94-7.67c.37-.41 1-.45 1.42-.08.41.37.45 1 .08 1.42l-7.01 7.96z" fill="white"/></svg>`)}`,
+      unified: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="29.39" height="28.13" viewBox="0 0 29.39 28.13" fill="currentColor"><path d="M6.45 14.06q7 0 14.06 0a2.88 2.88 0 0 1 2.88 2.88v8.31a2.88 2.88 0 0 1-2.88 2.88H6.45a2.88 2.88 0 0 1-2.88-2.88v-8.31a2.88 2.88 0 0 1 2.88-2.88z" style="fill:#221f1f"/><ellipse cx="13.47" cy="7.5" rx="7.31" ry="7.5" style="fill:#e53e3e"/><path d="M22.3 7.8a7.5 7.5 0 0 1-8.84 7.35 7.5 7.5 0 0 1-8.84-7.35 7.5 7.5 0 0 1 8.84-7.35 7.5 7.5 0 0 1 8.84 7.35z" style="fill:none;stroke:#221f1f;stroke-miterlimit:10;stroke-width:.75px;opacity:.25"/><path d="M7.5 10.11a.65.65 0 0 1-.65-.65V7.8a.65.65 0 0 1 1.31 0v1.66a.65.65 0 0 1-.65.65z"/><path d="M19.48 10.11a.65.65 0 0 1-.65-.65V7.8a.65.65 0 0 1 1.31 0v1.66a.65.65 0 0 1-.65.65z"/><ellipse cx="8.68" cy="6.23" rx="1.83" ry="1.88" style="fill:none;stroke:#221f1f;stroke-miterlimit:10;stroke-width:.75px;opacity:.5"/><ellipse cx="18.31" cy="6.23" rx="1.83" ry="1.88" style="fill:none;stroke:#221f1f;stroke-miterlimit:10;stroke-width:.75px;opacity:.5"/><path d="M19.2 5.79a7.24 7.24 0 0 0-5.74-4.61L13.47 0a8.4 8.4 0 0 1 6.77 5.43z" style="fill:#e53e3e"/><path d="M10.37 1.18a7.29 7.29 0 0 0-2.58 4.6h-1a8.49 8.49 0 0 1 3-5.51z" style="fill:#e53e3e"/></svg>`)}`,
+      userProfile: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72" aria-hidden="true" role="img" class="iconify iconify--noto"><path d="M41 61H16c-2.21 0-4-1.79-4-4V15c0-2.21 1.79-4 4-4h25c2.21 0 4 1.79 4 4v42c0 2.21-1.79 4-4 4z" fill="currentColor"/><circle cx="28.5" cy="28" r="8" fill="white"/><path d="M34.2 45.34c-.16-3.07-2.14-4.53-5.7-4.53s-5.54 1.46-5.7 4.53c-.01.15-.01.31 0 .46.09 1.31 1.17 2.33 2.5 2.33h5.9c1.33 0 2.41-1.02 2.5-2.33.01-.15.01-.31-.5-.46z" fill="white"/><path d="M47 20h13v3H47zm0 8h13v3H47zm0 8h9v3h-9zm0 8h13v3H47zm0 8h13v3H47z" fill="currentColor"/></svg>`)}`,
+      browserLink: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72" aria-hidden="true" role="img" class="iconify iconify--noto"><path d="M63 13H9c-2.2 0-4 1.8-4 4v38c0 2.2 1.8 4 4 4h54c2.2 0 4-1.8 4-4V17c0-2.2-1.8-4-4-4z" fill="currentColor"/><circle cx="13" cy="20" r="2" fill="white"/><circle cx="19" cy="20" r="2" fill="white"/><circle cx="25" cy="20" r="2" fill="white"/><path d="M9 25h54v30H9z" fill="white"/><path d="M22.5 34.5l7 7 7-7" fill="currentColor"/><path d="M29.5 41.5v-7" stroke="currentColor" stroke-width="2" fill="none"/><path d="M42 33h6v2h-6zm0 4h8v2h-8zm0 4h8v2h-8zm0 4h6v2h-6z" fill="currentColor"/></svg>`)}`,
+      graphMagnifying: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72" aria-hidden="true" role="img" class="iconify iconify--noto"><circle cx="28" cy="27" r="20" fill="none" stroke="currentColor" stroke-width="3"/><path d="m62 61-12-12" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M18 32h4l2-6 3 10 3-8 2 6h4" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`)}`,
+      // Source type icons
+      javascript: `data:image/svg+xml;base64,${btoa(`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="20" height="20" fill="#F7DF1E" stroke="#FFCE00" stroke-width="2"/>
+        <text x="12" y="16" font-family="Arial" font-size="12" font-weight="bold" fill="#333" text-anchor="middle">JS</text>
+      </svg>`)}`,
+      ios: `data:image/svg+xml;base64,${btoa(`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="2" width="16" height="20" rx="2" fill="#3373dc" stroke="#2052cc" stroke-width="2"/>
+        <circle cx="12" cy="18.5" r="1.5" fill="white"/>
+        <rect x="7" y="5" width="10" height="10" fill="white"/>
+        <circle cx="12" cy="10" r="2" fill="#3373dc"/>
+      </svg>`)}`,
+      android: `data:image/svg+xml;base64,${btoa(`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 7C4 5.89543 4.89543 5 6 5H18C19.1046 5 20 5.89543 20 7V17C20 18.1046 19.1046 19 18 19H6C4.89543 19 4 18.1046 4 17V7Z" fill="#a4c639|20a" stroke="#688c4c" stroke-width="2"/>
+        <circle cx="8" cy="9" r="1.5" fill="white"/>
+        <circle cx="16" cy="9" r="1.5" fill="white"/>
+        <path d="M9 13H15" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      </svg>`)}`,
+      server: `data:image/svg+xml;base64,${btoa(`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="3" width="20" height="4" rx="1" fill="#6373dc" stroke="#4f59c7" stroke-width="2"/>
+        <rect x="2" y="10" width="20" height="4" rx="1" fill="#6373dc" stroke="#4f59c7" stroke-width="2"/>
+        <rect x="2" y="17" width="20" height="4" rx="1" fill="#6373dc" stroke="#4f59c7" stroke-width="2"/>
+        <circle cx="6" cy="5" r="1" fill="white"/>
+        <circle cx="6" cy="12" r="1" fill="white"/>
+        <circle cx="6" cy="19" r="1" fill="white"/>
+      </svg>`)}`,
+      web: `data:image/svg+xml;base64,${btoa(`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10" stroke="#3373dc" stroke-width="2"/>
+        <path d="M2 12H18" stroke="#3373dc" stroke-width="2"/>
+        <path d="M12 2C14 6 14 10 12 12C10 14 10 18 12 22" stroke="#3373dc" stroke-width="2"/>
+      </svg>`)}`
+    };
+
+    // Helper function to get source icon
+    const getSourceIconEmoji = (sourceType) => {
+      const icons = {
+        'javascript': '🌐',
+        'ios': '📱', 
+        'android': '🤖',
+        'server': '🖥️',
+        'http': '🔗',
+        'react-native': '⚛️',
+        'flutter': '🐦',
+        'unity': '🎮'
+      };
+      return icons[sourceType] || '📡';
+    };
     const downloadAnalysisJS = `
       function downloadAnalysis() {
         const analysisData = ${JSON.stringify(analysisData.downloadData, null, 2)};
@@ -121,6 +182,45 @@ const Visualizer2 = ({
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+      }
+      
+      function toggleRawJson(eventNumber) {
+        const element = document.getElementById('raw-json-' + eventNumber);
+        const button = element.previousElementSibling;
+        
+        if (element.style.display === 'none') {
+          element.style.display = 'block';
+          button.textContent = 'Hide Raw JSON';
+        } else {
+          element.style.display = 'none';
+          button.textContent = 'View Raw JSON';
+        }
+      }
+      
+      function toggleProfileDetails(profileIndex) {
+        const element = document.getElementById('profile-details-' + profileIndex);
+        const button = element.previousElementSibling;
+        
+        if (element.style.display === 'none') {
+          element.style.display = 'block';
+          button.textContent = 'Hide Profile JSON';
+        } else {
+          element.style.display = 'none';
+          button.textContent = 'View Full Profile JSON';
+        }
+      }
+      
+      function toggleProfileDetails(profileIndex) {
+        const element = document.getElementById('profile-details-' + profileIndex);
+        const button = element.previousElementSibling;
+        
+        if (element.style.display === 'none') {
+          element.style.display = 'block';
+          button.textContent = 'Hide Full Profile JSON';
+        } else {
+          element.style.display = 'none';
+          button.textContent = 'View Full Profile JSON';
+        }
       }
     `;
 
@@ -398,7 +498,7 @@ const Visualizer2 = ({
             <div><strong>Generated:</strong> ${new Date(analysisData.downloadData.generatedAt).toLocaleString()}</div>
             <div><strong>Events Processed:</strong> ${analysisData.downloadData.eventCount}</div>
             <button class="download-button" onclick="downloadAnalysis()">
-                <img src="/assets/Download_symbol.svg" width="14" height="14" style="vertical-align: middle; margin-right: 6px;" alt="Download" /> Download JSON Report
+                <img src="${iconSvgs.download}" width="14" height="14" style="vertical-align: middle; margin-right: 6px; filter: brightness(0) invert(1);" alt="Download" /> Download JSON Report
             </button>
         </div>
     </div>
@@ -436,12 +536,13 @@ const Visualizer2 = ({
                 ${analysisData.eventSequence.map(event => `
                     <div class="event-card">
                         <div class="event-header">
+                            <img src="${event.sourceIcon || iconSvgs[event.sourceType] || iconSvgs.unknown}" width="20" height="20" style="vertical-align: middle; margin-right: 8px;" alt="${event.sourceType}" />
                             Event ${event.eventNumber}: ${event.eventType}
                         </div>
                         <div class="event-details">
                             <div class="event-detail">
-                                <div class="event-detail-label">Identifiers</div>
-                                <div class="event-detail-value">${event.identifiers || 'None'}</div>
+                                <div class="event-detail-label">All Identifiers</div>
+                                <div class="event-detail-value">${Object.entries(event.allIdentifiers || {}).map(([key, value]) => `<strong>${key}:</strong> ${value}`).join('<br>')}</div>
                             </div>
                             <div class="event-detail">
                                 <div class="event-detail-label">Expected Action</div>
@@ -453,8 +554,20 @@ const Visualizer2 = ({
                             </div>
                             <div class="event-detail">
                                 <div class="event-detail-label">Timestamp</div>
-                                <div class="event-detail-value">${event.timestamp}</div>
+                                <div class="event-detail-value">${new Date(event.timestamp).toLocaleString()}</div>
                             </div>
+                            ${event.segmentId ? `
+                                <div class="event-detail">
+                                    <div class="event-detail-label">Segment ID</div>
+                                    <div class="event-detail-value">${event.segmentId}</div>
+                                </div>
+                            ` : ''}
+                            ${event.sourceType ? `
+                                <div class="event-detail">
+                                    <div class="event-detail-label">Source Type</div>
+                                    <div class="event-detail-value">${event.sourceType}</div>
+                                </div>
+                            ` : ''}
                             ${event.mergeDirection ? `
                                 <div class="event-detail">
                                     <div class="event-detail-label">Merge Direction</div>
@@ -473,6 +586,17 @@ const Visualizer2 = ({
                                     <div class="event-detail-value">${event.droppedIdentifiers.join(', ')}</div>
                                 </div>
                             ` : ''}
+                            <div class="event-detail">
+                                <div class="event-detail-label">Raw JSON Payload</div>
+                                <div class="event-detail-value">
+                                    <button onclick="toggleRawJson(${event.eventNumber})" style="padding: 4px 8px; background: #3373dc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                        View Raw JSON
+                                    </button>
+                                    <div id="raw-json-${event.eventNumber}" style="display: none; margin-top: 8px; padding: 12px; background: #f5f5f5; border-radius: 4px; font-family: monospace; font-size: 11px; white-space: pre-wrap; max-height: 300px; overflow-y: auto; border: 1px solid #ddd;">
+                                        ${JSON.stringify(event.rawPayload, null, 2).replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `).join('')}
@@ -491,8 +615,82 @@ const Visualizer2 = ({
                     <span class="final-state-label">Analysis Completed:</span>
                     <span class="final-state-value">${new Date(analysisData.finalState.lastProcessedAt).toLocaleString()}</span>
                 </div>
-                <div>
-                    <div class="final-state-label" style="margin-bottom: 12px;">Profile Mappings:</div>
+                
+                <!-- Processing Statistics -->
+                ${analysisData.finalState.processingStatistics ? `
+                    <div style="margin-top: 20px;">
+                        <div class="final-state-label" style="margin-bottom: 12px;">Processing Statistics:</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                            <div style="text-align: center; padding: 12px; background: var(--color-bg-tertiary); border-radius: 6px;">
+                                <div style="font-size: 18px; font-weight: bold; color: var(--color-accent);">${analysisData.finalState.processingStatistics.totalEvents}</div>
+                                <div style="font-size: 12px; color: var(--color-text-secondary);">Total Events</div>
+                            </div>
+                            <div style="text-align: center; padding: 12px; background: var(--color-bg-tertiary); border-radius: 6px;">
+                                <div style="font-size: 18px; font-weight: bold; color: var(--color-accent);">${analysisData.finalState.processingStatistics.createActions}</div>
+                                <div style="font-size: 12px; color: var(--color-text-secondary);">Profiles Created</div>
+                            </div>
+                            <div style="text-align: center; padding: 12px; background: var(--color-bg-tertiary); border-radius: 6px;">
+                                <div style="font-size: 18px; font-weight: bold; color: var(--color-accent);">${analysisData.finalState.processingStatistics.addActions}</div>
+                                <div style="font-size: 12px; color: var(--color-text-secondary);">Add Actions</div>
+                            </div>
+                            <div style="text-align: center; padding: 12px; background: var(--color-bg-tertiary); border-radius: 6px;">
+                                <div style="font-size: 18px; font-weight: bold; color: var(--color-accent);">${analysisData.finalState.processingStatistics.mergeActions}</div>
+                                <div style="font-size: 12px; color: var(--color-text-secondary);">Profile Merges</div>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Detailed Profile Objects -->
+                ${analysisData.finalState.profiles && analysisData.finalState.profiles.length > 0 ? `
+                    <div style="margin-top: 20px;">
+                        <div class="final-state-label" style="margin-bottom: 12px;">Detailed Profile Objects:</div>
+                        <div style="display: grid; gap: 16px;">
+                            ${analysisData.finalState.profiles.map((profile, index) => `
+                                <div style="background: var(--color-bg-tertiary); border-radius: 8px; padding: 16px; border: 1px solid var(--color-border);">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                        <h4 style="margin: 0; color: var(--color-text-primary);">${profile.profileNumber}</h4>
+                                        <span style="font-size: 12px; color: var(--color-text-secondary);">${profile.eventCount} events</span>
+                                    </div>
+                                    
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px;">
+                                        <div>
+                                            <div style="font-weight: bold; font-size: 12px; color: var(--color-text-primary); margin-bottom: 4px;">Internal ID:</div>
+                                            <div style="font-family: monospace; font-size: 11px; color: var(--color-text-secondary);">${profile.internalId}</div>
+                                        </div>
+                                        ${profile.segmentId ? `
+                                            <div>
+                                                <div style="font-weight: bold; font-size: 12px; color: var(--color-text-primary); margin-bottom: 4px;">Segment ID:</div>
+                                                <div style="font-family: monospace; font-size: 11px; color: var(--color-text-secondary);">${profile.segmentId}</div>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    
+                                    <div style="margin-bottom: 12px;">
+                                        <div style="font-weight: bold; font-size: 12px; color: var(--color-text-primary); margin-bottom: 6px;">Contributing Events:</div>
+                                        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                            ${profile.events.map(event => `
+                                                <span style="background: var(--color-accent); color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px;">
+                                                    #${event.eventNumber}
+                                                </span>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                    
+                                    <button onclick="toggleProfileDetails(${index})" style="padding: 6px 12px; background: #3373dc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                        View Full Profile JSON
+                                    </button>
+                                    <div id="profile-details-${index}" style="display: none; margin-top: 12px; padding: 12px; background: #f5f5f5; border-radius: 4px; font-family: monospace; font-size: 11px; white-space: pre-wrap; max-height: 300px; overflow-y: auto; border: 1px solid #ddd;">
+                                        ${JSON.stringify(profile, null, 2).replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <div style="margin-top: 20px;">
+                    <div class="final-state-label" style="margin-bottom: 12px;">Profile Mappings (Internal ID → Display Name):</div>
                     <div class="profile-mappings">${JSON.stringify(analysisData.finalState.profileMappings, null, 2)}</div>
                 </div>
             </div>
@@ -615,7 +813,7 @@ const Visualizer2 = ({
       {/* <div className="visualizer2__header">
         <div className="visualizer2__header-top">
           <div className="visualizer2__header-left">
-            <img src="/assets/pie-chart.svg" alt="Visualizer" className="visualizer2__header-icon" />
+            <img src={`data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiLz4KPHBhdGggZD0iTTEyIDJWMTJMMTggNiIgZmlsbD0iY3VycmVudENvbG9yIi8+Cjwvc3ZnPgo=`} alt="Visualizer" className="visualizer2__header-icon" />
             <h2 className="visualizer2__title">
               Identity Resolution Visualizer
               <div className="visualizer2__separator">
@@ -744,7 +942,7 @@ const Visualizer2 = ({
                 >
                   {isAnalyzing ? 
                     <>⏳ Analyzing...</> : 
-                    <><img src="/assets/graph-magnifying-glass.svg" width="14" height="14" style={{verticalAlign: 'middle', marginRight: '4px'}} alt="Analyze" /> Analyze</>
+                    <><img src={`data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72" aria-hidden="true" role="img" class="iconify iconify--noto"><circle cx="28" cy="27" r="20" fill="none" stroke="currentColor" stroke-width="3"/><path d="m62 61-12-12" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M18 32h4l2-6 3 10 3-8 2 6h4" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`)}`} width="14" height="14" style={{verticalAlign: 'middle', marginRight: '4px'}} alt="Analyze" /> Analyze</>
                   }
                 </button>
               </div>
@@ -758,7 +956,7 @@ const Visualizer2 = ({
                       title="View Full Analysis"
                       style={{ padding: '4px 8px', fontSize: '11px', backgroundColor: '#6366f1' }}
                     >
-                      <img src="/assets/Browser-link.svg" width="12" height="12" style={{verticalAlign: 'middle', marginRight: '4px'}} alt="View" /> View
+                      <img src={`data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72" aria-hidden="true" role="img" class="iconify iconify--noto"><path d="M63 13H9c-2.2 0-4 1.8-4 4v38c0 2.2 1.8 4 4 4h54c2.2 0 4-1.8 4-4V17c0-2.2-1.8-4-4-4z" fill="currentColor"/><circle cx="13" cy="20" r="2" fill="white"/><circle cx="19" cy="20" r="2" fill="white"/><circle cx="25" cy="20" r="2" fill="white"/><path d="M9 25h54v30H9z" fill="white"/><path d="M22.5 34.5l7 7 7-7" fill="currentColor"/><path d="M29.5 41.5v-7" stroke="currentColor" stroke-width="2" fill="none"/><path d="M42 33h6v2h-6zm0 4h8v2h-8zm0 4h8v2h-8zm0 4h6v2h-6z" fill="currentColor"/></svg>`)}`} width="12" height="12" style={{verticalAlign: 'middle', marginRight: '4px'}} alt="View" /> View
                     </button>
                     <button
                       className="visualizer__download-button"
@@ -766,7 +964,7 @@ const Visualizer2 = ({
                       title="Download Analysis"
                       style={{ padding: '4px 8px', fontSize: '11px' }}
                     >
-                      <img src="/assets/Download_symbol.svg" width="12" height="12" style={{verticalAlign: 'middle', marginRight: '4px'}} alt="Download" /> Download
+                      <img src={`data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72" aria-hidden="true" role="img" class="iconify iconify--noto"><path d="M35.52 48.58c.4.4 1.05.4 1.45 0l14.46-14.46v-3.56L38.08 44.02c-.55.55-1.44.55-1.99 0L22.65 30.59v3.53l12.87 14.46z" fill="currentColor"/><path d="M15 33v28h42V33H15zm38 24H19V37h34v20z" fill="currentColor"/><path d="M35.99 11C28.26 11 22 17.26 22 24.99v6.73c-.01.07-.01.14 0 .21H12.5c-.83 0-1.5.67-1.5 1.5v28c0 .83.67 1.5 1.5 1.5h47c.83 0 1.5-.67 1.5-1.5v-28c0-.83-.67-1.5-1.5-1.5H50c.01-.07.01-.14 0-.21v-6.73C50 17.26 43.73 11 35.99 11zM47 24.99v6.52L36.43 42.08c-.88.88-2.31.88-3.19 0L22.68 31.51v-6.52c0-7.17 5.83-13 13-13s13 5.83 13 13z" fill="currentColor"/></svg>`)}`} width="12" height="12" style={{verticalAlign: 'middle', marginRight: '4px'}} alt="Download" /> Download
                     </button>
                   </div>
                   

@@ -467,6 +467,126 @@ function App() {
     ));
   };
 
+  // Handle removing a source from an event
+  const handleRemoveSourceFromEvent = (eventId, sourceIndex) => {
+    setEvents(prevEvents => prevEvents.map(event => {
+      if (event.id !== eventId) return event;
+      
+      // Handle events with new multi-source format
+      if (event.sources && event.sources.length > 0) {
+        const newSources = [...event.sources];
+        newSources.splice(sourceIndex, 1);
+        
+        // If no sources left, keep the event but clear source data
+        if (newSources.length === 0) {
+          return {
+            ...event,
+            sources: [],
+            writeKeys: [],
+            sourceNames: [],
+            sourceTypes: [],
+            writeKey: null,
+            sourceName: null,
+            sourceType: null
+          };
+        }
+        
+        // Update all source-related fields
+        return {
+          ...event,
+          sources: newSources,
+          writeKeys: newSources.map(source => source.settings?.writeKey).filter(Boolean),
+          sourceNames: newSources.map(source => source.name).filter(Boolean),
+          sourceTypes: newSources.map(source => source.type).filter(Boolean),
+          // Update legacy fields to use first remaining source
+          writeKey: newSources[0]?.settings?.writeKey || null,
+          sourceName: newSources[0]?.name || null,
+          sourceType: newSources[0]?.type || null
+        };
+      } 
+      // Handle legacy single-source format
+      else {
+        return {
+          ...event,
+          writeKey: null,
+          sourceName: null,
+          sourceType: null
+        };
+      }
+    }));
+  };
+
+  // Handle editing an event in EventBuilder (load it for editing)
+  const handleEditEventInBuilder = (event) => {
+    try {
+      const eventPayload = JSON.parse(event.rawData);
+      const eventSpec = {
+        id: `edit-${event.id}`,
+        name: `Edit Event #${events.findIndex(e => e.id === event.id) + 1}`,
+        payload: eventPayload,
+        _editingEventId: event.id, // Store reference to original event
+        _editingEvent: event // Store full event object for source management
+      };
+      handleLoadEvent(eventSpec);
+    } catch (error) {
+      console.error('Failed to parse event for editing:', error);
+    }
+  };
+
+  // Handle adding a source to an event being edited
+  const handleAddSourceToEvent = (eventId, source) => {
+    setEvents(prevEvents => prevEvents.map(event => {
+      if (event.id !== eventId) return event;
+      
+      // Check if source already exists (avoid duplicates)
+      if (event.sources && event.sources.some(s => s.id === source.id)) {
+        return event; // Source already exists, don't add again
+      }
+      
+      // Handle events with new multi-source format
+      if (event.sources) {
+        const newSources = [...event.sources, source];
+        return {
+          ...event,
+          sources: newSources,
+          writeKeys: newSources.map(source => source.settings?.writeKey).filter(Boolean),
+          sourceNames: newSources.map(source => source.name).filter(Boolean),
+          sourceTypes: newSources.map(source => source.type).filter(Boolean),
+          // Update legacy fields to use first source
+          writeKey: newSources[0]?.settings?.writeKey || null,
+          sourceName: newSources[0]?.name || null,
+          sourceType: newSources[0]?.type || null
+        };
+      } 
+      // Handle legacy single-source format - convert to multi-source
+      else {
+        const newSources = [source];
+        // If there was already a legacy source, preserve it
+        if (event.writeKey || event.sourceName || event.sourceType) {
+          const legacySource = {
+            id: 'legacy',
+            name: event.sourceName,
+            type: event.sourceType,
+            settings: { writeKey: event.writeKey }
+          };
+          newSources.unshift(legacySource);
+        }
+        
+        return {
+          ...event,
+          sources: newSources,
+          writeKeys: newSources.map(source => source.settings?.writeKey).filter(Boolean),
+          sourceNames: newSources.map(source => source.name).filter(Boolean),
+          sourceTypes: newSources.map(source => source.type).filter(Boolean),
+          // Update legacy fields to use first source
+          writeKey: newSources[0]?.settings?.writeKey || null,
+          sourceName: newSources[0]?.name || null,
+          sourceType: newSources[0]?.type || null
+        };
+      }
+    }));
+  };
+
   // Handle checkpoint change in EventList
   const handleCheckpointChange = (checkpointIndex) => {
     setEventListCheckpoint(checkpointIndex);
@@ -520,6 +640,8 @@ function App() {
             onCheckpointChange={handleCheckpointChange}
             stopCheckpointIndex={eventListStopCheckpoint}
             onStopCheckpointChange={handleStopCheckpointChange}
+            onRemoveSourceFromEvent={handleRemoveSourceFromEvent}
+            onEditEventInBuilder={handleEditEventInBuilder}
           />
         </aside>
       )}
@@ -650,9 +772,7 @@ function App() {
                   onProfileApiResultsUpdate={handleProfileApiResultsUpdate}
                   onAddEventToList={handleSaveEvent}
                   onClearProfiles={() => {
-                    if (window.confirm('Clear all saved profile lookup results?')) {
-                      setProfileApiResults({});
-                    }
+                    setProfileApiResults({});
                   }}
                 />
               </section>
@@ -691,6 +811,7 @@ function App() {
               sourceConfigUpdateTrigger={sourceConfigUpdateTrigger}
               onCurrentUserUpdate={handleCurrentUserUpdateFromPayload}
               onCSVUploadStart={handleCSVUploadStart}
+              onAddSourceToEvent={handleAddSourceToEvent}
             />
           </div>
 

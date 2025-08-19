@@ -535,6 +535,7 @@
 
 /* Individual Event Items */
 .event-list__event {
+  position: relative;
   border: 1px solid #e5e7eb;
   border-radius: 2rem;
   padding: 20px;
@@ -556,6 +557,7 @@
   border-color: #3b82f6;
   background-color: #eff6ff;
   box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.1);
+  padding-right: 60px; /* Add extra padding when running flag is visible */
 }
 
 .event-list__event--expanded {
@@ -643,6 +645,70 @@
   font-weight: 500;
   letter-spacing: 0.025em;
   cursor: help;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.event-list__event-source--no-source {
+  background-color: #9ca3af;
+  color: #ffffff;
+}
+
+.event-list__source-remove {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.event-list__source-remove:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+.event-list__source-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.event-list__edit-event-button {
+  font-size: 11px;
+  background-color: #3b82f6;
+  color: #ffffff;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+}
+
+.event-list__edit-event-button:hover:not(:disabled) {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.event-list__edit-event-button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .event-list__event-status {
@@ -654,6 +720,34 @@
   font-weight: 600;
   letter-spacing: 0.025em;
   text-transform: uppercase;
+}
+
+/* Running flag positioned vertically on the right side */
+.event-list__running-flag {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40px;
+  background-color: #3b82f6;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top-right-radius: 2rem;
+  border-bottom-right-radius: 2rem;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.event-list__running-text {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  white-space: nowrap;
 }
 
 .event-list__event-controls {
@@ -1446,6 +1540,11 @@
 .dark-mode .event-list__order-label,
 .dark-mode .event-list__timeout-label {
   color: #F3F4F7; /* grey-50 */
+}
+
+/* Dark mode running flag */
+.dark-mode .event-list__running-flag {
+  background-color: #60a5fa; /* blue-400 for better contrast in dark mode */
 }
 
 /* Event drag and drop styles */

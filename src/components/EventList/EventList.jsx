@@ -13,7 +13,9 @@ const EventList = ({
   checkpointIndex: propCheckpointIndex = -1,
   onCheckpointChange,
   stopCheckpointIndex: propStopCheckpointIndex = -1,
-  onStopCheckpointChange
+  onStopCheckpointChange,
+  onRemoveSourceFromEvent,
+  onEditEventInBuilder
 }) => {
   // Editing state
   const [editingEventId, setEditingEventId] = useState(null);
@@ -572,6 +574,20 @@ const EventList = ({
     });
   };
 
+  // Handle removing a source from an event
+  const handleRemoveSourceFromEvent = (eventId, sourceIndex) => {
+    if (onRemoveSourceFromEvent) {
+      onRemoveSourceFromEvent(eventId, sourceIndex);
+    }
+  };
+
+  // Handle clicking on an event to edit it in EventBuilder
+  const handleEventClick = (event) => {
+    if (onEditEventInBuilder) {
+      onEditEventInBuilder(event);
+    }
+  };
+
   // Extract event type from event data
   const getEventType = (eventData) => {
     try {
@@ -807,6 +823,14 @@ const EventList = ({
                       cursor: !isRunning ? 'grab' : 'default'
                     }}
                   >
+                    {/* Running flag positioned as vertical flag on right side */}
+                    {currentEventIndex === index && (
+                      <div className="event-list__running-flag">
+                        <span className="event-list__running-text">
+                          Running...
+                        </span>
+                      </div>
+                    )}
                     <div 
                       className="event-list__event-header"
                       onClick={() => toggleEventExpansion(event.id)}
@@ -820,11 +844,6 @@ const EventList = ({
                           {eventName && eventType !== 'track' && (
                             <span className="event-list__event-name">
                               "{eventName}"
-                            </span>
-                          )}
-                          {currentEventIndex === index && (
-                            <span className="event-list__event-status">
-                              Running...
                             </span>
                           )}
                         </div>
@@ -868,16 +887,68 @@ const EventList = ({
                                   title={`WriteKey: ${source.settings?.writeKey || 'Not set'}`}
                                 >
                                   {getSourceIcon(source.type)} {source.name || source.type}
+                                  <button
+                                    className="event-list__source-remove"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemoveSourceFromEvent(event.id, sourceIndex);
+                                    }}
+                                    disabled={isRunning}
+                                    title="Remove this source from event"
+                                  >
+                                    ×
+                                  </button>
                                 </span>
                               ))
                             ) : (
                               <span className="event-list__event-source" title={`WriteKey: ${event.writeKey || 'Not set'}`}>
                                 {getSourceIcon(event.sourceType)} {event.sourceName || event.sourceType}
+                                <button
+                                  className="event-list__source-remove"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveSourceFromEvent(event.id, 0);
+                                  }}
+                                  disabled={isRunning}
+                                  title="Remove this source from event"
+                                >
+                                  ×
+                                </button>
                               </span>
                             )}
                           </div>
+                          <button
+                            className="event-list__edit-event-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEventClick(event);
+                            }}
+                            disabled={isRunning}
+                            title="Edit this event in Event Builder"
+                          >
+                            Edit
+                          </button>
                         </div>
-                      ) : null}
+                      ) : (
+                        <div className="event-list__event-line-two">
+                          <div className="event-list__event-sources">
+                            <span className="event-list__event-source event-list__event-source--no-source">
+                              No source configured
+                            </span>
+                          </div>
+                          <button
+                            className="event-list__edit-event-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEventClick(event);
+                            }}
+                            disabled={isRunning}
+                            title="Edit this event in Event Builder"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {isExpanded && (

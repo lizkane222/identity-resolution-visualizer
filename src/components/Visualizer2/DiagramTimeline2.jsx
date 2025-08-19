@@ -3,6 +3,20 @@ import DiagramNode2 from './DiagramNode2';
 import { IdentitySimulation } from '../../utils/identitySimulation.js';
 import './DiagramTimeline2.css';
 
+// Helper function to get source icon for different source types
+function getSourceIcon(sourceType) {
+  const iconMap = {
+    'javascript': 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iMiIgeT0iMiIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjRjdERjFFIiBzdHJva2U9IiNGRkNFMDAiIHN0cm9rZS13aWR0aD0iMiIvPgo8dGV4dCB4PSIxMiIgeT0iMTYiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMzMzMiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkpTPC90ZXh0Pgo8L3N2Zz4K',
+    'ios': 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iNCIgeT0iMiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjIwIiByeD0iMiIgZmlsbD0iIzMzNzNkYyIgc3Ryb2tlPSIjMjA1MmNjIiBzdHJva2Utd2lkdGg9IjIiLz4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxOC41IiByPSIxLjUiIGZpbGw9IndoaXRlIi8+CjxyZWN0IHg9IjciIHk9IjUiIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgZmlsbD0id2hpdGUiLz4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMCIgcj0iMiIgZmlsbD0iIzMzNzNkYyIvPgo8L3N2Zz4K',
+    'android': 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQgN0M0IDUuODk1NDMgNC44OTU0MyA1IDYgNUgxOEMxOS4xMDQ2IDUgMjAgNS44OTU0MyAyMCA3VjE3QzIwIDE4LjEwNDYgMTkuMTA0NiAxOSAxOCAxOUg2QzQuODk1NDMgMTkgNCAxOC4xMDQ2IDQgMTdWN1oiIGZpbGw9IiNhNGM2Mzl8MjBhIiBzdHJva2U9IiM2ODhjNGMiIHN0cm9rZS13aWR0aD0iMiIvPgo8Y2lyY2xlIGN4PSI4IiBjeT0iOSIgcj0iMS41IiBmaWxsPSJ3aGl0ZSIvPgo8Y2lyY2xlIGN4PSIxNiIgY3k9IjkiIHI9IjEuNSIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTkgMTNIMTUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+Cjwvc3ZnPgo=',
+    'server': 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3QgeD0iMiIgeT0iMyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjQiIHJ4PSIxIiBmaWxsPSIjNjM3M2RjIiBzdHJva2U9IiM0ZjU5YzciIHN0cm9rZS13aWR0aD0iMiIvPgo8cmVjdCB4PSIyIiB5PSIxMCIgd2lkdGg9IjIwIiBoZWlnaHQ9IjQiIHJ4PSIxIiBmaWxsPSIjNjM3M2RjIiBzdHJva2U9IiM0ZjU5YzciIHN0cm9rZS13aWR0aD0iMiIvPgo8cmVjdCB4PSIyIiB5PSIxNyIgd2lkdGg9IjIwIiBoZWlnaHQ9IjQiIHJ4PSIxIiBmaWxsPSIjNjM3M2RjIiBzdHJva2U9IiM0ZjU5YzciIHN0cm9rZS13aWR0aD0iMiIvPgo8Y2lyY2xlIGN4PSI2IiBjeT0iNSIgcj0iMSIgZmlsbD0id2hpdGUiLz4KPGNpcmNsZSBjeD0iNiIgY3k9IjEyIiByPSIxIiBmaWxsPSJ3aGl0ZSIvPgo8Y2lyY2xlIGN4PSI2IiBjeT0iMTkiIHI9IjEiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo=',
+    'web': 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIHN0cm9rZT0iIzMzNzNkYyIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Ik0yIDEySDE4IiBzdHJva2U9IiMzMzczZGMiIHN0cm9rZS13aWR0aD0iMiIvPgo8cGF0aCBkPSJNMTIgMkMxNCA2IDE0IDEwIDEyIDEyQzEwIDE0IDEwIDE4IDEyIDIyIiBzdHJva2U9IiMzMzczZGMiIHN0cm9rZS13aWR0aD0iMiIvPgo8L3N2Zz4K',
+    'unknown': 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIHN0cm9rZT0iIzk5OTk5OSIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Ik05IDlBMyAzIDAgMCAxIDE1IDlDMTUgMTEuNSAxMiAxMS41IDEyIDEzIiBzdHJva2U9IiM5OTk5OTkiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CjxjaXJjbGUgY3g9IjEyIiBjeT0iMTciIHI9IjEiIGZpbGw9IiM5OTk5OTkiLz4KPC9zdmc+Cg=='
+  };
+  
+  return iconMap[sourceType] || iconMap['unknown'];
+}
+
 // Helper function to generate comprehensive analysis
 function generateComprehensiveAnalysis(processedEvents, simulation) {
   const analysis = {
@@ -22,11 +36,16 @@ function generateComprehensiveAnalysis(processedEvents, simulation) {
     const eventType = event.eventData?.event || event.eventData?.type || 'Unknown';
     const timestamp = new Date(event.timestamp).toLocaleString();
     
-    // Extract identifiers for display
-    const identifiersList = Object.entries(event.identifiers).map(([key, identifier]) => 
-      `${key}: ${identifier.value || identifier}`
-    ).join(', ');
-
+    // Extract identifiers for display with more detail
+    const allIdentifiers = {};
+    Object.entries(event.identifiers).forEach(([key, identifier]) => {
+      allIdentifiers[key] = identifier.value || identifier;
+    });
+    
+    // Get source information
+    const sourceType = event.eventData?.source?.type || 'unknown';
+    const segmentId = event.eventData?.segment_id;
+    
     let profileAction = '';
     let profileId = '';
     
@@ -68,20 +87,32 @@ function generateComprehensiveAnalysis(processedEvents, simulation) {
       profileId = profileMap.get(baseProfileId) || 'Merged Profile';
       profileAction = `🔀 Merge Profiles → ${profileId}`;
     }
+    
+    // Create detailed expected action with segment info
+    let enhancedExpectedAction = profileAction;
+    if (segmentId) {
+      enhancedExpectedAction += ` | Segment: ${segmentId}`;
+    }
 
     const eventAnalysis = {
       eventNumber: eventNum,
       eventType,
       timestamp,
-      identifiers: identifiersList,
-      expectedAction: profileAction,
+      sourceType,
+      sourceIcon: getSourceIcon(sourceType),
+      identifiers: Object.entries(allIdentifiers).map(([key, value]) => `${key}: ${value}`).join(', '),
+      allIdentifiers, // Full object with all identifiers
+      segmentId,
+      expectedAction: enhancedExpectedAction,
       reason: action.reason,
       detailedReason: action.detailedReason,
       profileState: profileId,
       mergeDirection: action.mergeTarget || null,
       processingLog: action.processingLog || null,
       droppedIdentifiers: action.droppedIdentifiers || [],
-      conflictingIdentifiers: action.conflictingIdentifiers || []
+      conflictingIdentifiers: action.conflictingIdentifiers || [],
+      rawPayload: event.eventData, // Include full raw payload for JSON display
+      rawEvent: event // Include full event for debugging
     };
 
     analysis.eventSequence.push(eventAnalysis);
@@ -104,18 +135,49 @@ function generateComprehensiveAnalysis(processedEvents, simulation) {
   const totalProfiles = Array.from(new Set(profileMap.values())).length;
 
   analysis.keyInsights = [
-    `<div style="text-align: center; margin-bottom: 8px;"><img src="/assets/bar-graph_search.svg" width="32" height="32" alt="Chart" /></div><div>Total Events Processed: ${totalEvents}</div>`,
-    `<div style="text-align: center; margin-bottom: 8px;"><img src="/assets/User-plus.svg" width="32" height="32" alt="New Profile" /></div><div>New Profiles Created: ${createActions}</div>`,
-    `<div style="text-align: center; margin-bottom: 8px;"><img src="/assets/User-Checkmark.svg" width="32" height="32" alt="Addition" /></div><div>Addition Actions: ${addActions}</div>`,
-    `<div style="text-align: center; margin-bottom: 8px;"><img src="/assets/Unified-Profiles.svg" width="32" height="32" alt="Merge" /></div><div>Profile Merges: ${mergeActions}</div>`,
-    `<div style="text-align: center; margin-bottom: 8px;"><img src="/assets/User-Profile.svg" width="32" height="32" alt="Profile" /></div><div>Final Profile Count: ${totalProfiles}</div>`
+    `<div style="text-align: center; margin-bottom: 8px;"><img src="data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 72 72" aria-hidden="true" role="img"><rect x="9" y="9" width="8" height="45" fill="none" stroke="white" stroke-width="2"/><rect x="22" y="18" width="8" height="36" fill="none" stroke="white" stroke-width="2"/><rect x="35" y="25" width="8" height="29" fill="none" stroke="white" stroke-width="2"/><rect x="48" y="31" width="8" height="23" fill="none" stroke="white" stroke-width="2"/><circle cx="54.55" cy="15.69" r="9.95" fill="none" stroke="white" stroke-width="2"/><path d="M51 14l2 2 4-4" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`)}" width="32" height="32" alt="Chart" /></div><div>Total Events Processed: ${totalEvents}</div>`,
+    `<div style="text-align: center; margin-bottom: 8px;"><img src="data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 72 72" aria-hidden="true" role="img"><circle cx="28" cy="22" r="11" fill="none" stroke="white" stroke-width="2"/><ellipse cx="28" cy="48.5" rx="17" ry="11.5" fill="none" stroke="white" stroke-width="2"/><circle cx="54" cy="26" r="8" fill="none" stroke="white" stroke-width="2"/><path d="M52 23v6M49 26h6" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>`)}" width="32" height="32" alt="New Profile" /></div><div>New Profiles Created: ${createActions}</div>`,
+    `<div style="text-align: center; margin-bottom: 8px;"><img src="data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 73 72" aria-hidden="true" role="img"><circle cx="28.5" cy="22" r="11" fill="none" stroke="white" stroke-width="2"/><ellipse cx="28.5" cy="48.5" rx="17" ry="11.5" fill="none" stroke="white" stroke-width="2"/><circle cx="54.5" cy="26" r="8" fill="none" stroke="white" stroke-width="2"/><path d="M51 24l2 2 4-4" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`)}" width="32" height="32" alt="Additional Actions" /></div><div>Additional Actions: ${addActions}</div>`,
+    `<div style="text-align: center; margin-bottom: 8px;"><img src="data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 29.39 28.13"><circle cx="8.68" cy="6.23" r="5" fill="none" stroke="white" stroke-width="1.5"/><circle cx="18.31" cy="6.23" r="5" fill="none" stroke="white" stroke-width="1.5"/><rect x="6.45" y="14.06" width="14.06" height="11.19" rx="2.88" fill="none" stroke="white" stroke-width="1.5"/><path d="M10 18h8M10 20h6M10 22h8" stroke="white" stroke-width="1" stroke-linecap="round"/></svg>`)}" width="32" height="32" alt="Merge" /></div><div>Profile Merges: ${mergeActions}</div>`,
+    `<div style="text-align: center; margin-bottom: 8px;"><img src="data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 72 72" aria-hidden="true" role="img"><rect x="16" y="15" width="25" height="42" rx="4" fill="none" stroke="white" stroke-width="2"/><circle cx="28.5" cy="28" r="8" fill="none" stroke="white" stroke-width="2"/><rect x="22" y="42" width="13" height="8" rx="2" fill="none" stroke="white" stroke-width="1.5"/><rect x="47" y="20" width="13" height="3" fill="none" stroke="white" stroke-width="1"/><rect x="47" y="28" width="13" height="3" fill="none" stroke="white" stroke-width="1"/><rect x="47" y="36" width="9" height="3" fill="none" stroke="white" stroke-width="1"/><rect x="47" y="44" width="13" height="3" fill="none" stroke="white" stroke-width="1"/><rect x="47" y="52" width="13" height="3" fill="none" stroke="white" stroke-width="1"/></svg>`)}" width="32" height="32" alt="Profile" /></div><div>Final Profile Count: ${totalProfiles}</div>`
   ];
 
-  // Final state
+  // Final state with detailed profile information
+  const finalProfiles = Array.from(profileMap.entries()).map(([internalId, displayName]) => {
+    // Find events that contributed to this profile
+    const relatedEvents = processedEvents.filter(event => {
+      const action = event.simulationResult?.actionDetails || event.action;
+      const profileId = action.profileStats?.profileId;
+      return profileId === internalId || profileMap.get(profileId) === displayName;
+    });
+
+    return {
+      profileNumber: displayName,
+      internalId,
+      segmentId: null, // Will be populated if available
+      identifiers: {},
+      eventCount: relatedEvents.length,
+      events: relatedEvents.map(e => ({
+        eventNumber: processedEvents.indexOf(e) + 1,
+        eventType: e.eventData?.event || e.eventData?.type,
+        timestamp: e.timestamp,
+        identifiers: e.identifiers
+      }))
+    };
+  });
+
   analysis.finalState = {
     totalProfiles,
+    profiles: finalProfiles,
     profileMappings: Object.fromEntries(profileMap),
-    lastProcessedAt: new Date().toISOString()
+    lastProcessedAt: new Date().toISOString(),
+    processingStatistics: {
+      totalEvents: processedEvents.length,
+      createActions,
+      addActions,
+      mergeActions,
+      profilesMerged: mergeActions > 0 ? Object.keys(profileMap).length - totalProfiles : 0
+    }
   };
 
   // Prepare download data

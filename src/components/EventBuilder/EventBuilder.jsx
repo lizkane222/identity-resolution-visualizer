@@ -104,7 +104,7 @@ function processMessageIdForSegment(payload) {
 
 
 
-const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventInfoChange, userUpdateTrigger, sourceConfigUpdateTrigger, onCurrentUserUpdate, onCSVUploadStart }, ref) => {
+const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventInfoChange, userUpdateTrigger, sourceConfigUpdateTrigger, onCurrentUserUpdate, onCSVUploadStart, onAddSourceToEvent }, ref) => {
   const [rawText, setRawText] = useState('');
   const [formattedText, setFormattedText] = useState('');
   const [isValid, setIsValid] = useState(true);
@@ -153,6 +153,13 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
 
   // Handle source selection
   const handleSourceSelect = (source) => {
+    // If we're editing an existing event, add the source to that event
+    if (selectedEvent && selectedEvent._editingEventId && onAddSourceToEvent) {
+      onAddSourceToEvent(selectedEvent._editingEventId, source);
+      return;
+    }
+    
+    // Otherwise, handle normal source selection for new events
     // If the clicked source is already selected, deselect it
     if (selectedSource?.id === source.id) {
       setSelectedSource(null);
@@ -728,22 +735,32 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
         </h2>
         
         {/* Source status info */}
-        {configuredSources.length > 0 && selectedSource && (
+        {selectedEvent && selectedEvent._editingEventId ? (
           <div className="event-builder__source-status">
             <span className="event-builder__source-status-text">
-              {/* Events will be sent to:  */}
-              Events will be sent to: <strong>{selectedSource.name}</strong>
-              {/* Events will be sent to: <strong>{selectedSource.name}</strong> ({selectedSource.type}) */}
+              Editing Event #{selectedEvent._editingEventId} - Click sources below to add them to this event
             </span>
           </div>
-        )}
-        {configuredSources.length > 0 && !selectedSource && (
-          <div className="event-builder__source-status">
-            <span className="event-builder__source-status-text">
-              Events will be sent to: All configured sources listed below 
-              {/* Events will be sent to: <strong>All configured sources</strong> ({configuredSources.map(s => s.name).join(', ')}) */}
-            </span>
-          </div>
+        ) : (
+          <>
+            {configuredSources.length > 0 && selectedSource && (
+              <div className="event-builder__source-status">
+                <span className="event-builder__source-status-text">
+                  {/* Events will be sent to:  */}
+                  Events will be sent to: <strong>{selectedSource.name}</strong>
+                  {/* Events will be sent to: <strong>{selectedSource.name}</strong> ({selectedSource.type}) */}
+                </span>
+              </div>
+            )}
+            {configuredSources.length > 0 && !selectedSource && (
+              <div className="event-builder__source-status">
+                <span className="event-builder__source-status-text">
+                  Events will be sent to: All configured sources listed below 
+                  {/* Events will be sent to: <strong>All configured sources</strong> ({configuredSources.map(s => s.name).join(', ')}) */}
+                </span>
+              </div>
+            )}
+          </>
         )}
       </div>
       
@@ -761,7 +778,7 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
           {configuredSources.length > 0 && (
             <div className="event-builder__source-row">
               {/* Source selection indicator - bounces when payload exists but no source selected */}
-              {!selectedSource && rawText.trim() && configuredSources.length > 1 && (
+              {!selectedEvent?._editingEventId && !selectedSource && rawText.trim() && configuredSources.length > 1 && (
                 <div className="event-builder__select-source-indicator">
                   <span className="event-builder__select-source-text">
                     Select A Source
@@ -777,14 +794,19 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
                     key={source.id}
                     className={`event-builder__source-button ${
                       selectedSource?.id === source.id ? 'event-builder__source-button--active' : ''
+                    } ${
+                      selectedEvent?._editingEventId ? 'event-builder__source-button--add-mode' : ''
                     }`}
                     onClick={() => handleSourceSelect(source)}
-                    title={`WriteKey: ${source.settings.writeKey}`}
+                    title={selectedEvent?._editingEventId 
+                      ? `Add ${source.name} to event (WriteKey: ${source.settings.writeKey})`
+                      : `WriteKey: ${source.settings.writeKey}`
+                    }
                   >
-                    {source.name || source.type}
+                    {selectedEvent?._editingEventId ? '+ ' : ''}{source.name || source.type}
                   </button>
                 ))}
-                {selectedSource && (
+                {!selectedEvent?._editingEventId && selectedSource && (
                   <button
                     className="event-builder__source-button event-builder__source-button--clear"
                     onClick={() => setSelectedSource(null)}
