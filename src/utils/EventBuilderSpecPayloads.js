@@ -432,10 +432,10 @@ const getUserTraits = (currentUser) => {
   
   // Fallback defaults if no user data
   return Object.keys(traits).length > 0 ? traits : {
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    phone: "+1234567890",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
     age: 28,
     city: "San Francisco",
     state: "CA",
