@@ -58,10 +58,10 @@ function generateComprehensiveAnalysis(processedEvents, simulation) {
       const simProfileId = action.profileStats?.profileId || action.profiles?.[0]?.id;
       profileId = profileMap.get(simProfileId) || `Profile ${profileCounter}`;
       profileAction = `➕ Add Event to Existing Profile (${profileId})`;
-    } else if (action.type === 'add_identifier_to_existing') {
+    } else if (action.type === 'add_event_to_existing') {
       const simProfileId = action.profileStats?.profileId || action.profiles?.[0]?.id;
       profileId = profileMap.get(simProfileId) || `Profile ${profileCounter}`;
-      profileAction = `🔗 Add Identifier to Existing Profile (${profileId})`;
+      profileAction = `➕ Add Event to Existing Profile (${profileId})`;
     } else if (action.type === 'merge_profiles') {
       // For merges, we need to update the profile mapping
       const baseProfileId = action.profileStats?.profileId;
@@ -325,8 +325,8 @@ const convertSimulationResultToAction = (simulationResult, profileApiResults = {
         
         if (hasSharedAndNewIdentifiers && profilesWithSharedIdentifiers.size === 1 && targetProfile) {
           return {
-            type: 'add_identifier_to_existing',
-            reason: 'Adding new identifiers to existing profile (merge scenario)',
+            type: 'add_event_to_existing',
+            reason: 'Adding event to existing profile (merge scenario)',
             detailedReason: 'This event contains identifiers that already exist on a profile plus new identifiers that should be added to that same profile (merge scenario).',
             description: 'Event contains existing identifiers plus new identifiers - merging with existing profile',
             droppedIdentifiers: dropped || [],
@@ -346,22 +346,11 @@ const convertSimulationResultToAction = (simulationResult, profileApiResults = {
       break;
       
     case 'add':
-      // Trust the simulation's decision about whether this adds identifiers or just events
-      const addedIdentifiersLog = logs.find(log => log.includes('Added identifiers'));
-      
-      if (addedIdentifiersLog) {
-        // Simulation explicitly mentioned adding identifiers
-        actionType = 'add_identifier_to_existing';
-        reason = 'Adding new identifier to existing profile';
-        description = 'New identifier added to existing profile';
-        detailedReason = 'The simulation determined that new identifiers should be added to an existing profile.';
-      } else {
-        // Just adding event to existing profile
-        actionType = 'add_event_to_existing';
-        reason = 'Adding event to existing profile';
-        description = logs.length > 0 ? logs[logs.length - 1] : 'Event added to existing profile';
-        detailedReason = 'The simulation determined that this event should be added to an existing profile without new identifiers.';
-      }
+      // Consolidate both identifier and event addition into single action type
+      actionType = 'add_event_to_existing';
+      reason = 'Adding event to existing profile';
+      description = logs.length > 0 ? logs[logs.length - 1] : 'Event added to existing profile';
+      detailedReason = 'The simulation determined that this event should be added to an existing profile.';
       break;
       
     case 'merge':

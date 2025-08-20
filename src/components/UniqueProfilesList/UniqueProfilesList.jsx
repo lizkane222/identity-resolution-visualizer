@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import UniqueProfile from '../UniqueProfile/UniqueProfile.jsx';
+import { exportToCSV } from '../../utils/csvUtils.js';
 import './UniqueProfilesList.css';
 
 const UniqueProfilesList = ({ events, profileApiResults, onHighlightEvents, onAddEventToList }) => {
@@ -360,15 +361,105 @@ const UniqueProfilesList = ({ events, profileApiResults, onHighlightEvents, onAd
     });
   }, [uniqueProfiles, events]);
 
+  // Handle CSV export for profiles
+  const handleExportCSV = () => {
+    if (profilesWithEventIndices.length === 0) {
+      alert('No profile data to export');
+      return;
+    }
+
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const filename = `profile_api_lookups_${timestamp}.csv`;
+    
+    try {
+      // Transform profiles data into a flat structure suitable for CSV
+      const flattenedData = profilesWithEventIndices.map((profile, index) => {
+        const flatProfile = {
+          profile_index: index + 1,
+          profile_id: profile.id || '',
+          segment_id: profile.segmentId || '',
+          user_id: profile.userId || '',
+          lookup_identifier: profile.lookupIdentifier || '',
+          endpoints_queried: profile.endpoints ? profile.endpoints.join('; ') : '',
+          event_count: profile.eventCount || 0,
+          first_seen: profile.firstSeen || '',
+          last_seen: profile.lastSeen || '',
+          event_indices: profile.eventIndices ? profile.eventIndices.join('; ') : '',
+        };
+
+        // Add external IDs
+        if (profile.externalIds && profile.externalIds.length > 0) {
+          profile.externalIds.forEach((extId, idx) => {
+            flatProfile[`external_id_${idx + 1}_type`] = extId.type || '';
+            flatProfile[`external_id_${idx + 1}_id`] = extId.id || '';
+            flatProfile[`external_id_${idx + 1}_created_at`] = extId.created_at || '';
+          });
+        }
+
+        // Add traits with prefix
+        if (profile.traits) {
+          Object.entries(profile.traits).forEach(([key, value]) => {
+            flatProfile[`trait_${key}`] = typeof value === 'object' ? JSON.stringify(value) : value;
+          });
+        }
+
+        // Add metadata
+        if (profile.metadata) {
+          Object.entries(profile.metadata).forEach(([key, value]) => {
+            if (key !== 'metadata') { // Avoid nested metadata object
+              flatProfile[`metadata_${key}`] = typeof value === 'object' ? JSON.stringify(value) : value;
+            }
+          });
+          
+          // Add nested metadata fields
+          if (profile.metadata.metadata) {
+            Object.entries(profile.metadata.metadata).forEach(([key, value]) => {
+              flatProfile[`metadata_${key}`] = typeof value === 'object' ? JSON.stringify(value) : value;
+            });
+          }
+        }
+
+        // Add sample events data (first 3 events for overview)
+        if (profile.events && profile.events.length > 0) {
+          profile.events.slice(0, 3).forEach((event, idx) => {
+            flatProfile[`event_${idx + 1}_name`] = event.event || '';
+            flatProfile[`event_${idx + 1}_timestamp`] = event.timestamp || '';
+            flatProfile[`event_${idx + 1}_message_id`] = event.message_id || '';
+          });
+        }
+
+        return flatProfile;
+      });
+
+      exportToCSV(flattenedData, filename);
+      console.log(`Exported ${profilesWithEventIndices.length} profiles to ${filename}`);
+    } catch (error) {
+      console.error('Failed to export CSV:', error);
+      alert('Failed to export CSV file. Please try again.');
+    }
+  };
+
   return (
     <div className="unique-profiles-list">
       <div className="unique-profiles-list__header">
-        <h3 className="unique-profiles-list__title">
-          Profile API Lookups ({profilesWithEventIndices.length})
-        </h3>
-        <p className="unique-profiles-list__subtitle">
-          Profiles built from Profile API responses
-        </p>
+        <div className="unique-profiles-list__header-left">
+          <h3 className="unique-profiles-list__title">
+            Profile API Lookups ({profilesWithEventIndices.length})
+          </h3>
+          <p className="unique-profiles-list__subtitle">
+            Profiles built from Profile API responses
+          </p>
+        </div>
+        <div className="unique-profiles-list__header-right">
+          <button 
+            className="unique-profiles-list__export-btn"
+            onClick={handleExportCSV}
+            disabled={profilesWithEventIndices.length === 0}
+            title={profilesWithEventIndices.length === 0 ? "No profiles to export" : "Export profiles to CSV"}
+          >
+            📊 Export CSV
+          </button>
+        </div>
       </div>
       
       <div className="unique-profiles-list__content">

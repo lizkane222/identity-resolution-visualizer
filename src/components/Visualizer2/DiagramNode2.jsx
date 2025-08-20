@@ -36,7 +36,6 @@ const DiagramNode2 = ({
       case 'add':
       case 'add_to_existing':
       case 'add_event_to_existing':
-      case 'add_identifier_to_existing':
         return <img src="/assets/User-Checkmark.svg" alt="Add to Profile" className="diagram-node2__action-icon-svg" />;
       case 'merge':
       case 'merge_profiles':
@@ -56,7 +55,6 @@ const DiagramNode2 = ({
       case 'add':
       case 'add_to_existing':
       case 'add_event_to_existing':
-      case 'add_identifier_to_existing':
         return '#f3e5f5';
       case 'merge':
       case 'merge_profiles':
@@ -182,31 +180,17 @@ const DiagramNode2 = ({
 
         {/* Action Result */}
         {event.simulationResult.action === 'dual_action' ? (
-          // Handle dual actions
-          <div className="diagram-node2__dual-actions">
-            <div 
-              className="diagram-node2__action-card"
-              style={{ backgroundColor: getActionColor('add_identifier_to_existing') }}
-            >
-              <div className="diagram-node2__action-header">
-                <span className="diagram-node2__action-icon">{getActionIcon('add_identifier_to_existing')}</span>
-                <span className="diagram-node2__action-title">Add Identifier to Existing Profile</span>
-              </div>
-              <div className="diagram-node2__action-description">
-                {event.simulationResult.primaryAction?.description || 'New identifier added to existing profile'}
-              </div>
+          // Show single consolidated action for dual scenarios
+          <div 
+            className="diagram-node2__action-card"
+            style={{ backgroundColor: getActionColor('add_event_to_existing') }}
+          >
+            <div className="diagram-node2__action-header">
+              <span className="diagram-node2__action-icon">{getActionIcon('add_event_to_existing')}</span>
+              <span className="diagram-node2__action-title">Add Event to Existing Profile</span>
             </div>
-            <div 
-              className="diagram-node2__action-card"
-              style={{ backgroundColor: getActionColor('add_event_to_existing'), marginTop: '8px' }}
-            >
-              <div className="diagram-node2__action-header">
-                <span className="diagram-node2__action-icon">{getActionIcon('add_event_to_existing')}</span>
-                <span className="diagram-node2__action-title">Add Event to Existing Profile</span>
-              </div>
-              <div className="diagram-node2__action-description">
-                {event.simulationResult.secondaryAction?.description || 'Event added to existing profile'}
-              </div>
+            <div className="diagram-node2__action-description">
+              {event.simulationResult.primaryAction?.description || 'Event added to existing profile'}
             </div>
           </div>
         ) : (
@@ -220,7 +204,6 @@ const DiagramNode2 = ({
               <span className="diagram-node2__action-title">
                 {(event.simulationResult.action === 'create' || event.simulationResult.action === 'create_new') && 'Create New Profile'}
                 {(event.simulationResult.action === 'add' || event.simulationResult.action === 'add_to_existing' || event.simulationResult.action === 'add_event_to_existing') && 'Add Event to Existing Profile'}
-                {event.simulationResult.action === 'add_identifier_to_existing' && 'Add Identifier to Existing Profile'}
                 {(event.simulationResult.action === 'merge' || event.simulationResult.action === 'merge_profiles') && 'Merge Profiles'}
               </span>
             </div>

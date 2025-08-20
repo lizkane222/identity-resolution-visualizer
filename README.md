@@ -374,6 +374,30 @@ The repository now includes **automatic environment setup** for forked repositor
 - **CORS Errors**: Make sure both frontend and backend are running for API features
 - **Build Failures**: Clear node_modules and run `npm install` if experiencing dependency issues
 
+### Port Management & Conflicts
+
+**Problem**: Port conflicts when starting the application
+```bash
+# Quick port cleanup
+npm run stop                   # Use built-in stop commands
+
+# Manual port cleanup (if stop commands fail)
+lsof -ti:3000 | xargs kill     # Kill processes on port 3000
+lsof -ti:8888 | xargs kill     # Kill processes on port 8888
+```
+
+🛡️ **Future Prevention Tip**:
+
+Use a tool like `concurrently` with proper error handling, or check for running servers before starting new ones. You could also add a script like:
+
+```json
+"scripts": {
+  "kill-ports": "fuser -k 3000/tcp || true && fuser -k 8888/tcp || true"
+}
+```
+
+> 💡 **Pro Tip**: The `|| true` ensures the script doesn't fail if no processes are running on those ports, making it safe to run anytime.
+
 ### Support
 For issues and questions:
 1. Check the browser console for error messages
