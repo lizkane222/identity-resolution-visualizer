@@ -447,25 +447,52 @@ const SourceConfig = ({ isOpen, onClose, unifySpaceSlug }) => {
     }
   };
 
-  // Test connection to Segment API
-  const handleTestConnection = async () => {
+  // Test connection to Segment API for a specific source
+  const handleTestConnection = async (sourceId = null) => {
     setIsLoading(true);
     setMessage({ type: '', text: '' });
 
+    let writeKey;
+    let sourceName = 'configured source';
+
     try {
-      const writeKey = getStoredWriteKey();
-      if (!writeKey) {
-        setMessage({ 
-          type: 'error', 
-          text: 'No writeKey found. Please configure and save a writeKey first.' 
-        });
-        return;
+      if (sourceId) {
+        // Test specific source
+        const source = sources.find(s => s.id === sourceId);
+        if (!source) {
+          setMessage({ 
+            type: 'error', 
+            text: 'Source not found for testing.' 
+          });
+          return;
+        }
+
+        writeKey = source.settings?.writeKey;
+        sourceName = source.name;
+
+        if (!writeKey) {
+          setMessage({ 
+            type: 'error', 
+            text: `No writeKey configured for ${sourceName}. Please add a writeKey first.` 
+          });
+          return;
+        }
+      } else {
+        // Test general connection using stored writeKey
+        writeKey = getStoredWriteKey();
+        if (!writeKey) {
+          setMessage({ 
+            type: 'error', 
+            text: 'No writeKey found. Please configure and save a writeKey first.' 
+          });
+          return;
+        }
       }
 
       if (!validateWriteKey(writeKey)) {
         setMessage({ 
           type: 'error', 
-          text: 'Invalid writeKey format. Please check your writeKey configuration.' 
+          text: `Invalid writeKey format for ${sourceName}. Please check your writeKey configuration.` 
         });
         return;
       }
@@ -475,7 +502,8 @@ const SourceConfig = ({ isOpen, onClose, unifySpaceSlug }) => {
         userId: 'test-user-' + Date.now(),
         traits: {
           name: 'Test User',
-          email: 'test@example.com'
+          email: 'test@example.com',
+          source: sourceName
         }
       };
 
@@ -485,12 +513,12 @@ const SourceConfig = ({ isOpen, onClose, unifySpaceSlug }) => {
 
       setMessage({ 
         type: 'success', 
-        text: 'Connection test successful! Events can be sent to Segment.' 
+        text: `Connection test successful for ${sourceName}! Events can be sent to Segment.` 
       });
     } catch (error) {
       setMessage({ 
         type: 'error', 
-        text: 'Connection test failed: ' + error.message 
+        text: `Connection test failed for ${sourceName}: ` + error.message 
       });
     } finally {
       setIsLoading(false);
@@ -605,7 +633,19 @@ const SourceConfig = ({ isOpen, onClose, unifySpaceSlug }) => {
 
         {source.enabled && (
           <div className="source-config__card-settings">
-            <h5 className="source-config__settings-title">Configuration</h5>
+            <div className="source-config__settings-header">
+              <h5 className="source-config__settings-title">Configuration</h5>
+              {source.settings?.writeKey && (
+                <button
+                  onClick={() => handleTestConnection(source.id)}
+                  disabled={isLoading}
+                  className="source-config__test-button source-config__test-button--small"
+                  title={`Test connection for ${source.name}`}
+                >
+                  {isLoading ? 'Testing...' : 'Test Connection'}
+                </button>
+              )}
+            </div>
             <div className="source-config__settings-grid">
               {sourceType.settings.map(setting => (
                 <div key={setting.key} className="source-config__setting">
@@ -688,44 +728,43 @@ const SourceConfig = ({ isOpen, onClose, unifySpaceSlug }) => {
       <div className="source-config__modal">
         <div className="source-config__modal-header">
           <h2 className="source-config__title">Source Configuration</h2>
-          <button
-            onClick={handleClose}
-            className="source-config__close"
-            aria-label="Close"
-          >
-            ✕
-          </button>
+          <div className="source-config__header-actions">
+            <button 
+              onClick={handleSaveConfiguration}
+              disabled={isLoading}
+              className="source-config__save-button source-config__save-button--header"
+            >
+              {isLoading ? 'Saving...' : 'Save Configuration'}
+            </button>
+            <button
+              onClick={handleClose}
+              className="source-config__close"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         <div className="source-config__modal-content">
           <div className="source-config">
-
-
-
-
-
-            <div className="source-config__header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px', padding: '12px 24px', width: '100%', boxSizing: 'border-box' }}>
-              <p className="source-config__description" style={{ margin: 0, flex: 1, minWidth: 0, paddingLeft: '12px' }}>
+            <div className="source-config__header">
+              <p className="source-config__description">
                 Configure your Profile Sources and destinations to track events and send data to various platforms.
               </p>
-              {message.type === 'success' && message.text && (
-                <div className={`source-config__message source-config__message--${message.type}`} style={{ whiteSpace: 'nowrap', flexShrink: 1, paddingRight: '12px', minWidth: 0 }}>
-                  {message.text}
-                </div>
-              )}
             </div>
 
-      {message.type !== 'success' && message.text && (
-        <div className={`source-config__message source-config__message--${message.type}`}>
-          {message.text}
-        </div>
-      )}
+            {message.text && (
+              <div className={`source-config__message source-config__message--${message.type}`}>
+                {message.text}
+              </div>
+            )}
 
-      {autoSaving && (
-        <div className="source-config__message source-config__message--info">
-          Auto-saving configuration...
-        </div>
-      )}
+            {autoSaving && (
+              <div className="source-config__message source-config__message--info">
+                Auto-saving configuration...
+              </div>
+            )}
 
   {/* Tabs removed: Only sources are shown, so no tab UI needed */}
 
@@ -759,7 +798,14 @@ const SourceConfig = ({ isOpen, onClose, unifySpaceSlug }) => {
                 </p>
               </div>
               <div className="source-config__cards">
-                {sources.map(renderSourceCard)}
+                {sources
+                  .sort((a, b) => {
+                    // Sort enabled sources first, then by name
+                    if (a.enabled && !b.enabled) return -1;
+                    if (!a.enabled && b.enabled) return 1;
+                    return a.name.localeCompare(b.name);
+                  })
+                  .map(renderSourceCard)}
               </div>
               {sources.length === 0 && (
                 <div className="source-config__empty">
@@ -791,18 +837,11 @@ const SourceConfig = ({ isOpen, onClose, unifySpaceSlug }) => {
 
       <div className="source-config__actions">
         <button 
-          onClick={handleSaveConfiguration}
-          disabled={isLoading}
-          className="source-config__save-button"
-        >
-          {isLoading ? 'Saving...' : 'Save Configuration'}
-        </button>
-        <button 
-          onClick={handleTestConnection}
+          onClick={() => handleTestConnection()}
           disabled={isLoading}
           className="source-config__test-button"
         >
-          {isLoading ? 'Testing...' : 'Test Connection'}
+          {isLoading ? 'Testing...' : 'Test General Connection'}
         </button>
       </div>
           </div>

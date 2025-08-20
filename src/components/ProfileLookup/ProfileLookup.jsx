@@ -590,7 +590,7 @@ const ProfileLookup = ({
     return (
       <div className="profile-lookup profile-lookup--not-configured">
         <div className="profile-lookup__header">
-          <h3 className="profile-lookup__title">Profile Lookup</h3>
+          <h3 className="profile-lookup__title">Profile API Lookup</h3>
         </div>
         <div className="profile-lookup__not-configured">
           <p>Segment Profile API is not configured.</p>
@@ -604,8 +604,8 @@ const ProfileLookup = ({
     <div className="profile-lookup">
       <div className="profile-lookup__header">
         <h3 className="profile-lookup__title">
-          <img src="/assets/compass.svg" alt="Profile Lookup" className="profile-lookup__header-icon" />
-          Profile Lookup
+          <img src="/assets/compass.svg" alt="Profile API Lookup" className="profile-lookup__header-icon" />
+          Profile API Lookup
         </h3>
         <p className="profile-lookup__subtitle">
           Query Segment Profile API endpoints
@@ -863,7 +863,7 @@ const ProfileLookup = ({
                     <button 
                       onClick={onClearProfiles}
                       className="profile-lookup__clear-profiles-button"
-                      title="Clear all saved profile lookup results"
+                      title="Clear all saved profile api lookup results"
                     >
                       <img src="/assets/compass.svg" alt="Clear" className="profile-lookup__button-icon" />
                       Clear Profiles

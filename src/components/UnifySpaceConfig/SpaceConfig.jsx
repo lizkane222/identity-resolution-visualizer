@@ -440,7 +440,7 @@ const SpaceConfig = () => {
                     ))}
                   </div>
                   <p className="space-config__params-help">
-                    These parameters will be available when using the Profile Lookup tool
+                    These parameters will be available when using the Profile API Lookup tool
                   </p>
                 </div>
               )}

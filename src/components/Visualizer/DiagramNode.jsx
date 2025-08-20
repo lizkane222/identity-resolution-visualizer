@@ -92,7 +92,7 @@ const DiagramNode = ({ event, sequenceNumber, isLast, identifierOptions, positio
           </div>
         </div>
 
-        {/* Profile Lookup Results */}
+        {/* Profile API Lookup Results */}
         {event.action.profiles && event.action.profiles.length > 0 && (
           <div className="diagram-node__profiles-card">
             <h5>Matching Profiles Found</h5>

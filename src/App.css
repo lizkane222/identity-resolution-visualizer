@@ -494,7 +494,7 @@ body {
   gap: 0.75rem;
 }
 
-/* Profile Lookup Section */
+/* Profile API Lookup Section */
 .app__profile-lookup-section {
   margin: 24px 24px 0px 24px;
   animation: slideDown 0.3s ease-out;

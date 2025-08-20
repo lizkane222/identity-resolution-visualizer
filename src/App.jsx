@@ -731,7 +731,7 @@ function App() {
                   }
                 }}
                 className={`app__lookup-button ${showProfileLookup ? 'app__lookup-button--active' : ''}`}
-                title="Profile Lookup Tool"
+                title="Profile API Lookup Tool"
               >
                 <img src="/assets/compass.svg" alt="Compass" className="app__button-icon" />
                 Lookup

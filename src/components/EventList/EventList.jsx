@@ -57,6 +57,10 @@ const EventList = ({
       })
     : events;
 
+  // Timeout input state for better editing control
+  const [timeoutInputValue, setTimeoutInputValue] = useState('1000');
+  const [isTimeoutFocused, setIsTimeoutFocused] = useState(false);
+
   // Simulation state
   const [isRunning, setIsRunning] = useState(false);
   const [timeoutMs, setTimeoutMs] = useState(1000);
@@ -344,13 +348,50 @@ const EventList = ({
     return new Promise(resolve => setTimeout(resolve, ms));
   };
 
-  // Handle timeout input change
+  // Handle timeout input change with improved validation
   const handleTimeoutChange = (e) => {
-    const value = parseInt(e.target.value);
-    if (!isNaN(value) && value >= 100) {
-      setTimeoutMs(value);
+    const value = e.target.value;
+    // Allow any input while typing (including empty string or leading zeros)
+    setTimeoutInputValue(value);
+    
+    // Only update actual timeout if it's a valid number >= 100
+    const numValue = parseInt(value);
+    if (!isNaN(numValue) && numValue >= 100) {
+      setTimeoutMs(numValue);
     }
   };
+
+  // Handle timeout input focus
+  const handleTimeoutFocus = () => {
+    setIsTimeoutFocused(true);
+  };
+
+  // Handle timeout input blur with validation
+  const handleTimeoutBlur = () => {
+    setIsTimeoutFocused(false);
+    const numValue = parseInt(timeoutInputValue);
+    
+    // If invalid or zero, reset to default 1000ms
+    if (isNaN(numValue) || numValue <= 0) {
+      setTimeoutInputValue('1000');
+      setTimeoutMs(1000);
+    } else if (numValue < 100) {
+      // If less than minimum, set to minimum
+      setTimeoutInputValue('100');
+      setTimeoutMs(100);
+    } else {
+      // Valid value, ensure the display matches the actual value
+      setTimeoutInputValue(numValue.toString());
+      setTimeoutMs(numValue);
+    }
+  };
+
+  // Sync timeout display value when timeoutMs changes externally
+  useEffect(() => {
+    if (!isTimeoutFocused) {
+      setTimeoutInputValue(timeoutMs.toString());
+    }
+  }, [timeoutMs, isTimeoutFocused]);
 
   // Event drag handlers
   const handleEventDragStart = (e, eventId) => {
@@ -1127,9 +1168,11 @@ const EventList = ({
             type="number"
             min="100"
             max="10000"
-            step="100"
-            value={timeoutMs}
+            step="1000"
+            value={timeoutInputValue}
             onChange={handleTimeoutChange}
+            onFocus={handleTimeoutFocus}
+            onBlur={handleTimeoutBlur}
             disabled={isRunning}
             className="event-list__timeout-input"
           />

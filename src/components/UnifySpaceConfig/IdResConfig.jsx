@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useEffect, useImperativeHandle, forwardRef, useCallback, useRef } from 'react';
 import './IdResConfig.css';
 
 const IdResConfig = forwardRef((props, ref) => {
   const { unifySpaceSlug } = props;
+  const [showSaveSparkle, setShowSaveSparkle] = useState(false);
+  const saveTimeoutRef = useRef(null);
+  const sparkleTimeoutRef = useRef(null);
   const defaultIdentifiers = [
     { id: 'user_id', name: 'User ID', enabled: true, isCustom: false, limit: 1, frequency: 'Ever' },
     { id: 'email', name: 'Email', enabled: true, isCustom: false, limit: 3, frequency: 'Ever' },
@@ -48,11 +51,58 @@ const IdResConfig = forwardRef((props, ref) => {
     }
     return [];
   });
+  // Debounced save function with sparkle effect
+  const debouncedSave = useCallback(() => {
+    // Clear any existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Set new timeout for save
+    saveTimeoutRef.current = setTimeout(() => {
+      localStorage.setItem('idres_config_identifiers', JSON.stringify(identifiers));
+      localStorage.setItem('idres_config_deleted_identifiers', JSON.stringify(deletedIdentifiers));
+      
+      // Show sparkle effect
+      setShowSaveSparkle(true);
+      
+      // Clear sparkle effect after animation
+      if (sparkleTimeoutRef.current) {
+        clearTimeout(sparkleTimeoutRef.current);
+      }
+      sparkleTimeoutRef.current = setTimeout(() => {
+        setShowSaveSparkle(false);
+      }, 2000); // Show sparkle for 2 seconds
+      
+    }, 1000); // Debounce for 1 second
+  }, [identifiers, deletedIdentifiers]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      if (sparkleTimeoutRef.current) {
+        clearTimeout(sparkleTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Expose saveConfig method to parent
   useImperativeHandle(ref, () => ({
     saveConfig: () => {
       localStorage.setItem('idres_config_identifiers', JSON.stringify(identifiers));
       localStorage.setItem('idres_config_deleted_identifiers', JSON.stringify(deletedIdentifiers));
+      
+      // Show sparkle effect for manual saves too
+      setShowSaveSparkle(true);
+      if (sparkleTimeoutRef.current) {
+        clearTimeout(sparkleTimeoutRef.current);
+      }
+      sparkleTimeoutRef.current = setTimeout(() => {
+        setShowSaveSparkle(false);
+      }, 2000);
     }
   }), [identifiers, deletedIdentifiers]);
   const [newCustomId, setNewCustomId] = useState('');
@@ -165,6 +215,8 @@ const IdResConfig = forwardRef((props, ref) => {
     newIdentifiers.splice(targetIndex, 0, movedItem);
     setIdentifiers(newIdentifiers);
     setDraggedItem(null);
+    // Trigger debounced save when reordering
+    debouncedSave();
   };
 
   const toggleIdentifier = (index) => {
@@ -173,6 +225,8 @@ const IdResConfig = forwardRef((props, ref) => {
         i === index ? { ...item, enabled: !item.enabled } : item
       )
     );
+    // Trigger debounced save when toggling
+    debouncedSave();
   };
 
   const updateLimit = (index, newLimit) => {
@@ -181,6 +235,8 @@ const IdResConfig = forwardRef((props, ref) => {
         i === index ? { ...item, limit: Math.max(1, newLimit) } : item
       )
     );
+    // Trigger debounced save when limit changes
+    debouncedSave();
   };
 
   const updateFrequency = (index, newFrequency) => {
@@ -189,6 +245,8 @@ const IdResConfig = forwardRef((props, ref) => {
         i === index ? { ...item, frequency: newFrequency } : item
       )
     );
+    // Trigger debounced save when frequency changes
+    debouncedSave();
   };
 
   // Helper to normalize identifier: lowercase, snake_case, preserve dots
@@ -213,6 +271,8 @@ const IdResConfig = forwardRef((props, ref) => {
     };
     setIdentifiers(prev => [...prev, customId]);
     setNewCustomId('');
+    // Trigger debounced save when adding custom identifier
+    debouncedSave();
   };
 
   const removeIdentifier = (index) => {
@@ -231,6 +291,8 @@ const IdResConfig = forwardRef((props, ref) => {
       }
       return prev.filter((_, i) => i !== index);
     });
+    // Trigger debounced save when removing identifier
+    debouncedSave();
   };
 
   // Restore a deleted identifier from bubble
@@ -241,6 +303,8 @@ const IdResConfig = forwardRef((props, ref) => {
       return alreadyActive ? prev : [...prev, identifier];
     });
     setDeletedIdentifiers(dels => dels.filter(d => d.id !== identifier.id));
+    // Trigger debounced save when restoring identifier
+    debouncedSave();
   };
 
   // Restore default IDs, preserving current order and adding restored ones to the bottom
@@ -255,6 +319,8 @@ const IdResConfig = forwardRef((props, ref) => {
     });
     // Clear the deleted identifiers list since we're restoring all defaults
     setDeletedIdentifiers([]);
+    // Trigger debounced save when restoring defaults
+    debouncedSave();
   };
 
   const toggleExpanded = (identifierId) => {
@@ -268,26 +334,19 @@ const IdResConfig = forwardRef((props, ref) => {
     `Context traits: { "context": { "traits": { "${identifierName}": "value" }}}`
   ];
 
-  // Save identifiers to localStorage whenever they change (including Limit and Frequency changes)
-  useEffect(() => {
-    localStorage.setItem('idres_config_identifiers', JSON.stringify(identifiers));
-  }, [identifiers]);
-
-  // Save deleted identifiers to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('idres_config_deleted_identifiers', JSON.stringify(deletedIdentifiers));
-  }, [deletedIdentifiers]);
-
-  // Optionally, save on unmount (in case modal is closed by other means)
-  useEffect(() => {
-    return () => {
-      localStorage.setItem('idres_config_identifiers', JSON.stringify(identifiers));
-      localStorage.setItem('idres_config_deleted_identifiers', JSON.stringify(deletedIdentifiers));
-    };
-  }, [identifiers, deletedIdentifiers]);
-
   return (
     <div className="idres-config">
+      {/* Save Sparkle Effect */}
+      {showSaveSparkle && (
+        <div className="idres-config__save-indicator">
+          <div className="idres-config__sparkle-container">
+            <span className="idres-config__sparkle">✨</span>
+            <span className="idres-config__saved-text">Saved</span>
+            <span className="idres-config__sparkle">✨</span>
+          </div>
+        </div>
+      )}
+      
       <div className="idres-config__section">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <h3 className="idres-config__section-title" style={{ margin: 0 }}>

@@ -1,6 +1,84 @@
 .idres-config {
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+/* Save Sparkle Effect */
+.idres-config__save-indicator {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  animation: slideInFromRight 0.3s ease-out, fadeOut 0.5s ease-in 1.5s forwards;
+  pointer-events: none;
+}
+
+.idres-config__sparkle-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.idres-config__sparkle {
+  animation: sparkleRotate 1s ease-in-out infinite;
+  font-size: 16px;
+}
+
+.idres-config__sparkle:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.idres-config__sparkle:nth-child(3) {
+  animation-delay: 0.5s;
+}
+
+.idres-config__saved-text {
+  white-space: nowrap;
+}
+
+/* Keyframe Animations */
+@keyframes slideInFromRight {
+  0% {
+    transform: translateX(100px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes sparkleRotate {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-10deg) scale(1.1);
+  }
+  50% {
+    transform: rotate(10deg) scale(1.2);
+  }
+  75% {
+    transform: rotate(-5deg) scale(1.1);
+  }
 }
 
 .idres-config__section {
@@ -530,6 +608,14 @@
 }
 
 /* Dark mode support */
+/* Dark Mode - Save Sparkle Effect */
+.dark-mode .idres-config__sparkle-container {
+  background: linear-gradient(135deg, #059669, #047857);
+  color: #f9fafb;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+  border: 2px solid rgba(249, 250, 251, 0.2);
+}
+
 .dark-mode .idres-config__section {
   background: #1f2937;
   border-color: #374151;

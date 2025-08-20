@@ -29,7 +29,9 @@
     "stop-client": "pkill -f \"react-scripts start\"",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "setup": "node scripts/setup-env.js",
+    "postinstall": "node scripts/setup-env.js"
   },
   "eslintConfig": {
     "extends": [

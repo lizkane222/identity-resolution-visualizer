@@ -364,7 +364,7 @@ const UniqueProfilesList = ({ events, profileApiResults, onHighlightEvents, onAd
     <div className="unique-profiles-list">
       <div className="unique-profiles-list__header">
         <h3 className="unique-profiles-list__title">
-          Profile Lookups ({profilesWithEventIndices.length})
+          Profile API Lookups ({profilesWithEventIndices.length})
         </h3>
         <p className="unique-profiles-list__subtitle">
           Profiles built from Profile API responses
@@ -375,10 +375,10 @@ const UniqueProfilesList = ({ events, profileApiResults, onHighlightEvents, onAd
         {profilesWithEventIndices.length === 0 ? (
           <div className="unique-profiles-list__empty">
             <p className="unique-profiles-list__empty-message">
-              No profile lookups performed yet.
+              No profile API lookups performed yet.
             </p>
             <p className="unique-profiles-list__empty-subtitle">
-              Use the Profile Lookup tool to query the Segment Profile API.
+              Use the Profile API Lookup tool to query the Segment Profile API.
             </p>
           </div>
         ) : (

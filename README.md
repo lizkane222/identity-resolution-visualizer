@@ -23,7 +23,7 @@ A comprehensive React application for building, simulating, and analyzing event 
 - **Data Export**: JSON payload inspection and debugging tools
 
 ### 🔌 Segment Profile API Integration
-- **Profile Lookup Tool**: Query Segment Profile API endpoints directly from the UI
+- **Profile API Lookup Tool**: Query Segment Profile API endpoints directly from the UI
 - **Multi-endpoint Support**: Access traits, external_ids, events, metadata, and links
 - **Configuration Management**: Secure API credential storage and management
 - **Query Parameter Control**: Fine-tune API requests with filters and pagination
@@ -49,17 +49,20 @@ A comprehensive React application for building, simulating, and analyzing event 
    cd identity_resolution_visualizer
    ```
 
-2. **Install dependencies**
+2. **Install dependencies with automatic setup**
    ```bash
    npm install
    ```
+   
+   > 🎉 **NEW: Automatic Environment Setup**: 
+   > - The `.env` file is **automatically created** from `.env.example` during installation
+   > - **No manual file copying required** - the postinstall script handles everything
+   > - Perfect for **forked repositories** - eliminates setup friction for new contributors
+   > - Includes helpful next-steps guidance after environment file creation
 
 3. **Configure environment variables**
    
-   Create a `.env` file in the project root directory:
-   ```bash
-   cp .env.example .env  # If example exists, or create manually
-   ```
+   A `.env` file is automatically created during `npm install`. Open it and replace the placeholder values:
    
    **Required Environment Variables:**
    ```env
@@ -82,7 +85,33 @@ A comprehensive React application for building, simulating, and analyzing event 
    SEGMENT_INTEGRATIONS_CONFIG={"personas":true}
    ```
 
+   > 💡 **Manual Setup Options**: 
+   > - **Automatic**: Environment setup runs automatically during `npm install` (recommended)
+   > - **Manual Script**: Run `npm run setup` if you need to recreate the `.env` file
+   > - **Manual Copy**: Copy `.env.example` to `.env` manually if scripts fail
+
 ### Development
+
+#### 🆕 Installation & Setup Scripts
+
+**NEW: Automated Environment Setup**
+```bash
+# Automatic setup (runs during npm install)
+npm install                    # Automatically creates .env from .env.example
+
+# Manual environment setup
+npm run setup                  # Creates .env file with guided setup instructions
+
+# Setup verification
+ls -la .env                    # Verify .env file was created successfully
+```
+
+> 🎯 **What's New in Setup**:
+> - **Zero-friction installation**: No manual file copying required
+> - **Postinstall automation**: Environment file created automatically after `npm install`  
+> - **Fork-friendly**: Eliminates setup barriers for repository forks and new contributors
+> - **Guided setup**: Helpful next-steps provided after environment file creation
+> - **Error handling**: Robust setup script with clear success/failure messaging
 
 #### 🚀 Quick Start - Run Full Application
 ```bash
@@ -171,7 +200,7 @@ The application uses the following ports by default:
 1. Click the **⚙️ Config** button in the application header
 2. Enter your Segment Space ID and Access Token
 3. Click **Save Configuration** to enable Profile API features
-4. Use the **🔍 Lookup** button to access the Profile Lookup tool
+4. Use the **🔍 Lookup** button to access the Profile API Lookup tool
 
 #### Environment Management
 - Configuration is stored in a local `.env` file
@@ -186,7 +215,7 @@ The application uses the following ports by default:
 3. **Set User Context**: Configure user identity in the Current User section
 4. **Save Event**: Click "Save Event" to add to your simulation
 
-### Profile Lookups
+### Profile API Lookups
 1. **Configure API Access**: Set up your Segment credentials via the Config modal
 2. **Open Lookup Tool**: Click the 🔍 Lookup button in the header
 3. **Enter Identifier**: Format as `id_type:value` (e.g., `user_id:12345`)
@@ -263,6 +292,15 @@ server/
 - `npm test` - Run test suite  
 - `npm run eject` - Eject from Create React App (irreversible)
 
+#### 🆕 New Setup & Environment Scripts
+- **`npm run setup`** - Manually create `.env` file from `.env.example` with guided instructions
+- **`npm run postinstall`** - Automatic environment setup (runs after `npm install`)
+
+> 📦 **Package.json Updates**: 
+> - Added `"postinstall": "node scripts/setup-env.js"` for automatic setup
+> - Added `"setup": "node scripts/setup-env.js"` for manual environment configuration
+> - Created `scripts/setup-env.js` utility for robust environment file management
+
 ### Contributing
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/new-feature`)  
@@ -273,9 +311,66 @@ server/
 
 ## Troubleshooting
 
+### Environment File Issues
+
+**🆕 IMPROVED: Automatic Environment Setup**
+
+**Problem**: `.env` file wasn't created automatically
+```bash
+# NEW: Preferred solution - Use automated setup script
+npm run setup
+
+# Alternative: Re-run the postinstall script manually
+npm run postinstall
+
+# Fallback: Manual copy (if scripts fail)
+cp .env.example .env
+```
+
+**Problem**: Application fails to start with environment variable errors
+```bash
+# Step 1: Check if .env file exists
+ls -la .env
+
+# Step 2: If missing, use automated setup (NEW)
+npm run setup
+
+# Step 3: Verify .env file structure
+cat .env
+
+# Step 4: If still having issues, reinstall with automatic setup
+rm .env && npm install
+```
+
+**🎯 NEW: Forked Repository Setup**
+The repository now includes **automatic environment setup** for forked repositories:
+
+1. **Automatic Setup** (runs during `npm install`):
+   - ✅ Creates `.env` file from `.env.example` template
+   - ✅ Provides guided next-steps for credential configuration
+   - ✅ No manual file copying required
+
+2. **Manual Setup** (if automatic setup fails):
+   ```bash
+   npm run setup              # Run the setup script manually
+   ```
+
+3. **Verification Steps**:
+   ```bash
+   # Check if setup was successful
+   ls -la .env                # Should show .env file exists
+   head -5 .env              # Should show environment variables
+   ```
+
+**Problem**: Repository fork has missing environment configuration
+1. ✅ **Automatic**: Run `npm install` (environment setup is now automatic)
+2. ✅ **Manual backup**: If automatic setup fails, run `npm run setup`
+3. ✅ **Verification**: Check that `.env.example` exists and `.env` was created
+4. ✅ **Configuration**: Edit `.env` file with your actual Segment credentials
+
 ### Common Issues
 - **API Configuration**: Ensure valid Segment Space ID and Access Token
-- **Port Conflicts**: Default ports are 3000 (frontend) and 3001 (backend)
+- **Port Conflicts**: Default ports are 3000 (frontend) and 8888 (backend)
 - **CORS Errors**: Make sure both frontend and backend are running for API features
 - **Build Failures**: Clear node_modules and run `npm install` if experiencing dependency issues
 

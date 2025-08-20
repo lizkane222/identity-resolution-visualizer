@@ -895,7 +895,7 @@ html.dark .app__palette-selector {
   line-height: 1.3;
 }
 
-/* Profile Lookup Section */
+/* Profile API Lookup Section */
 .app__profile-lookup-section {
   margin: 24px 24px 24px 24px;
   animation: slideDown 0.3s ease-out;

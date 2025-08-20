@@ -718,7 +718,7 @@ const Visualizer2 = ({
     if (!profileApiResults || Object.keys(profileApiResults).length === 0) {
       return (
         <div className="visualizer2__empty-profiles">
-          <p>No profiles loaded yet. Use Profile Lookup to load profiles.</p>
+          <p>No profiles loaded yet. Use Profile API Lookup to load profiles.</p>
         </div>
       );
     }

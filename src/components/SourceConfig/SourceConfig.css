@@ -31,6 +31,7 @@
   border-radius: 6px;
   margin-bottom: 24px;
   font-weight: 500;
+  text-align: center;
 }
 
 .source-config__message--success {
@@ -469,6 +470,69 @@
   flex-shrink: 0;
 }
 
+.source-config__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.source-config__save-button--header {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: #2b5ce6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.source-config__save-button--header:hover {
+  background-color: #1e4fd6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(43, 92, 230, 0.2);
+}
+
+.source-config__save-button--header:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.source-config__settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.source-config__test-button--small {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.source-config__test-button--small:hover {
+  background-color: #218838;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+}
+
+.source-config__test-button--small:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .source-config__close {
   background: none;
   border: none;
@@ -724,4 +788,36 @@
 .dark-mode .source-config__close:hover {
   background: rgba(77, 87, 119, 0.3); /* grey-600 with opacity */
   color: #F3F4F7; /* grey-50 */
+}
+
+/* Dark Mode - Header Actions */
+.dark-mode .source-config__save-button--header {
+  background-color: #1866EE; /* blue-500 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .source-config__save-button--header:hover {
+  background-color: rgba(24, 102, 238, 0.9); /* blue-500 with opacity */
+  box-shadow: 0 2px 8px rgba(24, 102, 238, 0.3);
+}
+
+.dark-mode .source-config__save-button--header:disabled {
+  background-color: rgba(77, 87, 119, 0.5); /* grey-600 with opacity */
+  color: rgba(243, 244, 247, 0.6); /* grey-50 with opacity */
+}
+
+/* Dark Mode - Individual Test Buttons */
+.dark-mode .source-config__test-button--small {
+  background-color: #1866EE; /* blue-500 */
+  color: #F3F4F7; /* grey-50 */
+}
+
+.dark-mode .source-config__test-button--small:hover {
+  background-color: rgba(24, 102, 238, 0.9); /* blue-500 with opacity */
+  box-shadow: 0 2px 4px rgba(24, 102, 238, 0.3);
+}
+
+.dark-mode .source-config__test-button--small:disabled {
+  background-color: rgba(77, 87, 119, 0.5); /* grey-600 with opacity */
+  color: rgba(243, 244, 247, 0.6); /* grey-50 with opacity */
 }
