@@ -111,6 +111,9 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
   const [errorMessage, setErrorMessage] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
   const [selectedSource, setSelectedSource] = useState(null);
+  const [selectedSources, setSelectedSources] = useState([]); // New: for multiple source selection
+  const [allSourcesSelected, setAllSourcesSelected] = useState(false); // New: for "All Sources" state
+  const [showSourceValidationError, setShowSourceValidationError] = useState(false); // New: for validation error border
   const [configuredSources, setConfiguredSources] = useState([]);
   const [lastUpdatedFrom, setLastUpdatedFrom] = useState('raw'); // Track which field was last updated
   const [showFormattedBorder, setShowFormattedBorder] = useState(false); // Track when to show blue border
@@ -159,14 +162,20 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
       return;
     }
     
-    // Otherwise, handle normal source selection for new events
-    // If the clicked source is already selected, deselect it
-    if (selectedSource?.id === source.id) {
-      setSelectedSource(null);
+    // Otherwise, handle normal source selection for new events with multiple source support
+    if (allSourcesSelected) {
+      setAllSourcesSelected(false);
+      setSelectedSources([source]);
     } else {
-      // Otherwise, select the new source
-      setSelectedSource(source);
+      const isAlreadySelected = selectedSources.find(s => s.id === source.id);
+      if (isAlreadySelected) {
+        setSelectedSources(prev => prev.filter(s => s.id !== source.id));
+      } else {
+        setSelectedSources(prev => [...prev, source]);
+      }
     }
+    setSelectedSource(source); // Keep legacy single source for backward compatibility
+    setShowSourceValidationError(false); // Clear validation error when user selects source
   };
 
   // Load selected event when it changes
@@ -497,6 +506,26 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
     }
   };
 
+  // Handle "All Sources" selection
+  const handleAllSourcesSelect = () => {
+    setAllSourcesSelected(!allSourcesSelected);
+    setSelectedSources(allSourcesSelected ? [] : configuredSources);
+    setSelectedSource(null);
+    setShowSourceValidationError(false); // Clear validation error when user selects source
+  };
+
+  // Clear all source selections
+  const handleClearSources = () => {
+    setSelectedSources([]);
+    setSelectedSource(null);
+    setAllSourcesSelected(false);
+  };
+
+  // Check if user has selected any sources
+  const hasSelectedSources = () => {
+    return allSourcesSelected || selectedSources.length > 0 || selectedSource;
+  };
+
   // Clear event content
   const handleClear = () => {
     setRawText('');
@@ -528,6 +557,19 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
       return;
     }
 
+    // Check if user has selected any sources (required)
+    if (configuredSources.length > 0 && !hasSelectedSources()) {
+      setShowSourceValidationError(true);
+      alert('Please select at least one source or "All Sources" before saving your event.');
+      
+      // Auto-hide the error after 3 seconds
+      setTimeout(() => {
+        setShowSourceValidationError(false);
+      }, 3000);
+      
+      return;
+    }
+
     const validation = validateJSON(dataToSave);
     if (!validation.isValid) {
       alert('Please fix JSON errors before saving:\n' + validation.error);
@@ -539,37 +581,47 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
     const processedDataString = JSON.stringify(processedPayload);
     const formattedProcessedData = formatAsJSON(processedDataString);
 
-    // If no source is selected, save one event with all configured sources
-    // If a source is selected, save event for that source only
-    if (!selectedSource && configuredSources.length > 0) {
-      // Create a single event with all configured sources
+    // Determine which sources to use based on selection
+    let sourcesToUse = [];
+    if (allSourcesSelected) {
+      sourcesToUse = configuredSources;
+    } else if (selectedSources.length > 0) {
+      sourcesToUse = selectedSources;
+    } else if (selectedSource) {
+      sourcesToUse = [selectedSource];
+    } else if (configuredSources.length > 0) {
+      // Fallback to all sources if somehow we get here
+      sourcesToUse = configuredSources;
+    }
+
+    if (sourcesToUse.length > 0) {
+      // Create a single event with the selected sources
       const eventData = {
         id: Date.now() + Math.random(),
         timestamp: new Date().toISOString(),
         rawData: processedDataString,
         formattedData: formattedProcessedData,
         // Store all sources in arrays for multi-source support
-        writeKeys: configuredSources.map(source => source.settings?.writeKey).filter(Boolean),
-        sourceNames: configuredSources.map(source => source.name).filter(Boolean),
-        sourceTypes: configuredSources.map(source => source.type).filter(Boolean),
-        sources: configuredSources, // Store full source objects for reference
+        writeKeys: sourcesToUse.map(source => source.settings?.writeKey).filter(Boolean),
+        sourceNames: sourcesToUse.map(source => source.name).filter(Boolean),
+        sourceTypes: sourcesToUse.map(source => source.type).filter(Boolean),
+        sources: sourcesToUse, // Store full source objects for reference
         // Legacy single-source fields for backward compatibility (use first source)
-        writeKey: configuredSources[0]?.settings?.writeKey || null,
-        sourceName: configuredSources[0]?.name || null,
-        sourceType: configuredSources[0]?.type || null
+        writeKey: sourcesToUse[0]?.settings?.writeKey || null,
+        sourceName: sourcesToUse[0]?.name || null,
+        sourceType: sourcesToUse[0]?.type || null
       };
       onSave(eventData);
     } else {
-      // Create a single event for the selected source or null if no sources configured
-      const sourceToUse = selectedSource || null;
+      // Fallback case - should not reach here with validation
       const eventData = {
         id: Date.now() + Math.random(),
         timestamp: new Date().toISOString(),
         rawData: processedDataString,
         formattedData: formattedProcessedData,
-        writeKey: sourceToUse?.settings?.writeKey || null,
-        sourceName: sourceToUse?.name || null,
-        sourceType: sourceToUse?.type || null
+        writeKey: null,
+        sourceName: null,
+        sourceType: null
       };
       onSave(eventData);
     }
@@ -593,7 +645,7 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
-  }, [formattedText, rawText, onSave, selectedSource, configuredSources]);
+  }, [formattedText, rawText, onSave, selectedSource, selectedSources, allSourcesSelected, configuredSources, hasSelectedSources]);
 
   // Format display text for the textarea
   // const displayText = rawText ? formatAsJSON(rawText) : '';
@@ -776,12 +828,12 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
           
           {/* Source selection row */}
           {configuredSources.length > 0 && (
-            <div className="event-builder__source-row">
-              {/* Source selection indicator - bounces when payload exists but no source selected */}
-              {!selectedEvent?._editingEventId && !selectedSource && rawText.trim() && configuredSources.length > 1 && (
+            <div className={`event-builder__source-row ${showSourceValidationError ? 'event-builder__source-row--error' : ''}`}>
+              {/* Source selection indicator - shows when no sources selected */}
+              {!selectedEvent?._editingEventId && !hasSelectedSources() && (
                 <div className="event-builder__select-source-indicator">
                   <span className="event-builder__select-source-text">
-                    Select A Source
+                    Select Sources
                   </span>
                   <span className="event-builder__select-source-arrow">→</span>
                 </div>
@@ -789,11 +841,25 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
               
               {/* Source selection buttons */}
               <div className="event-builder__source-buttons">
+                {/* All Sources button */}
+                {!selectedEvent?._editingEventId && (
+                  <button
+                    className={`event-builder__source-button event-builder__source-button--all ${
+                      allSourcesSelected ? 'event-builder__source-button--active' : ''
+                    }`}
+                    onClick={handleAllSourcesSelect}
+                    title="Send events to all configured sources"
+                  >
+                    {allSourcesSelected ? '✓ ' : ''}All Sources
+                  </button>
+                )}
+                
+                {/* Individual source buttons */}
                 {configuredSources.map((source) => (
                   <button
                     key={source.id}
                     className={`event-builder__source-button ${
-                      selectedSource?.id === source.id ? 'event-builder__source-button--active' : ''
+                      selectedSources.find(s => s.id === source.id) ? 'event-builder__source-button--active' : ''
                     } ${
                       selectedEvent?._editingEventId ? 'event-builder__source-button--add-mode' : ''
                     }`}
@@ -803,16 +869,18 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
                       : `WriteKey: ${source.settings.writeKey}`
                     }
                   >
-                    {selectedEvent?._editingEventId ? '+ ' : ''}{source.name || source.type}
+                    {selectedEvent?._editingEventId ? '+ ' : selectedSources.find(s => s.id === source.id) ? '✓ ' : ''}{source.name || source.type}
                   </button>
                 ))}
-                {!selectedEvent?._editingEventId && selectedSource && (
+                
+                {/* Clear button */}
+                {!selectedEvent?._editingEventId && (hasSelectedSources()) && (
                   <button
                     className="event-builder__source-button event-builder__source-button--clear"
-                    onClick={() => setSelectedSource(null)}
-                    title="Clear source selection - events will be sent to all configured sources"
+                    onClick={handleClearSources}
+                    title="Clear all source selections"
                   >
-                    Clear
+                    Clear All
                   </button>
                 )}
               </div>

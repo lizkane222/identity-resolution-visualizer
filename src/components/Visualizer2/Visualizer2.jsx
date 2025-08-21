@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DiagramTimeline2 from './DiagramTimeline2.jsx';
+import { exportVisualizerAsImage } from '../../utils/imageExport.js';
 import './Visualizer2.css';
 import '../Visualizer/AnalysisSidebar.css';
 import '../Visualizer/Visualizer.css';
@@ -925,6 +926,25 @@ const Visualizer2 = ({
                 <div className="visualizer2__stat">
                   <span className="visualizer2__stat-label">Identifiers:</span>
                   <span className="visualizer2__stat-value">{idResConfig.length}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Image Export Section */}
+            <div className="visualizer2__config-section">
+              <div className="visualizer__analysis-header">
+                <h4>Export <br/>Visualizer <br/>as Image</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginLeft: 'auto' }}>
+                  <button
+                    className="visualizer__download-button"
+                    onClick={() => exportVisualizerAsImage('visualizer-timeline', 'identity-resolution-visualizer')}
+                    disabled={events.length === 0}
+                    title={events.length === 0 ? "Add events to export" : "Export as standard resolution image"}
+                    style={{ padding: '6px 12px', fontSize: '11px', minWidth: '100px' }}
+                  >
+                    <img src="/assets/Download_symbol.svg" width="12" height="12" style={{verticalAlign: 'middle', marginRight: '4px', filter: 'brightness(0) invert(1)'}} alt="Export" />
+                    Export PNG
+                  </button>
                 </div>
               </div>
             </div>

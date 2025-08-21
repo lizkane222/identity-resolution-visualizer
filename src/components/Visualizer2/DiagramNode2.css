@@ -317,6 +317,7 @@
 .diagram-node2__action-card,
 .diagram-node2__logic-card,
 .diagram-node2__dropped-card,
+.diagram-node2__added-card,
 .diagram-node2__profile-target-card {
   background: white;
   border: 2px solid #e0e0e0;
@@ -400,15 +401,93 @@
   border: 1px solid #f44336;
 }
 
+.diagram-node2__dropped-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
 .diagram-node2__dropped-name {
   font-weight: 600;
   color: #d32f2f;
   font-size: 11px;
+  flex: 1;
+}
+
+.diagram-node2__dropped-priority {
+  font-weight: 500;
+  color: #d32f2f;
+  font-size: 10px;
+  white-space: nowrap;
 }
 
 .diagram-node2__dropped-reason {
   color: #666;
   font-size: 10px;
+  margin-left: 2px;
+}
+
+/* Added Identifiers Section */
+.diagram-node2__added-card {
+  border-color: #4caf50;
+  background: #f9fff9;
+}
+
+.diagram-node2__added-card h5 {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4caf50;
+}
+
+.diagram-node2__added-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.diagram-node2__added-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  background: #e8f5e8;
+  border-radius: 6px;
+  border: 1px solid #4caf50;
+}
+
+.diagram-node2__added-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.diagram-node2__added-name {
+  font-weight: 600;
+  color: #2e7d32;
+  font-size: 12px;
+  flex: 1;
+}
+
+.diagram-node2__added-priority {
+  font-weight: 500;
+  color: #2e7d32;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.diagram-node2__added-reason {
+  color: #666;
+  font-size: 10px;
+  margin-left: 2px;
+}
+
+.diagram-node2__added-reason {
+  font-size: 11px;
+  color: #1b5e20;
+  line-height: 1.3;
 }
 
 /* Logic Card */
@@ -489,6 +568,7 @@
 .dark-mode .diagram-node2__action-card,
 .dark-mode .diagram-node2__logic-card,
 .dark-mode .diagram-node2__dropped-card,
+.dark-mode .diagram-node2__added-card,
 .dark-mode .diagram-node2__profile-target-card,
 .dark-mode .diagram-node2__payload-card {
   background: #1f2937;
@@ -521,6 +601,15 @@
 
 .dark-mode .diagram-node2__dropped-card h5 {
   color: #f87171;
+}
+
+.dark-mode .diagram-node2__added-card {
+  background: #1a2e1a;
+  border-color: #4caf50;
+}
+
+.dark-mode .diagram-node2__added-card h5 {
+  color: #81c784;
 }
 
 .dark-mode .diagram-node2__identifier-chip {
@@ -631,6 +720,7 @@
 .twilio-mode .diagram-node2__action-card,
 .twilio-mode .diagram-node2__logic-card,
 .twilio-mode .diagram-node2__dropped-card,
+.twilio-mode .diagram-node2__added-card,
 .twilio-mode .diagram-node2__profile-target-card,
 .twilio-mode .diagram-node2__payload-card {
   background: #0f172a;
@@ -728,12 +818,22 @@
   color: #dc2626;
 }
 
+.twilio-mode .diagram-node2__added-card {
+  background: #1e293b;
+  border-color: #4caf50;
+}
+
+.twilio-mode .diagram-node2__added-card h5 {
+  color: #4caf50;
+}
+
 .twilio-mode .diagram-node2__event-time,
 .twilio-mode .diagram-node2__profile-meta,
 .twilio-mode .diagram-node2__node-label,
 .twilio-mode .diagram-node2__action-description,
 .twilio-mode .diagram-node2__step-text,
-.twilio-mode .diagram-node2__dropped-reason {
+.twilio-mode .diagram-node2__dropped-reason,
+.twilio-mode .diagram-node2__added-reason {
   color: #94a3b8;
 }
 
@@ -758,6 +858,7 @@
   .diagram-node2__action-card,
   .diagram-node2__logic-card,
   .diagram-node2__dropped-card,
+  .diagram-node2__added-card,
   .diagram-node2__profile-target-card {
     width: 230px;
     padding: 12px;

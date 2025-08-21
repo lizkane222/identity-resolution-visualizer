@@ -638,7 +638,7 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
   }
 
   return (
-    <div className="diagram-timeline2">
+    <div className="diagram-timeline2" id="visualizer-timeline">
       <div 
         className={`diagram-timeline2__timeline-container ${expandedNodes.size > 0 ? 'diagram-timeline2__timeline-container--expanded' : ''}`}
         style={{
@@ -890,6 +890,7 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                   position={index}
                   totalEvents={processedEvents.length}
                   simulation={simulation}
+                  previousEvents={processedEvents.slice(0, index)}
                   hoveredProfileId={hoveredProfileId}
                   onEventHover={(profileId) => {
                     setHoveredEventProfileId(profileId);

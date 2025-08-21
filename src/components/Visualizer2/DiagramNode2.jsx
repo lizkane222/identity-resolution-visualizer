@@ -9,6 +9,7 @@ const DiagramNode2 = ({
   position, 
   totalEvents, 
   simulation,
+  previousEvents,
   hoveredProfileId,
   onEventHover,
   onEventHoverLeave,
@@ -96,6 +97,71 @@ const DiagramNode2 = ({
   };
 
   const identifierDetails = getIdentifierDetails();
+
+  // Get new identifiers for this event
+  const getNewIdentifiers = () => {
+    const newIdentifiers = [];
+    const currentAction = event.simulationResult.action;
+    
+    // For create actions, all identifiers are new
+    if (currentAction === 'create' || currentAction === 'create_new') {
+      Object.entries(event.identifiers).forEach(([key, value]) => {
+        // Skip dropped identifiers
+        if (!event.simulationResult.dropped.includes(key)) {
+          const optionConfig = identifierOptions.find(opt => opt.value === key);
+          newIdentifiers.push({
+            key,
+            value,
+            label: optionConfig?.label || key,
+            priority: optionConfig ? identifierOptions.indexOf(optionConfig) + 1 : 999,
+            reason: 'New identifier for new profile'
+          });
+        }
+      });
+    } 
+    // For add/merge actions, check against previous events
+    else if (currentAction === 'add' || currentAction === 'add_event_to_existing' || currentAction === 'merge' || currentAction === 'merge_profiles') {
+      const targetProfileId = event.simulationResult.profile?.id;
+      
+      // Get all identifiers that existed on the target profile before this event
+      const existingIdentifiers = new Set();
+      
+      // Look through all previous events to find what identifiers were already on this profile
+      if (previousEvents && targetProfileId) {
+        previousEvents.forEach(prevEvent => {
+          if (prevEvent.simulationResult?.profile?.id === targetProfileId || 
+              (prevEvent.simulationResult?.action === 'create' && prevEvent.simulationResult?.profile?.id === targetProfileId)) {
+            Object.keys(prevEvent.identifiers || {}).forEach(key => {
+              if (!prevEvent.simulationResult?.dropped?.includes(key)) {
+                existingIdentifiers.add(key);
+              }
+            });
+          }
+        });
+      }
+      
+      // Check current event identifiers against existing ones
+      Object.entries(event.identifiers).forEach(([key, value]) => {
+        // Skip dropped identifiers
+        if (!event.simulationResult.dropped.includes(key) && !existingIdentifiers.has(key)) {
+          const optionConfig = identifierOptions.find(opt => opt.value === key);
+          newIdentifiers.push({
+            key,
+            value,
+            label: optionConfig?.label || key,
+            priority: optionConfig ? identifierOptions.indexOf(optionConfig) + 1 : 999,
+            reason: currentAction === 'merge' || currentAction === 'merge_profiles' 
+              ? 'Added from merge' 
+              : 'New identifier for profile'
+          });
+        }
+      });
+    }
+    
+    return newIdentifiers.sort((a, b) => a.priority - b.priority);
+  };
+
+  const newIdentifiers = getNewIdentifiers();
 
   // Check if this node should be highlighted based on profile hover
   const isProfileHighlighted = hoveredProfileId && 
@@ -231,11 +297,45 @@ const DiagramNode2 = ({
                 const identifierDetail = identifierDetails.find(id => id.key === droppedKey);
                 return (
                   <div key={droppedKey} className="diagram-node2__dropped-item">
-                    <span className="diagram-node2__dropped-name">
-                      {identifierDetail?.label || droppedKey}
-                    </span>
+                    <div className="diagram-node2__dropped-header">
+                      <span className="diagram-node2__dropped-name">
+                        {identifierDetail?.label || droppedKey}
+                      </span>
+                      <span className="diagram-node2__dropped-priority">
+                        Priority {identifierDetail?.priority || 'Unknown'}
+                      </span>
+                    </div>
                     <span className="diagram-node2__dropped-reason">
-                      Priority {identifierDetail?.priority || 'Unknown'} - Dropped due to conflict
+                      Dropped due to conflict
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Added Identifiers Section */}
+        {newIdentifiers.length > 0 && (
+          <div className="diagram-node2__added-card">
+            <h5>
+              <img src="/assets/User-plus.svg" alt="Plus" className="diagram-node2__header-icon" />
+              Added Identifiers
+            </h5>
+            <div className="diagram-node2__added-items">
+              {newIdentifiers.map((newIdentifier) => {
+                return (
+                  <div key={newIdentifier.key} className="diagram-node2__added-item">
+                    <div className="diagram-node2__added-header">
+                      <span className="diagram-node2__added-name">
+                        {newIdentifier.label}
+                      </span>
+                      <span className="diagram-node2__added-priority">
+                        Priority {newIdentifier.priority}
+                      </span>
+                    </div>
+                    <span className="diagram-node2__added-reason">
+                      {newIdentifier.reason}
                     </span>
                   </div>
                 );
