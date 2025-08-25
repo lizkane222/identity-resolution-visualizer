@@ -510,7 +510,12 @@ const Visualizer2 = ({
             <h2 class="section-title">🔍 Key Insights</h2>
             <div class="insights-list">
                 ${analysisData.keyInsights.map(insight => `
-                    <div class="insight-item">${insight}</div>
+                    <div class="insight-item">
+                        <div style="text-align: center; margin-bottom: 8px;">
+                            <img src="${insight.icon}" width="32" height="32" alt="${insight.label}" />
+                        </div>
+                        <div>${insight.label}: ${insight.value}</div>
+                    </div>
                 `).join('')}
             </div>
         </div>
@@ -962,7 +967,7 @@ const Visualizer2 = ({
                 >
                   {isAnalyzing ? 
                     <>⏳ Analyzing...</> : 
-                    <><img src={`data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72" aria-hidden="true" role="img" class="iconify iconify--noto"><circle cx="28" cy="27" r="20" fill="none" stroke="currentColor" stroke-width="3"/><path d="m62 61-12-12" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M18 32h4l2-6 3 10 3-8 2 6h4" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`)}`} width="14" height="14" style={{verticalAlign: 'middle', marginRight: '4px'}} alt="Analyze" /> Analyze</>
+                    <><img src="/assets/graph-magnifying-glass.svg" width="14" height="14" style={{verticalAlign: 'middle', marginRight: '4px', filter: 'brightness(0) invert(1)'}} alt="Analyze" /> Analyze</>
                   }
                 </button>
               </div>
@@ -976,7 +981,7 @@ const Visualizer2 = ({
                       title="View Full Analysis"
                       style={{ padding: '4px 8px', fontSize: '11px', backgroundColor: '#6366f1' }}
                     >
-                      <img src={`data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72" aria-hidden="true" role="img" class="iconify iconify--noto"><path d="M63 13H9c-2.2 0-4 1.8-4 4v38c0 2.2 1.8 4 4 4h54c2.2 0 4-1.8 4-4V17c0-2.2-1.8-4-4-4z" fill="currentColor"/><circle cx="13" cy="20" r="2" fill="white"/><circle cx="19" cy="20" r="2" fill="white"/><circle cx="25" cy="20" r="2" fill="white"/><path d="M9 25h54v30H9z" fill="white"/><path d="M22.5 34.5l7 7 7-7" fill="currentColor"/><path d="M29.5 41.5v-7" stroke="currentColor" stroke-width="2" fill="none"/><path d="M42 33h6v2h-6zm0 4h8v2h-8zm0 4h8v2h-8zm0 4h6v2h-6z" fill="currentColor"/></svg>`)}`} width="12" height="12" style={{verticalAlign: 'middle', marginRight: '4px'}} alt="View" /> View
+                      <img src="/assets/Browser-link.svg" width="12" height="12" style={{verticalAlign: 'middle', marginRight: '4px', filter: 'brightness(0) invert(1)'}} alt="View" /> View
                     </button>
                     <button
                       className="visualizer__download-button"
@@ -984,7 +989,7 @@ const Visualizer2 = ({
                       title="Download Analysis"
                       style={{ padding: '4px 8px', fontSize: '11px' }}
                     >
-                      <img src={`data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72" aria-hidden="true" role="img" class="iconify iconify--noto"><path d="M35.52 48.58c.4.4 1.05.4 1.45 0l14.46-14.46v-3.56L38.08 44.02c-.55.55-1.44.55-1.99 0L22.65 30.59v3.53l12.87 14.46z" fill="currentColor"/><path d="M15 33v28h42V33H15zm38 24H19V37h34v20z" fill="currentColor"/><path d="M35.99 11C28.26 11 22 17.26 22 24.99v6.73c-.01.07-.01.14 0 .21H12.5c-.83 0-1.5.67-1.5 1.5v28c0 .83.67 1.5 1.5 1.5h47c.83 0 1.5-.67 1.5-1.5v-28c0-.83-.67-1.5-1.5-1.5H50c.01-.07.01-.14 0-.21v-6.73C50 17.26 43.73 11 35.99 11zM47 24.99v6.52L36.43 42.08c-.88.88-2.31.88-3.19 0L22.68 31.51v-6.52c0-7.17 5.83-13 13-13s13 5.83 13 13z" fill="currentColor"/></svg>`)}`} width="12" height="12" style={{verticalAlign: 'middle', marginRight: '4px'}} alt="Download" /> Download
+                      <img src="/assets/Download_symbol.svg" width="12" height="12" style={{verticalAlign: 'middle', marginRight: '4px', filter: 'brightness(0) invert(1)'}} alt="Download" /> Download
                     </button>
                   </div>
                   
@@ -993,7 +998,11 @@ const Visualizer2 = ({
                     <h5>Key Insights</h5>
                     <div className="visualizer__insights-list">
                       {analysisData.keyInsights.map((insight, index) => (
-                        <div key={index} className="visualizer__insight-item" dangerouslySetInnerHTML={{ __html: insight }}>
+                        <div key={`${insight.label}-${insight.value}`} className="visualizer__insight-item">
+                          <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                            <img src={insight.icon} width="32" height="32" alt={insight.label} />
+                          </div>
+                          <div>{insight.label}: {insight.value}</div>
                         </div>
                       ))}
                     </div>
