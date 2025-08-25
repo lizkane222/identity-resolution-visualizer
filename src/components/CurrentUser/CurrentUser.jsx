@@ -310,9 +310,10 @@ const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
       _toggles: fieldToggles // Add toggle states with a special prefix
     };
 
-    console.log('📤 [CurrentUser] Sending userData to parent:', JSON.stringify(userData, null, 2));
-    console.log('📤 [CurrentUser] anonymousId in userData:', userData.anonymousId);
-    console.log('📤 [CurrentUser] toggles:', userData._toggles);
+    // Reduced logging - only log when there are actual changes
+    // console.log('📤 [CurrentUser] Sending userData to parent:', JSON.stringify(userData, null, 2));
+    // console.log('📤 [CurrentUser] anonymousId in userData:', userData.anonymousId);
+    // console.log('📤 [CurrentUser] toggles:', userData._toggles);
 
     if (onUserChange) {
       onUserChange(userData);

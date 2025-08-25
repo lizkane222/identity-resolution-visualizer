@@ -663,7 +663,10 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
           {(() => {
             const profiles = convertProfileApiResultsToProfiles(profileApiResults);
             
-            // Create profile cards based on actual event targets for perfect ID matching
+            // Create profile cards based on Profile API data only
+            // - Each profile shows only its own identifiers from Profile API data
+            // - No combining of identifiers, even for merge events
+            // - Skip profiles that don't have corresponding Profile API data
             const eventTargetProfiles = processedEvents.reduce((profilesMap, event) => {
               if (event.simulationResult?.profile?.id) {
                 const profileId = event.simulationResult.profile.id;
@@ -678,18 +681,21 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                          ));
                 });
                 
-                // Determine what to display - prefer real profile data when available
+                // Only display profiles that have actual Profile API data
                 let displayName, segmentId, identifiers = {};
+                
                 if (realProfile) {
                   // We have real profile data - use it!
                   segmentId = realProfile.segmentId;
                   displayName = realProfile.segmentId || realProfile.id;
+                  
+                  // Always use the profile's own identifiers from Profile API
+                  // Do NOT combine identifiers from other profiles, even for merge events
                   identifiers = realProfile.identifiers || {};
                 } else {
-                  // No real profile data, create a cleaner display name
-                  segmentId = null;
-                  displayName = profileId.replace(/^profile_/, 'Profile '); // Convert profile_1 to Profile 1
-                  identifiers = event.identifiers || {};
+                  // No real profile data - skip this profile completely
+                  // Only show profiles that exist in the Profile API
+                  return profilesMap;
                 }
                 
                 // Use segmentId as primary key when available, fallback to simulation profileId
@@ -721,21 +727,9 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                     existingProfile.simulationProfileIds.push(profileId);
                   }
                   
-                  // Merge identifiers if we have new ones
-                  if (event.identifiers) {
-                    Object.entries(event.identifiers).forEach(([type, value]) => {
-                      if (!existingProfile.identifiers[type]) {
-                        existingProfile.identifiers[type] = [];
-                      }
-                      if (Array.isArray(existingProfile.identifiers[type])) {
-                        if (!existingProfile.identifiers[type].includes(value)) {
-                          existingProfile.identifiers[type].push(value);
-                        }
-                      } else if (existingProfile.identifiers[type] !== value) {
-                        existingProfile.identifiers[type] = [existingProfile.identifiers[type], value];
-                      }
-                    });
-                  }
+                  // Do NOT merge event identifiers into profile identifiers
+                  // Profile identifiers should only come from Profile API data
+                  // Event identifiers are displayed separately in the event nodes
                 }
               }
               return profilesMap;
@@ -759,12 +753,14 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                     key={profile.id || idx} 
                     className={`visualizer2__profile-card ${isEventHighlighted ? 'visualizer2__profile-card--highlighted' : ''}`}
                     onMouseEnter={() => {
-                      // Set hover state for both the main profile ID and all simulation profile IDs
-                      setHoveredProfileId(profile.id);
-                      // Also consider the simulation profile IDs for event highlighting
+                      // For profile hover, use the simulation profile ID to highlight events
+                      // This ensures events with matching simulation profile IDs get highlighted
                       if (profile.simulationProfileIds && profile.simulationProfileIds.length > 0) {
                         // Use the first simulation profile ID for event hover consistency
                         setHoveredProfileId(profile.simulationProfileIds[0]);
+                      } else {
+                        // Fallback to the profile ID or segment ID
+                        setHoveredProfileId(profile.id || profile.segmentId);
                       }
                     }}
                     onMouseLeave={() => {
@@ -853,7 +849,8 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                           })
                           .map(([type, values]) => {
                             // Check if this identifier matches between event and profile
-                            const isMatching = isEventHighlighted && hoveredEventIdentifiers && 
+                            // This should work regardless of which profile the event is primarily associated with
+                            const isMatching = hoveredEventIdentifiers && 
                               isIdentifierMatching(type, values, hoveredEventIdentifiers);
                             
                             return (
@@ -863,7 +860,8 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                                   {Array.isArray(values) ? (
                                     values.map((value, index) => {
                                       // Check if this specific value matches the hovered event
-                                      const isSpecificValueMatching = isEventHighlighted && hoveredEventIdentifiers && 
+                                      // This should work regardless of which profile the event is primarily associated with
+                                      const isSpecificValueMatching = hoveredEventIdentifiers && 
                                         isIdentifierMatching(type, [value], hoveredEventIdentifiers);
                                       
                                       return (

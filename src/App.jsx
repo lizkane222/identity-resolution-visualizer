@@ -142,7 +142,8 @@ function App() {
   useEffect(() => {
     try {
       localStorage.setItem('app_currentUser', JSON.stringify(currentUser));
-      console.log('Persisted currentUser to localStorage:', currentUser);
+      // Reduced logging - only log on errors
+      // console.log('Persisted currentUser to localStorage:', currentUser);
     } catch (error) {
       console.error('Error saving currentUser to localStorage:', error);
     }
