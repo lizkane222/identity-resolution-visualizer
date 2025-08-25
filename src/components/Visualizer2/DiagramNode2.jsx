@@ -123,39 +123,54 @@ const DiagramNode2 = ({
     else if (currentAction === 'add' || currentAction === 'add_event_to_existing' || currentAction === 'merge' || currentAction === 'merge_profiles') {
       const targetProfileId = event.simulationResult.profile?.id;
       
-      // Get all identifiers that existed on the target profile before this event
-      const existingIdentifiers = new Set();
-      
-      // Look through all previous events to find what identifiers were already on this profile
-      if (previousEvents && targetProfileId) {
-        previousEvents.forEach(prevEvent => {
-          if (prevEvent.simulationResult?.profile?.id === targetProfileId || 
-              (prevEvent.simulationResult?.action === 'create' && prevEvent.simulationResult?.profile?.id === targetProfileId)) {
-            Object.keys(prevEvent.identifiers || {}).forEach(key => {
-              if (!prevEvent.simulationResult?.dropped?.includes(key)) {
-                existingIdentifiers.add(key);
-              }
+      // For merge actions, show ALL identifiers from the event as "added"
+      if (currentAction === 'merge' || currentAction === 'merge_profiles') {
+        Object.entries(event.identifiers).forEach(([key, value]) => {
+          // Skip dropped identifiers
+          if (!event.simulationResult.dropped.includes(key)) {
+            const optionConfig = identifierOptions.find(opt => opt.value === key);
+            newIdentifiers.push({
+              key,
+              value,
+              label: optionConfig?.label || key,
+              priority: optionConfig ? identifierOptions.indexOf(optionConfig) + 1 : 999,
+              reason: 'Merged from profiles'
+            });
+          }
+        });
+      } else {
+        // For add actions, get all identifiers that existed on the target profile before this event
+        const existingIdentifiers = new Set();
+        
+        // Look through all previous events to find what identifiers were already on this profile
+        if (previousEvents && targetProfileId) {
+          previousEvents.forEach(prevEvent => {
+            if (prevEvent.simulationResult?.profile?.id === targetProfileId || 
+                (prevEvent.simulationResult?.action === 'create' && prevEvent.simulationResult?.profile?.id === targetProfileId)) {
+              Object.keys(prevEvent.identifiers || {}).forEach(key => {
+                if (!prevEvent.simulationResult?.dropped?.includes(key)) {
+                  existingIdentifiers.add(key);
+                }
+              });
+            }
+          });
+        }
+        
+        // Check current event identifiers against existing ones
+        Object.entries(event.identifiers).forEach(([key, value]) => {
+          // Skip dropped identifiers
+          if (!event.simulationResult.dropped.includes(key) && !existingIdentifiers.has(key)) {
+            const optionConfig = identifierOptions.find(opt => opt.value === key);
+            newIdentifiers.push({
+              key,
+              value,
+              label: optionConfig?.label || key,
+              priority: optionConfig ? identifierOptions.indexOf(optionConfig) + 1 : 999,
+              reason: 'New identifier for profile'
             });
           }
         });
       }
-      
-      // Check current event identifiers against existing ones
-      Object.entries(event.identifiers).forEach(([key, value]) => {
-        // Skip dropped identifiers
-        if (!event.simulationResult.dropped.includes(key) && !existingIdentifiers.has(key)) {
-          const optionConfig = identifierOptions.find(opt => opt.value === key);
-          newIdentifiers.push({
-            key,
-            value,
-            label: optionConfig?.label || key,
-            priority: optionConfig ? identifierOptions.indexOf(optionConfig) + 1 : 999,
-            reason: currentAction === 'merge' || currentAction === 'merge_profiles' 
-              ? 'Added from merge' 
-              : 'New identifier for profile'
-          });
-        }
-      });
     }
     
     return newIdentifiers.sort((a, b) => a.priority - b.priority);
@@ -274,8 +289,11 @@ const DiagramNode2 = ({
               </span>
             </div>
             <div className="diagram-node2__action-description">
-              Result: {event.simulationResult.profile.segmentId || 
-                       event.simulationResult.profile.id.replace(/^profile_/, 'Profile ')}
+              {(event.simulationResult.action === 'merge' || event.simulationResult.action === 'merge_profiles') && (event.simulationResult.mergeDirection || event.simulationResult.actionDetails?.mergeDirection) ? 
+                `Result: ${event.simulationResult.mergeDirection || event.simulationResult.actionDetails.mergeDirection}` :
+                `Result: ${event.simulationResult.profile.segmentId || 
+                         event.simulationResult.profile.id.replace(/^profile_/, 'Profile ')}`
+              }
             </div>
             {event.simulationResult.dropped.length > 0 && (
               <div className="diagram-node2__action-dropped">
@@ -363,8 +381,11 @@ const DiagramNode2 = ({
           <div className="diagram-node2__profile-target">
             <span className="diagram-node2__target-arrow">→</span>
             <span className="diagram-node2__target-profile">
-              {event.simulationResult.profile.segmentId || 
-               event.simulationResult.profile.id.replace(/^profile_/, 'Profile ')}
+              {(event.simulationResult.action === 'merge' || event.simulationResult.action === 'merge_profiles') && event.simulationResult.mergeDirection ? 
+                event.simulationResult.mergeDirection :
+                (event.simulationResult.profile.segmentId || 
+                 event.simulationResult.profile.id.replace(/^profile_/, 'Profile '))
+              }
             </span>
           </div>
         </div>

@@ -91,12 +91,14 @@
   min-width: 0; /* Allow shrinking */
   max-width: 100%; /* Constrain to parent width */
   overflow: hidden; /* Prevent overflow */
+  justify-content: flex-end; /* Right align the buttons */
 }
 
 /* Select a Source Indicator - positioned to the left of wrapped sources */
 .event-builder__select-source-indicator {
   display: flex;
   align-items: center;
+  justify-content: flex-end; /* Right align the content */
   gap: 4px;
   animation: bounce-horizontal 1.5s ease-in-out infinite;
   flex-shrink: 0; /* Prevent shrinking */
@@ -104,6 +106,7 @@
   margin-top: 2px; /* Small offset to align better with first row of buttons */
   white-space: nowrap; /* Prevent text wrapping */
   max-width: 120px; /* Constrain indicator width */
+  text-align: right; /* Right align text content */
 }
 
 /* Optional variant - no bouncing animation */

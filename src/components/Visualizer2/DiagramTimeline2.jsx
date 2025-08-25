@@ -65,13 +65,23 @@ function generateComprehensiveAnalysis(processedEvents, simulation) {
     } else if (action.type === 'merge_profiles') {
       // For merges, we need to update the profile mapping
       const baseProfileId = action.profileStats?.profileId;
+      let mergeDirectionText = '';
+      
       if (baseProfileId && action.simulationLogs) {
         // Find which profiles were merged
         const mergeLog = action.simulationLogs.find(log => log.includes('Starting merge'));
         if (mergeLog) {
           const merged = mergeLog.match(/Starting merge of profiles: (.+)/);
           if (merged) {
-            const profileIds = merged[1].split(', ');
+            const profileIds = merged[1].split(', ').map(id => id.trim());
+            
+            // Sort profiles numerically to get consistent ordering
+            profileIds.sort((a, b) => {
+              const aNum = parseInt(a.replace('profile_', ''));
+              const bNum = parseInt(b.replace('profile_', ''));
+              return aNum - bNum;
+            });
+            
             // Map all merged profiles to the same display name
             const primaryProfile = profileMap.get(baseProfileId) || `Profile ${Object.keys(profileMap).length + 1}`;
             profileIds.forEach(id => {
@@ -81,11 +91,19 @@ function generateComprehensiveAnalysis(processedEvents, simulation) {
               }
             });
             profileMap.set(baseProfileId, primaryProfile);
+            
+            // Create merge direction text: "Profile 2 → Profile 1"
+            const otherProfiles = profileIds.filter(id => id !== baseProfileId);
+            if (otherProfiles.length > 0) {
+              const fromProfile = otherProfiles[0].replace('profile_', 'Profile ');
+              const toProfile = baseProfileId.replace('profile_', 'Profile ');
+              mergeDirectionText = `${fromProfile} → ${toProfile}`;
+            }
           }
         }
       }
       profileId = profileMap.get(baseProfileId) || 'Merged Profile';
-      profileAction = `🔀 Merge Profiles → ${profileId}`;
+      profileAction = mergeDirectionText ? `🔀 Merge Profiles: ${mergeDirectionText}` : `🔀 Merge Profiles → ${profileId}`;
     }
     
     // Create detailed expected action with segment info
@@ -220,18 +238,67 @@ const getConflictingIdentifiersFromLogs = (logs) => {
 // Helper function to create enhanced merge description
 const getMergeDescriptionForProfile = (profile, logs, profileApiResults = {}) => {
   if (!profile || !logs) {
-    return 'Profiles merged successfully';
+    return { action: 'Profiles merged successfully', direction: null };
   }
 
   // Try to extract merge information from logs
-  const mergeLog = logs.find(log => log.includes('Merged profile') || log.includes('Starting merge'));
+  const startMergeLog = logs.find(log => log.includes('Starting merge'));
+  const mergedLogs = logs.filter(log => log.includes('Merged profile'));
   
-  if (!mergeLog) {
-    return 'Profiles merged successfully';
+  if (!startMergeLog && mergedLogs.length === 0) {
+    return { action: 'Profiles merged successfully', direction: null };
   }
 
-  // For simplicity in Visualizer2, return basic merge description
-  return 'Profiles merged successfully';
+  // Extract profile IDs that were merged
+  let profileIds = [];
+  let baseProfileId = profile.id;
+  
+  // From "Starting merge of profiles: profile_1, profile_2"
+  if (startMergeLog) {
+    const startMatch = startMergeLog.match(/Starting merge of profiles: (.+)/);
+    if (startMatch) {
+      profileIds = startMatch[1].split(', ').map(id => id.trim());
+    }
+  }
+  
+  // From individual "Merged profile profile_X" logs
+  mergedLogs.forEach(log => {
+    const mergeMatch = log.match(/Merged profile (profile_\d+)/);
+    if (mergeMatch && !profileIds.includes(mergeMatch[1])) {
+      profileIds.push(mergeMatch[1]);
+    }
+  });
+
+  // Add the base profile if it's not already in the list
+  if (!profileIds.includes(baseProfileId)) {
+    profileIds.push(baseProfileId);
+  }
+
+  // Sort profiles numerically to get consistent ordering
+  profileIds.sort((a, b) => {
+    const aNum = parseInt(a.replace('profile_', ''));
+    const bNum = parseInt(b.replace('profile_', ''));
+    return aNum - bNum;
+  });
+
+  // The merge direction: all other profiles → base profile
+  const otherProfiles = profileIds.filter(id => id !== baseProfileId);
+  
+  if (otherProfiles.length > 0) {
+    // Format as "Profile 2 → Profile 1"
+    const fromProfile = otherProfiles[0].replace('profile_', 'Profile ');
+    const toProfile = baseProfileId.replace('profile_', 'Profile ');
+    const direction = `${fromProfile} → ${toProfile}`;
+    
+    return { 
+      action: `Merge Profiles / Result: ${direction}`, 
+      direction: direction,
+      mergedProfiles: otherProfiles,
+      baseProfile: baseProfileId
+    };
+  }
+
+  return { action: 'Profiles merged successfully', direction: null };
 };
 
 // Helper function to convert IdentitySimulation result to DiagramNode action format
@@ -246,99 +313,8 @@ const convertSimulationResultToAction = (simulationResult, profileApiResults = {
   
   switch (action) {
     case 'create':
-      // Check if this is a case where we should correct the simulation's decision
-      // Case 1: ALL identifiers already exist on a single profile
-      // Case 2: Event contains existing identifiers + new ones (should merge, not create)
-      if (currentEvent && previousEvents.length > 0) {
-        const currentIdentifiers = extractIdentifiersFromEvent(currentEvent, []);
-        
-        // Find profiles that share any identifiers with this event
-        const profilesWithSharedIdentifiers = new Map();
-        let targetProfile = null;
-        
-        for (let i = 0; i < previousEvents.length; i++) {
-          const prevEvent = previousEvents[i];
-          const prevIdentifiers = extractIdentifiersFromEvent(prevEvent, []);
-          const prevProfileId = prevEvent.simulationResult?.profile?.id;
-          const prevProfile = prevEvent.simulationResult?.profile;
-          
-          if (!prevProfileId) continue;
-          
-          // Check for any shared identifiers
-          const sharedIdentifiers = [];
-          const newIdentifiers = [];
-          
-          Object.entries(currentIdentifiers).forEach(([type, value]) => {
-            if (prevIdentifiers[type] === value) {
-              sharedIdentifiers.push({type, value});
-            } else if (!Object.values(prevIdentifiers).includes(value)) {
-              newIdentifiers.push({type, value});
-            }
-          });
-          
-          if (sharedIdentifiers.length > 0) {
-            if (!profilesWithSharedIdentifiers.has(prevProfileId)) {
-              profilesWithSharedIdentifiers.set(prevProfileId, {
-                shared: [],
-                new: [],
-                totalEvents: 0,
-                profile: prevProfile // Store the actual profile object
-              });
-            }
-            const profileData = profilesWithSharedIdentifiers.get(prevProfileId);
-            profileData.shared.push(...sharedIdentifiers);
-            profileData.new.push(...newIdentifiers);
-            profileData.totalEvents++;
-            
-            // Set target profile for override
-            if (!targetProfile) {
-              targetProfile = prevProfile;
-            }
-          }
-        }
-        
-        // Case 1: All identifiers exist on single profile
-        const allIdentifiersMatch = Array.from(profilesWithSharedIdentifiers.values()).some(profileData => {
-          const currentIdentifierCount = Object.keys(currentIdentifiers).length;
-          const sharedCount = profileData.shared.length;
-          return sharedCount === currentIdentifierCount && currentIdentifierCount > 0;
-        });
-        
-        if (allIdentifiersMatch && targetProfile) {
-          return {
-            type: 'add_event_to_existing',
-            reason: 'Adding event to existing profile (all identifiers match)',
-            detailedReason: 'All identifiers in this event already exist on a single existing profile, so it should be added to that profile instead of creating a new one.',
-            description: 'All identifiers in this event already exist on a single profile',
-            droppedIdentifiers: dropped || [],
-            conflictingIdentifiers: getConflictingIdentifiersFromLogs(logs),
-            profiles: [targetProfile], // Override with correct profile
-            simulationLogs: logs,
-            profileStats: getProfileStats(targetProfile, logs)
-          };
-        }
-        
-        // Case 2: Event has both existing and new identifiers (merge scenario)
-        const hasSharedAndNewIdentifiers = Array.from(profilesWithSharedIdentifiers.values()).some(profileData => {
-          return profileData.shared.length > 0 && profileData.new.length > 0;
-        });
-        
-        if (hasSharedAndNewIdentifiers && profilesWithSharedIdentifiers.size === 1 && targetProfile) {
-          return {
-            type: 'add_event_to_existing',
-            reason: 'Adding event to existing profile (merge scenario)',
-            detailedReason: 'This event contains identifiers that already exist on a profile plus new identifiers that should be added to that same profile (merge scenario).',
-            description: 'Event contains existing identifiers plus new identifiers - merging with existing profile',
-            droppedIdentifiers: dropped || [],
-            conflictingIdentifiers: getConflictingIdentifiersFromLogs(logs),
-            profiles: [targetProfile], // Override with correct profile
-            simulationLogs: logs,
-            profileStats: getProfileStats(targetProfile, logs)
-          };
-        }
-      }
-      
-      // Trust the simulation's decision for other cases
+      // Trust the simulation's decision - if it says create, then create
+      // The identity simulation handles complex scenarios including merges properly
       actionType = 'create_new';
       reason = 'Simulation determined new profile is needed';
       description = logs.length > 0 ? logs[logs.length - 1] : 'Created new profile for event';
@@ -360,15 +336,17 @@ const convertSimulationResultToAction = (simulationResult, profileApiResults = {
       
       // Enhanced merge description with profile direction
       const mergeDescription = getMergeDescriptionForProfile(profile, logs, profileApiResults);
-      description = typeof mergeDescription === 'string' ? mergeDescription : mergeDescription.action;
+      description = mergeDescription.action;
       
       return {
         type: actionType,
         reason,
         detailedReason,
         description,
-        mergeTarget: typeof mergeDescription === 'object' ? mergeDescription.target : null,
-        processingLog: typeof mergeDescription === 'object' ? mergeDescription.processingLog : null,
+        mergeDirection: mergeDescription.direction,
+        mergeTarget: mergeDescription.direction,
+        mergedProfiles: mergeDescription.mergedProfiles,
+        baseProfile: mergeDescription.baseProfile,
         droppedIdentifiers: dropped || [],
         conflictingIdentifiers: getConflictingIdentifiersFromLogs(logs),
         profiles: [profile], // IdentitySimulation returns the merged profile
@@ -555,6 +533,27 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
         // Process through simulation
         const result = sim.processEvent({ identifiers: eventIdentifiers });
         
+        // DEBUG: Log Event 10 specifically to understand what's happening
+        if (i === 9) { // Event 10 (0-indexed)
+          console.log('=== EVENT 10 DEBUG ===');
+          console.log('Raw Event Data:', event);
+          console.log('Extracted Identifiers:', eventIdentifiers);
+          console.log('Simulation Result:', result);
+          console.log('Current Profiles in Simulation:', sim.profiles.map(p => ({
+            id: p.id,
+            identifiers: Object.fromEntries(
+              Object.entries(p.identifiers).map(([type, valueSet]) => [type, Array.from(valueSet)])
+            )
+          })));
+          console.log('=====================');
+          
+          // Additional debugging to understand the issue
+          console.error('🚨 EVENT 10 SHOULD BE A MERGE! 🚨');
+          console.error('Expected: email from Profile 1 + anonymousId from Profile 2 = MERGE');
+          console.error('Actual result action:', result.action);
+          console.error('If this is not "merge", there is a bug in the identity simulation');
+        }
+        
         // Convert simulation result to detailed action format
         const actionDetails = convertSimulationResultToAction(
           result, 
@@ -572,7 +571,8 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
           simulationResult: {
             ...result,
             actionDetails: actionDetails,
-            action: actionDetails.type // Use the detailed action type
+            action: actionDetails.type, // Use the detailed action type
+            mergeDirection: actionDetails.mergeDirection // Add direct access to mergeDirection
           },
           sequenceNumber: i + 1,
           timestamp: event.timestamp || new Date(event.createdAt).getTime()
@@ -859,9 +859,28 @@ const DiagramTimeline2 = ({ events, identifierOptions, unifySpaceSlug, profileAp
                             return (
                               <div key={type} className={`visualizer2__identifier-row ${isMatching ? 'visualizer2__identifier-row--matching' : ''}`}>
                                 <span className="visualizer2__identifier-type">{type}:</span>
-                                <span className={`visualizer2__identifier-values ${isMatching ? 'visualizer2__identifier-values--matching' : ''}`}>
-                                  {Array.isArray(values) ? values.join(', ') : values}
-                                </span>
+                                <div className="visualizer2__identifier-values-container">
+                                  {Array.isArray(values) ? (
+                                    values.map((value, index) => {
+                                      // Check if this specific value matches the hovered event
+                                      const isSpecificValueMatching = isEventHighlighted && hoveredEventIdentifiers && 
+                                        isIdentifierMatching(type, [value], hoveredEventIdentifiers);
+                                      
+                                      return (
+                                        <span 
+                                          key={index} 
+                                          className={`visualizer2__identifier-value ${isSpecificValueMatching ? 'visualizer2__identifier-value--matching' : ''}`}
+                                        >
+                                          {value}
+                                        </span>
+                                      );
+                                    })
+                                  ) : (
+                                    <span className={`visualizer2__identifier-value ${isMatching ? 'visualizer2__identifier-value--matching' : ''}`}>
+                                      {values}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             );
                           })

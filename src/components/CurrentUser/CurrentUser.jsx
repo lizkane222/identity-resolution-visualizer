@@ -48,19 +48,107 @@ function getOrPersistUserId() {
 const CurrentUser = ({ onUserChange, eventPayload, onUserUpdate }) => {
   // Get configured identifiers from ID Resolution Config
   const [configuredIdentifiers, setConfiguredIdentifiers] = useState([]);
-  const [identifierFields, setIdentifierFields] = useState({});
-  const [traitFields, setTraitFields] = useState({
-    email: '',
-    firstName: '',
-    lastName: ''
+  
+  // Initialize identifier fields from localStorage if available
+  const [identifierFields, setIdentifierFields] = useState(() => {
+    try {
+      const saved = localStorage.getItem('currentUser_identifierFields');
+      return saved ? JSON.parse(saved) : {};
+    } catch (error) {
+      console.error('Error loading identifier fields from localStorage:', error);
+      return {};
+    }
   });
-  const [customTraits, setCustomTraits] = useState({});
+  
+  // Initialize trait fields from localStorage if available
+  const [traitFields, setTraitFields] = useState(() => {
+    try {
+      const saved = localStorage.getItem('currentUser_traitFields');
+      return saved ? JSON.parse(saved) : {
+        email: '',
+        firstName: '',
+        lastName: ''
+      };
+    } catch (error) {
+      console.error('Error loading trait fields from localStorage:', error);
+      return {
+        email: '',
+        firstName: '',
+        lastName: ''
+      };
+    }
+  });
+  
+  // Initialize custom traits from localStorage if available
+  const [customTraits, setCustomTraits] = useState(() => {
+    try {
+      const saved = localStorage.getItem('currentUser_customTraits');
+      return saved ? JSON.parse(saved) : {};
+    } catch (error) {
+      console.error('Error loading custom traits from localStorage:', error);
+      return {};
+    }
+  });
+  
   const [editingField, setEditingField] = useState(null);
   const [editingValue, setEditingValue] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customFieldName, setCustomFieldName] = useState('');
-  const [fieldToggles, setFieldToggles] = useState({});
+  
+  // Initialize field toggles from localStorage if available
+  const [fieldToggles, setFieldToggles] = useState(() => {
+    try {
+      const saved = localStorage.getItem('currentUser_fieldToggles');
+      return saved ? JSON.parse(saved) : {
+        userId: true,
+        anonymousId: true
+      };
+    } catch (error) {
+      console.error('Error loading field toggles from localStorage:', error);
+      return {
+        userId: true,
+        anonymousId: true
+      };
+    }
+  });
+  
   const inputRef = useRef(null);
+
+  // Persist identifier fields to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('currentUser_identifierFields', JSON.stringify(identifierFields));
+    } catch (error) {
+      console.error('Error saving identifier fields to localStorage:', error);
+    }
+  }, [identifierFields]);
+
+  // Persist trait fields to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('currentUser_traitFields', JSON.stringify(traitFields));
+    } catch (error) {
+      console.error('Error saving trait fields to localStorage:', error);
+    }
+  }, [traitFields]);
+
+  // Persist custom traits to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('currentUser_customTraits', JSON.stringify(customTraits));
+    } catch (error) {
+      console.error('Error saving custom traits to localStorage:', error);
+    }
+  }, [customTraits]);
+
+  // Persist field toggles to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('currentUser_fieldToggles', JSON.stringify(fieldToggles));
+    } catch (error) {
+      console.error('Error saving field toggles to localStorage:', error);
+    }
+  }, [fieldToggles]);
 
   // Load configured identifiers and initialize states
   useEffect(() => {

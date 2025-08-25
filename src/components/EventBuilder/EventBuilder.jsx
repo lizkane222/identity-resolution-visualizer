@@ -154,6 +154,15 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
     }
   }, [sourceConfigUpdateTrigger]);
 
+  // Auto-select single configured source
+  useEffect(() => {
+    if (configuredSources.length === 1 && selectedSources.length === 0 && !allSourcesSelected) {
+      setSelectedSources([configuredSources[0]]);
+      setSelectedSource(configuredSources[0]);
+      console.log('🎯 [EventBuilder] Auto-selected single configured source:', configuredSources[0].name);
+    }
+  }, [configuredSources, selectedSources.length, allSourcesSelected]);
+
   // Handle source selection
   const handleSourceSelect = (source) => {
     // If we're editing an existing event, add the source to that event
@@ -829,19 +838,16 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
           {/* Source selection row */}
           {configuredSources.length > 0 && (
             <div className={`event-builder__source-row ${showSourceValidationError ? 'event-builder__source-row--error' : ''}`}>
-              {/* Source selection indicator - shows when no sources selected */}
+              {/* Select Source Indicator */}
               {!selectedEvent?._editingEventId && !hasSelectedSources() && (
                 <div className="event-builder__select-source-indicator">
-                  <span className="event-builder__select-source-text">
-                    Select Sources
-                  </span>
+                  <span className="event-builder__select-source-text">Select Sources</span>
                   <span className="event-builder__select-source-arrow">→</span>
                 </div>
               )}
               
-              {/* Source selection buttons */}
+              {/* Source buttons with dynamic wrap */}
               <div className="event-builder__source-buttons">
-                {/* All Sources button */}
                 {!selectedEvent?._editingEventId && (
                   <button
                     className={`event-builder__source-button event-builder__source-button--all ${
@@ -854,7 +860,6 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
                   </button>
                 )}
                 
-                {/* Individual source buttons */}
                 {configuredSources.map((source) => (
                   <button
                     key={source.id}
@@ -873,8 +878,7 @@ const EventBuilder = forwardRef(({ onSave, selectedEvent, currentUser, onEventIn
                   </button>
                 ))}
                 
-                {/* Clear button */}
-                {!selectedEvent?._editingEventId && (hasSelectedSources()) && (
+                {!selectedEvent?._editingEventId && hasSelectedSources() && (
                   <button
                     className="event-builder__source-button event-builder__source-button--clear"
                     onClick={handleClearSources}

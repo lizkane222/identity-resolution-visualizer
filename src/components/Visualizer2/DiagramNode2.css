@@ -479,7 +479,8 @@
 }
 
 .diagram-node2__added-reason {
-  color: #666;
+  /* color: #666; */
+  color: #333;
   font-size: 10px;
   margin-left: 2px;
 }
@@ -831,9 +832,13 @@
 .twilio-mode .diagram-node2__profile-meta,
 .twilio-mode .diagram-node2__node-label,
 .twilio-mode .diagram-node2__action-description,
-.twilio-mode .diagram-node2__step-text,
 .twilio-mode .diagram-node2__dropped-reason,
 .twilio-mode .diagram-node2__added-reason {
+  /* color: #94a3b8; */
+  color: #333;
+}
+
+.twilio-mode .diagram-node2__step-text{
   color: #94a3b8;
 }
 

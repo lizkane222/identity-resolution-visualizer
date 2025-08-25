@@ -17,9 +17,37 @@ import './App.css';
 console.log(`Loading Client on localhost:3000 - ${new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })} PST`);
 
 function App() {
-  const [events, setEvents] = useState([]);
+  // Initialize events from localStorage if available
+  const [events, setEvents] = useState(() => {
+    try {
+      const saved = localStorage.getItem('app_events');
+      if (saved) {
+        const parsedEvents = JSON.parse(saved);
+        console.log('Loaded events from localStorage:', parsedEvents.length);
+        return parsedEvents;
+      }
+    } catch (error) {
+      console.error('Error loading events from localStorage:', error);
+    }
+    return [];
+  });
+  
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [currentUser, setCurrentUser] = useState({});
+  
+  // Initialize currentUser from localStorage if available  
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('app_currentUser');
+      if (saved) {
+        const parsedUser = JSON.parse(saved);
+        console.log('Loaded currentUser from localStorage:', parsedUser);
+        return parsedUser;
+      }
+    } catch (error) {
+      console.error('Error loading currentUser from localStorage:', error);
+    }
+    return {};
+  });
   const [currentEventPayload, setCurrentEventPayload] = useState(null);
   const [currentEventInfo, setCurrentEventInfo] = useState(null);
   const [userUpdateTrigger, setUserUpdateTrigger] = useState(0);
@@ -99,6 +127,26 @@ function App() {
     }
     return null;
   });
+
+  // Persist events to localStorage when they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('app_events', JSON.stringify(events));
+      console.log('Persisted events to localStorage:', events.length);
+    } catch (error) {
+      console.error('Error saving events to localStorage:', error);
+    }
+  }, [events]);
+
+  // Persist currentUser to localStorage when it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('app_currentUser', JSON.stringify(currentUser));
+      console.log('Persisted currentUser to localStorage:', currentUser);
+    } catch (error) {
+      console.error('Error saving currentUser to localStorage:', error);
+    }
+  }, [currentUser]);
 
   // Apply dark mode class to document - Temporarily disabled
   /*
@@ -353,6 +401,13 @@ function App() {
   // Handle clearing all events
   const handleClearEvents = () => {
     setEvents([]);
+    // Also clear UniqueUsersList localStorage data
+    try {
+      localStorage.removeItem('uniqueUsers_data');
+      console.log('Cleared unique users data from localStorage');
+    } catch (error) {
+      console.error('Error clearing unique users from localStorage:', error);
+    }
   };
 
   // Handle highlighting events
@@ -761,7 +816,7 @@ function App() {
         {/* Conditional Page Rendering */}
         {currentPage === 'main' && (
           <>
-            {/* Profile Lookup Section (Collapsible) */}
+            {/* Profile API Lookup Section (Collapsible) */}
             {showProfileLookup && (
               <section className="app__profile-lookup-section">
                 <ProfileLookup 

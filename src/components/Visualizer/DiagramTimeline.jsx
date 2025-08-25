@@ -46,13 +46,23 @@ function generateComprehensiveAnalysis(processedEvents, simulation) {
     } else if (action.type === 'merge_profiles') {
       // For merges, we need to update the profile mapping
       const baseProfileId = action.profileStats?.profileId;
+      let mergeDirectionText = '';
+      
       if (baseProfileId && action.simulationLogs) {
         // Find which profiles were merged
         const mergeLog = action.simulationLogs.find(log => log.includes('Starting merge'));
         if (mergeLog) {
           const merged = mergeLog.match(/Starting merge of profiles: (.+)/);
           if (merged) {
-            const profileIds = merged[1].split(', ');
+            const profileIds = merged[1].split(', ').map(id => id.trim());
+            
+            // Sort profiles numerically to get consistent ordering
+            profileIds.sort((a, b) => {
+              const aNum = parseInt(a.replace('profile_', ''));
+              const bNum = parseInt(b.replace('profile_', ''));
+              return aNum - bNum;
+            });
+            
             // Map all merged profiles to the same display name
             const primaryProfile = profileMap.get(baseProfileId) || `Profile ${Object.keys(profileMap).length + 1}`;
             profileIds.forEach(id => {
@@ -62,11 +72,19 @@ function generateComprehensiveAnalysis(processedEvents, simulation) {
               }
             });
             profileMap.set(baseProfileId, primaryProfile);
+            
+            // Create merge direction text: "Profile 2 → Profile 1"
+            const otherProfiles = profileIds.filter(id => id !== baseProfileId);
+            if (otherProfiles.length > 0) {
+              const fromProfile = otherProfiles[0].replace('profile_', 'Profile ');
+              const toProfile = baseProfileId.replace('profile_', 'Profile ');
+              mergeDirectionText = `${fromProfile} → ${toProfile}`;
+            }
           }
         }
       }
       profileId = profileMap.get(baseProfileId) || 'Merged Profile';
-      profileAction = `🔀 Merge Profiles → ${profileId}`;
+      profileAction = mergeDirectionText ? `🔀 Merge Profiles: ${mergeDirectionText}` : `🔀 Merge Profiles → ${profileId}`;
     }
 
     const eventAnalysis = {

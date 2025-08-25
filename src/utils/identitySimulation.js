@@ -299,7 +299,10 @@ export class IdentitySimulation {
     const sorted = [...profileIndices].sort((a, b) => b - a);
     const baseIndex = sorted.pop();
     const baseProfile = this.profiles[baseIndex];
-    baseProfile.log(`Starting merge of profiles: ${profileIndices.join(', ')}`);
+    
+    // Log using profile IDs instead of indices for better readability
+    const profileIds = profileIndices.map(idx => this.profiles[idx].id);
+    baseProfile.log(`Starting merge of profiles: ${profileIds.join(', ')}`);
     
     for (const idx of sorted) {
       const profile = this.profiles[idx];
@@ -421,106 +424,80 @@ export class IdentitySimulation {
         delete identifiers[toDrop];
         logs.push(conflictMessage);
         continue;
-      }
-
-      // Q3: Are there other identifiers in the payload that belong to more than one profile?
-      const perTypeProfiles = this.getProfilesForIdentifiers(identifiers);
-      
-      let intersection = null;
-      for (const type in perTypeProfiles) {
-        const set = perTypeProfiles[type];
-        const unionForType = new Set(set);
-        if (intersection === null) {
-          intersection = new Set(unionForType);
-        } else {
-          intersection = new Set([...intersection].filter((idx) => unionForType.has(idx)));
-        }
-      }
-      const candidates = [];
-      if (intersection && intersection.size > 0) {
-        for (const idx of intersection) {
-          const profile = this.profiles[idx];
-          let hasAll = true;
-          for (const type in identifiers) {
-            const values = identifiers[type];
-            for (const v of values) {
-              if (!profile.identifiers[type] || !profile.identifiers[type].has(v)) {
-                hasAll = false;
-                break;
-              }
-            }
-            if (!hasAll) break;
-          }
-          if (hasAll) candidates.push(idx);
-        }
-      }
-      if (candidates.length === 1) {
-        const idx = candidates[0];
-        this.addIdentifiersToProfile(idx, identifiers);
-        logs.push(`Added identifiers to existing profile ${this.profiles[idx].id}.`);
-        return {
-          action: 'add',
-          profile: this.profiles[idx],
-          dropped: IdentitySimulation.parseDroppedIdentifiers(logs),
-          logs,
-        };
-      }
-
-      const unionProfiles = new Set();
-      for (const type in perTypeProfiles) {
-        for (const idx of perTypeProfiles[type]) {
-          unionProfiles.add(idx);
-        }
-      }
-      if (unionProfiles.size <= 1) {
-        logs.push('No single profile matches all identifiers. Creating new profile.');
-        const profile = this.createProfile(identifiers);
-        return {
-          action: 'create',
-          profile,
-          dropped: IdentitySimulation.parseDroppedIdentifiers(logs),
-          logs,
-        };
-      }
-
-      const toMerge = [...unionProfiles];
-      const conflictResult = this.checkMergeConflict(toMerge, identifiers);
-      if (!conflictResult.hasConflict) {
-        const merged = this.mergeProfiles(toMerge);
-        const mergedIndex = this.profiles.indexOf(merged);
-        this.addIdentifiersToProfile(mergedIndex, identifiers);
-        logs.push(`Merged profiles and added identifiers into profile ${merged.id}.`);
-        return {
-          action: 'merge',
-          profile: merged,
-          dropped: IdentitySimulation.parseDroppedIdentifiers(logs),
-          logs,
-        };
       } else {
-        // Get detailed conflict information
-        const conflictDetails = this.getMergeConflictDetails(toMerge, identifiers);
-        const toDrop = this.findLowestPriority(identifiers);
-        if (toDrop == null) {
-          logs.push('All identifiers exhausted during merge conflict. Creating new profile.');
-          const profile = this.createProfile({});
-          return {
-            action: 'create',
-            profile,
-            dropped: IdentitySimulation.parseDroppedIdentifiers(logs),
-            logs,
-          };
+        // Before just adding to an existing profile, check if identifiers span multiple profiles
+        // If they do, this should be a merge scenario
+        const perTypeProfiles = this.getProfilesForIdentifiers(identifiers);
+        const unionProfiles = new Set();
+        for (const type in perTypeProfiles) {
+          for (const idx of perTypeProfiles[type]) {
+            unionProfiles.add(idx);
+          }
         }
         
-        // Find which identifier type is causing the conflict with the dropped type
-        let conflictMessage = `Dropped identifier type '${toDrop}' due to merge conflict`;
-        const conflict = conflictDetails.find(c => c.droppedType === toDrop);
-        if (conflict && conflict.conflictingType) {
-          conflictMessage += ` with ${conflict.conflictingType}`;
+        // If identifiers span multiple profiles, this is a merge scenario
+        if (unionProfiles.size > 1) {
+          const toMerge = [...unionProfiles];
+          const conflictResult = this.checkMergeConflict(toMerge, identifiers);
+          if (!conflictResult.hasConflict) {
+            const merged = this.mergeProfiles(toMerge);
+            const mergedIndex = this.profiles.indexOf(merged);
+            this.addIdentifiersToProfile(mergedIndex, identifiers);
+            // Get only the specific logs we want in the correct order
+            const recentHistory = merged.history.slice(-6); // Get more history to ensure we capture the right logs
+            const mergeLog = recentHistory.find(log => log.includes('Merged profile'));
+            const addLog = recentHistory.reverse().find(log => log.includes('Added identifiers from event')); // Get the most recent "Added identifiers" log
+            
+            // Add logs in the desired order: merge first, then add
+            if (mergeLog) logs.push(mergeLog);
+            if (addLog) logs.push(addLog);
+            return {
+              action: 'merge',
+              profile: merged,
+              dropped: IdentitySimulation.parseDroppedIdentifiers(logs),
+              logs,
+            };
+          } else {
+            // Handle merge conflict by dropping identifiers
+            const conflictDetails = this.getMergeConflictDetails(toMerge, identifiers);
+            const toDrop = this.findLowestPriority(identifiers);
+            if (toDrop == null) {
+              logs.push('All identifiers exhausted during merge conflict. Creating new profile.');
+              const profile = this.createProfile({});
+              return {
+                action: 'create',
+                profile,
+                dropped: IdentitySimulation.parseDroppedIdentifiers(logs),
+                logs,
+              };
+            }
+            
+            let conflictMessage = `Dropped identifier type '${toDrop}' due to merge conflict`;
+            const conflict = conflictDetails.find(c => c.droppedType === toDrop);
+            if (conflict && conflict.conflictingType) {
+              conflictMessage += ` with ${conflict.conflictingType}`;
+            }
+            
+            delete identifiers[toDrop];
+            logs.push(conflictMessage);
+            continue;
+          }
         }
         
-        delete identifiers[toDrop];
-        logs.push(conflictMessage);
-        continue;
+        // If identifiers don't span multiple profiles, add to existing profile
+        for (const idx of matched) {
+          const profile = this.profiles[idx];
+          if (this.canAddToProfile(profile, identifiers)) {
+            this.addIdentifiersToProfile(idx, identifiers);
+            logs.push(`Added identifiers to existing profile ${profile.id}.`);
+            return {
+              action: 'add',
+              profile: profile,
+              dropped: IdentitySimulation.parseDroppedIdentifiers(logs),
+              logs,
+            };
+          }
+        }
       }
     }
   }

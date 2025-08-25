@@ -1,10 +1,25 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import UniqueUser from '../UniqueUser/UniqueUser.jsx';
 import './UniqueUsersList.css';
 
 const UniqueUsersList = ({ events, currentUser, onHighlightEvents, onAddEventToList }) => {
   // Extract unique users from events using proper identity resolution logic
   const uniqueUsers = useMemo(() => {
+    // If no events, try to load from localStorage
+    if (!events || events.length === 0) {
+      try {
+        const saved = localStorage.getItem('uniqueUsers_data');
+        if (saved) {
+          const parsedData = JSON.parse(saved);
+          console.log('Loaded unique users from localStorage:', parsedData.uniqueUsers?.length);
+          return parsedData.uniqueUsers || [];
+        }
+      } catch (error) {
+        console.error('Error loading unique users from localStorage:', error);
+      }
+      return [];
+    }
+
     const usersMap = new Map();
     
     // Process events to build user profiles with proper identity resolution merging
@@ -236,6 +251,27 @@ const UniqueUsersList = ({ events, currentUser, onHighlightEvents, onAddEventToL
       return new Date(a.firstSeen) - new Date(b.firstSeen);
     });
   }, [events]);
+
+  // Persist uniqueUsers to localStorage when they change
+  useEffect(() => {
+    if (uniqueUsers && uniqueUsers.length > 0) {
+      try {
+        const eventsString = JSON.stringify(events);
+        const dataToStore = {
+          uniqueUsers: uniqueUsers,
+          eventsHash: btoa(eventsString),
+          timestamp: Date.now()
+        };
+        localStorage.setItem('uniqueUsers_data', JSON.stringify(dataToStore));
+        console.log('Persisted unique users data to localStorage:', uniqueUsers.length);
+      } catch (error) {
+        console.error('Error saving unique users to localStorage:', error);
+      }
+    } else {
+      // Clear localStorage if no users
+      localStorage.removeItem('uniqueUsers_data');
+    }
+  }, [uniqueUsers, events]);
   
   // Check if current user matches any unique user
   const isCurrentUserActive = (user) => {
@@ -251,13 +287,15 @@ const UniqueUsersList = ({ events, currentUser, onHighlightEvents, onAddEventToL
   return (
     <div className="unique-users-list">
       <div className="unique-users-list__header">
-        <h3 className="unique-users-list__title">
-          <img src="/assets/user.svg" alt="Users" className="unique-users-list__header-icon" />
-          Unique Users ({uniqueUsers.length})
-        </h3>
-        <p className="unique-users-list__subtitle">
-          Users identified from saved events
-        </p>
+        <div className="unique-users-list__title-row">
+          <h3 className="unique-users-list__title">
+            <img src="/assets/user.svg" alt="Users" className="unique-users-list__header-icon" />
+            Unique Users ({uniqueUsers.length})
+          </h3>
+          <p className="unique-users-list__subtitle">
+            Users identified from saved events
+          </p>
+        </div>
       </div>
       
       <div className="unique-users-list__content">

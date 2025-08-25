@@ -118,8 +118,9 @@
   transition: all 0.2s ease-in-out;
   cursor: pointer;
   flex: 0 0 auto;
-  width: 400px; /* Default expanded width */
-  min-width: 400px;
+  width: auto; /* Auto width to accommodate content */
+  min-width: 400px; /* Minimum width maintained */
+  max-width: 600px; /* Maximum width to prevent too wide cards */
   position: relative;
 }
 
@@ -335,26 +336,70 @@
   min-width: 0;
 }
 
+/* New container for identifier values */
+.diagram-timeline2__events .visualizer2__identifier-values-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Individual identifier value styling */
+.diagram-timeline2__events .visualizer2__identifier-value {
+  /* color: #374151; */
+  font-size: 12px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: initial;
+  word-break: break-all;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+/* Individual value matching state */
+.diagram-timeline2__events .visualizer2__identifier-value--matching {
+  color: #f22f46 !important; /* Twilio red */
+  background-color: rgba(242, 47, 70, 0.1);
+  border-radius: 4px;
+  padding: 2px 6px;
+  box-shadow: 0 0 8px rgba(242, 47, 70, 0.3);
+  font-weight: 600;
+  animation: identifierGlow 1.5s ease-in-out infinite alternate;
+}
+
 /* Matching identifier highlighting */
 .diagram-timeline2__events .visualizer2__identifier-row--matching {
   animation: identifierGlow 1.5s ease-in-out infinite alternate;
 }
 
 .diagram-timeline2__events .visualizer2__identifier-values--matching {
-  color: #3b82f6 !important;
-  background-color: rgba(59, 130, 246, 0.1);
+  color: #f22f46 !important; /* Twilio red */
+  background-color: rgba(242, 47, 70, 0.1);
   border-radius: 4px;
   padding: 2px 6px;
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 8px rgba(242, 47, 70, 0.3);
   font-weight: 600;
 }
 
 @keyframes identifierGlow {
   0% {
-    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 5px rgba(242, 47, 70, 0.3); /* Twilio red */
   }
   100% {
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+    box-shadow: 0 0 15px rgba(242, 47, 70, 0.6); /* Twilio red */
+  }
+}
+
+/* Dark mode glow animation */
+@keyframes identifierGlowDark {
+  0% {
+    box-shadow: 0 0 5px rgba(255, 107, 157, 0.4); /* Twilio pink */
+  }
+  100% {
+    box-shadow: 0 0 15px rgba(255, 107, 157, 0.7); /* Twilio pink */
   }
 }
 
@@ -452,14 +497,77 @@
 }
 
 .dark-mode .diagram-timeline2__events .visualizer2__identifier-values {
-  color: #F3F4F7; /* grey-50 */
+  color: #ffffff !important; /* White text in dark mode */
+}
+
+/* Dark mode styles for new identifier value classes */
+.dark-mode .diagram-timeline2__events .visualizer2__identifier-value {
+  color: #ffffff !important; /* White text in dark mode */
+}
+
+.dark-mode .diagram-timeline2__events .visualizer2__identifier-value--matching {
+  color: #ff6b9d !important; /* Twilio pink for dark mode matching */
+  background-color: rgba(255, 107, 157, 0.2);
+  box-shadow: 0 0 8px rgba(255, 107, 157, 0.4);
+  animation: identifierGlowDark 1.5s ease-in-out infinite alternate;
 }
 
 /* Dark mode matching identifier highlighting */
 .dark-mode .diagram-timeline2__events .visualizer2__identifier-values--matching {
-  color: #60a5fa !important;
-  background-color: rgba(96, 165, 250, 0.2);
-  box-shadow: 0 0 8px rgba(96, 165, 250, 0.4);
+  color: #ff6b9d !important; /* Twilio pink for dark mode matching */
+  background-color: rgba(255, 107, 157, 0.2);
+  box-shadow: 0 0 8px rgba(255, 107, 157, 0.4);
+}
+
+/* Dark mode overrides for Twilio mode - more specific selectors */
+.dark-mode.twilio-mode .diagram-timeline2__events .visualizer2__identifier-type,
+.twilio-mode.dark-mode .diagram-timeline2__events .visualizer2__identifier-type {
+  color: #ffffff !important; /* White text in dark mode */
+}
+
+.dark-mode.twilio-mode .diagram-timeline2__events .visualizer2__identifier-values,
+.twilio-mode.dark-mode .diagram-timeline2__events .visualizer2__identifier-values {
+  color: #ffffff !important; /* White text in dark mode */
+}
+
+.dark-mode.twilio-mode .diagram-timeline2__events .visualizer2__identifier-value,
+.twilio-mode.dark-mode .diagram-timeline2__events .visualizer2__identifier-value {
+  color: #ffffff !important; /* White text in dark mode */
+}
+
+.dark-mode.twilio-mode .diagram-timeline2__events .visualizer2__identifiers-label,
+.twilio-mode.dark-mode .diagram-timeline2__events .visualizer2__identifiers-label {
+  color: #ffffff !important; /* White text in dark mode */
+}
+
+/* Ultra-specific dark mode overrides to force white text */
+body.dark-mode .diagram-timeline2__events .visualizer2__identifier-value,
+html.dark-mode .diagram-timeline2__events .visualizer2__identifier-value,
+.dark-mode .diagram-timeline2__events .visualizer2__identifier-values-container .visualizer2__identifier-value,
+.dark-mode .diagram-timeline2__events .visualizer2__identifier-row .visualizer2__identifier-value,
+.dark-mode .visualizer2__profile-card .visualizer2__identifier-value {
+  color: #ffffff !important; /* Force white text in dark mode */
+}
+
+body.dark-mode .diagram-timeline2__events .visualizer2__identifier-values,
+html.dark-mode .diagram-timeline2__events .visualizer2__identifier-values,
+.dark-mode .diagram-timeline2__events .visualizer2__identifier-row .visualizer2__identifier-values,
+.dark-mode .visualizer2__profile-card .visualizer2__identifier-values {
+  color: #ffffff !important; /* Force white text in dark mode */
+}
+
+/* Dark mode empty identifier styles */
+.dark-mode .diagram-timeline2__events .visualizer2__identifier-empty {
+  color: #ffffff; /* White text in dark mode */
+}
+
+/* Additional comprehensive dark mode overrides for all identifier elements */
+.dark-mode .diagram-timeline2__events .visualizer2__identifier-values-container .visualizer2__identifier-value {
+  color: #ffffff !important; /* Ensure white text in dark mode */
+}
+
+.dark-mode .diagram-timeline2__events .visualizer2__identifier-value:not(.visualizer2__identifier-value--matching) {
+  color: #ffffff !important; /* Ensure white text for non-matching identifiers in dark mode */
 }
 
 /* Brand mode support */
@@ -634,6 +742,22 @@
   color: #dc2626 !important;
   background-color: rgba(220, 38, 38, 0.1);
   box-shadow: 0 0 8px rgba(220, 38, 38, 0.3);
+}
+
+/* Dark mode overrides for Twilio mode matching states */
+.dark-mode.twilio-mode .diagram-timeline2__events .visualizer2__identifier-value--matching,
+.twilio-mode.dark-mode .diagram-timeline2__events .visualizer2__identifier-value--matching {
+  color: #ff6b9d !important; /* Twilio pink for dark mode matching */
+  background-color: rgba(255, 107, 157, 0.2) !important;
+  box-shadow: 0 0 8px rgba(255, 107, 157, 0.4) !important;
+  animation: identifierGlowDark 1.5s ease-in-out infinite alternate;
+}
+
+.dark-mode.twilio-mode .diagram-timeline2__events .visualizer2__identifier-values--matching,
+.twilio-mode.dark-mode .diagram-timeline2__events .visualizer2__identifier-values--matching {
+  color: #ff6b9d !important; /* Twilio pink for dark mode matching */
+  background-color: rgba(255, 107, 157, 0.2) !important;
+  box-shadow: 0 0 8px rgba(255, 107, 157, 0.4) !important;
 }
 
 .twilio-mode .diagram-timeline2__events .visualizer2__target-arrow,
