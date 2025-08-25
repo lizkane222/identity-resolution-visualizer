@@ -89,7 +89,7 @@
   flex-wrap: wrap;
   flex: 1; /* Take remaining space within source-row */
   min-width: 0; /* Allow shrinking */
-  max-width: 100%; /* Constrain to parent width */
+  max-width: 60%; /* Constrain to parent width */
   overflow: hidden; /* Prevent overflow */
   justify-content: flex-end; /* Right align the buttons */
 }
