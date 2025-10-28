@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './VoiceTutorial.css';
 
-const VoiceTutorial = ({ isOpen, onClose }) => {
+const VoiceTutorial = ({ isOpen, onClose, onPhoneNumberSaved }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -76,6 +76,12 @@ const VoiceTutorial = ({ isOpen, onClose }) => {
           type: 'success', 
           text: `Tutorial call initiated! You should receive a call at ${phoneNumber} shortly.` 
         });
+        
+        // Save phone number to parent component (for navbar display)
+        if (onPhoneNumberSaved) {
+          onPhoneNumberSaved(phoneNumber);
+        }
+        
         setPhoneNumber('');
         
         // Close modal after 3 seconds

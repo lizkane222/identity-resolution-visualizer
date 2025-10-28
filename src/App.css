@@ -138,6 +138,35 @@ body {
   border: none;
 }
 
+.app__phone-button {
+  background: #ffffff;
+  /* border: 1px solid #e5e7eb; */
+  border-radius: 20px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.app__phone-button:hover {
+  background: linear-gradient(135deg, #5a6fdb 0%, #6a408f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.15);
+  border-color: #667eea;
+}
+
 .app__config-button:hover,
 .app__lookup-button:hover,
 .app__tutorial-button:hover {
@@ -294,6 +323,10 @@ body {
 
 .app__tutorial-button .app__button-icon:not(.app__button-icon--color) {
   filter: brightness(0) saturate(100%) invert(100%);
+}
+
+.app__phone-button .app__button-icon:not(.app__button-icon--color) {
+  filter: brightness(0) saturate(100%) invert(41%) sepia(89%) saturate(1520%) hue-rotate(223deg) brightness(98%) contrast(90%);
 }
 
 .app__brand-icon {

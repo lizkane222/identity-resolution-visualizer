@@ -599,9 +599,31 @@ app.get('/api/accounts/:groupId/links', async (req, res) => {
   }
 });
 
-// ========================================
-// Twilio Voice Tutorial Endpoint
-// ========================================
+// ============================================================
+// TWILIO INTEGRATION
+// ============================================================
+
+// Helper function to initialize Twilio client
+function initializeTwilioClient() {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+  if (!accountSid || !authToken) {
+    return null;
+  }
+
+  try {
+    const twilio = require('twilio');
+    return twilio(accountSid, authToken);
+  } catch (error) {
+    console.error('⚠️  Twilio SDK not installed');
+    return null;
+  }
+}
+
+// ============================================================
+// Twilio Studio Flow Voice Tutorial Trigger
+// ============================================================
 
 // POST /api/twilio/start-tutorial
 // Starts a voice tutorial call via Twilio Studio Flow
@@ -629,14 +651,11 @@ app.post('/api/twilio/start-tutorial', async (req, res) => {
     }
 
     // Initialize Twilio client (lazy loading to avoid errors if not installed)
-    let twilioClient;
-    try {
-      const twilio = require('twilio');
-      twilioClient = twilio(accountSid, authToken);
-    } catch (error) {
-      console.error('⚠️  Twilio SDK not installed');
+    const twilioClient = initializeTwilioClient();
+    
+    if (!twilioClient) {
       return res.status(500).json({
-        error: 'Twilio SDK is not installed. Run: npm install twilio'
+        error: 'Twilio SDK is not installed or credentials are missing. Run: npm install twilio and configure credentials.'
       });
     }
 
@@ -680,6 +699,148 @@ app.post('/api/twilio/start-tutorial', async (req, res) => {
     
     res.status(500).json({
       error: 'Failed to start voice tutorial call',
+      details: error.message
+    });
+  }
+});
+
+// Export data via SMS/MMS
+app.post('/api/twilio/send-export', async (req, res) => {
+  let { to, exportType, data, fileName } = req.body;
+
+  // Validate required fields
+  if (!to) {
+    return res.status(400).json({
+      error: 'Missing required field',
+      details: 'Phone number (to) is required'
+    });
+  }
+
+  if (!data) {
+    return res.status(400).json({
+      error: 'Missing required field',
+      details: 'Export data is required'
+    });
+  }
+
+  // Normalize phone number to E.164 format
+  let normalizedPhone = to.replace(/\D/g, ''); // Remove all non-digits
+  
+  // Ensure it has country code +1
+  if (normalizedPhone.length === 10) {
+    normalizedPhone = '+1' + normalizedPhone;
+  } else if (normalizedPhone.length === 11 && normalizedPhone.startsWith('1')) {
+    normalizedPhone = '+' + normalizedPhone;
+  } else if (!normalizedPhone.startsWith('+')) {
+    normalizedPhone = '+' + normalizedPhone;
+  } else {
+    normalizedPhone = to; // Keep original if already formatted
+  }
+  
+  console.log('📞 Phone number normalized:', to, '→', normalizedPhone);
+  to = normalizedPhone; // Use normalized version
+
+  // Check if Twilio SDK is available
+  const twilioClient = initializeTwilioClient();
+  
+  if (!twilioClient) {
+    return res.status(500).json({
+      error: 'Twilio SDK not initialized',
+      details: 'Twilio credentials not configured. Please set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER in your environment variables.'
+    });
+  }
+
+  try {
+    const from = process.env.TWILIO_PHONE_NUMBER;
+    
+    if (!from) {
+      throw new Error('TWILIO_PHONE_NUMBER not configured');
+    }
+
+    console.log('\n📤 [TWILIO EXPORT] Sending export via SMS/MMS');
+    console.log('To:', to);
+    console.log('Export Type:', exportType);
+    console.log('File Name:', fileName || 'export.json');
+
+    // Create message body based on export type
+    let messageBody = `Identity Resolution Export\n`;
+    messageBody += `Type: ${exportType || 'Data'}\n`;
+    messageBody += `File: ${fileName || 'export.json'}\n\n`;
+    
+    // For small data, include preview in message
+    const dataStr = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    const dataPreview = dataStr.length > 500 
+      ? dataStr.substring(0, 500) + '...\n\n(Data truncated. Full export attached)'
+      : dataStr;
+    
+    messageBody += dataPreview;
+
+    // Option 1: Use Studio Flow (bypasses A2P restrictions for trial accounts)
+    // Can use the same flow as voice tutorial with conditional routing
+    const exportFlowSid = process.env.TWILIO_EXPORT_FLOW_SID || process.env.TWILIO_VOICE_FLOW_SID || 'FW8b38713dcf3b2cb224d6b3a7a511f4d3';
+    
+    if (exportFlowSid) {
+      console.log('📱 Using Studio Flow for export:', exportFlowSid);
+      console.log('📋 Parameters being sent:', {
+        exportType: 'SMS_EXPORT',
+        Body: messageBody.substring(0, 100) + '...',
+        To: to
+      });
+      
+      const execution = await twilioClient.studio.v2
+        .flows(exportFlowSid)
+        .executions
+        .create({
+          to: to,
+          from: from,
+          parameters: {
+            exportType: 'SMS_EXPORT', // This is what split_1 checks
+            Body: messageBody,
+            To: to,
+            messageType: 'export',
+            fileName: fileName,
+            dataType: exportType
+          }
+        });
+      
+      console.log('✅ Export sent via Studio Flow');
+      console.log('Execution SID:', execution.sid);
+      console.log('Status:', execution.status);
+      
+      return res.json({
+        success: true,
+        executionSid: execution.sid,
+        status: execution.status,
+        timestamp: new Date().toISOString(),
+        method: 'studio-flow'
+      });
+    }
+
+    // Option 2: Direct messaging (requires A2P registration for US numbers)
+    console.log('📱 Using direct Messaging API');
+    const messageResponse = await twilioClient.messages.create({
+      body: messageBody,
+      from: from,
+      to: to
+    });
+
+    console.log('✅ Export sent successfully');
+    console.log('Message SID:', messageResponse.sid);
+    console.log('Status:', messageResponse.status);
+
+    res.json({
+      success: true,
+      messageSid: messageResponse.sid,
+      status: messageResponse.status,
+      timestamp: new Date().toISOString(),
+      method: 'direct-messaging'
+    });
+
+  } catch (error) {
+    console.error('\n❌ [TWILIO EXPORT] Error sending export:', error);
+    
+    res.status(500).json({
+      error: 'Failed to send export',
       details: error.message
     });
   }

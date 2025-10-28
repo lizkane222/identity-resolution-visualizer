@@ -11,6 +11,7 @@ import GlowModesList from './components/GlowModesList/GlowModesList.jsx';
 import Visualizer from './components/Visualizer/Visualizer.jsx';
 import Visualizer2 from './components/Visualizer2/Visualizer2.jsx';
 import VoiceTutorial from './components/VoiceTutorial/VoiceTutorial.jsx';
+import ExportDropdown from './components/ExportDropdown/ExportDropdown.jsx';
 import { useEffect, useMemo } from 'react';
 import './App.css';
 
@@ -60,9 +61,31 @@ function App() {
   const [showSourceConfig, setShowSourceConfig] = useState(false);
   const [showProfileLookup, setShowProfileLookup] = useState(false);
   const [showVoiceTutorial, setShowVoiceTutorial] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [currentPage, setCurrentPage] = useState('main'); // 'main', 'visualizer', or 'visualizer2'
   const [highlightedEventIndices, setHighlightedEventIndices] = useState([]);
   const [unifySpaceSlug, setUnifySpaceSlug] = useState('');
+  
+  // Stored phone number for voice tutorial
+  const [savedPhoneNumber, setSavedPhoneNumber] = useState(() => {
+    try {
+      const saved = localStorage.getItem('voiceTutorialPhoneNumber');
+      return saved || '';
+    } catch (error) {
+      console.error('Error loading phone number from localStorage:', error);
+      return '';
+    }
+  });
+
+  // Handler to save phone number from voice tutorial
+  const handlePhoneNumberSaved = useCallback((phoneNumber) => {
+    try {
+      localStorage.setItem('voiceTutorialPhoneNumber', phoneNumber);
+      setSavedPhoneNumber(phoneNumber);
+    } catch (error) {
+      console.error('Error saving phone number to localStorage:', error);
+    }
+  }, []);
   
   // Persistent checkpoint state for EventList
   const [eventListCheckpoint, setEventListCheckpoint] = useState(() => {
@@ -217,20 +240,33 @@ function App() {
     const loadUnifySpaceSlug = async () => {
       try {
         const response = await fetch('http://localhost:8888/api/config');
+        if (!response.ok) {
+          // Don't log error for expected failures (server might not be ready)
+          return;
+        }
         const config = await response.json();
         if (config.unifySpaceSlug) {
           setUnifySpaceSlug(config.unifySpaceSlug);
         }
       } catch (error) {
-        console.error('Failed to load unifySpaceSlug:', error);
+        // Silently ignore fetch errors - server might not be ready yet
+        // Only log if it's not a network error
+        if (error.message && !error.message.includes('fetch')) {
+          console.error('Failed to load unifySpaceSlug:', error);
+        }
       }
     };
-    loadUnifySpaceSlug();
     
-    // Set up an interval to periodically check for updates
-    const interval = setInterval(loadUnifySpaceSlug, 2000);
+    // Initial load with a small delay
+    const initialTimeout = setTimeout(loadUnifySpaceSlug, 500);
     
-    return () => clearInterval(interval);
+    // Set up an interval to periodically check for updates (less frequently)
+    const interval = setInterval(loadUnifySpaceSlug, 10000); // Every 10 seconds instead of 2
+    
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
   }, []);
 
   // Persist profile API results to localStorage
@@ -749,7 +785,49 @@ function App() {
               )}
             </div>
             <div className="app__header-actions">
+              {/* Phone number display button - shown after tutorial is used */}
+              {savedPhoneNumber && (
+                <div style={{ position: 'relative' }}>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setShowExportDropdown(!showExportDropdown);
+                    }}
+                    className="app__phone-button"
+                    title={`Export to ${savedPhoneNumber}`}
+                  >
+                    <img src="/assets/phone.svg" alt="Phone" className="app__button-icon" />
+                    {savedPhoneNumber}
+                  </button>
+                  
+                  <ExportDropdown
+                    phoneNumber={savedPhoneNumber}
+                    events={events}
+                    currentUser={currentUser}
+                    profileApiResults={profileApiResults}
+                    isOpen={showExportDropdown}
+                    onClose={() => setShowExportDropdown(false)}
+                  />
+                </div>
+              )}
+              
+              {/* Voice Tutorial button */}
               <button 
+                type="button"
+                onClick={() => {
+                  setCurrentPage('main');
+                  setShowVoiceTutorial(true);
+                }}
+                className="app__tutorial-button"
+                title="Get Voice Tutorial"
+              >
+                <img src="/assets/phone.svg" alt="Tutorial" className="app__button-icon" />
+                Voice Tutorial
+              </button>
+              
+              {/* Source Config button */}
+              <button 
+                type="button"
                 onClick={() => {
                   setCurrentPage('main');
                   setShowSourceConfig(true);
@@ -760,7 +838,10 @@ function App() {
                 <img src="/assets/Connections.svg" alt="Connections" className="app__button-icon" />
                 Source Config
               </button>
+              
+              {/* Unify Config button */}
               <button 
+                type="button"
                 onClick={() => {
                   setCurrentPage('main');
                   setShowUnifySpaceConfig(true);
@@ -771,7 +852,10 @@ function App() {
                 <img src="/assets/Unify.svg" alt="Unify" className="app__button-icon" />
                 Unify Config
               </button>
+              
+              {/* Lookup button */}
               <button 
+                type="button"
                 onClick={() => {
                   setCurrentPage('main');
                   const newShowState = !showProfileLookup;
@@ -792,17 +876,6 @@ function App() {
               >
                 <img src="/assets/compass.svg" alt="Compass" className="app__button-icon" />
                 Lookup
-              </button>
-              <button 
-                onClick={() => {
-                  setCurrentPage('main');
-                  setShowVoiceTutorial(true);
-                }}
-                className="app__tutorial-button"
-                title="Get Voice Tutorial"
-              >
-                <img src="/assets/phone.svg" alt="Tutorial" className="app__button-icon" />
-                Voice Tutorial
               </button>
               {/* <button 
                 onClick={() => setCurrentPage('visualizer')}
@@ -1001,6 +1074,7 @@ function App() {
         <VoiceTutorial 
           isOpen={showVoiceTutorial}
           onClose={() => setShowVoiceTutorial(false)}
+          onPhoneNumberSaved={handlePhoneNumberSaved}
         />
       )}
     </div>
