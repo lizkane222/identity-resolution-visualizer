@@ -1,0 +1,259 @@
+.voice-tutorial-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.voice-tutorial-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.voice-tutorial-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.voice-tutorial-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.voice-tutorial-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.voice-tutorial-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.voice-tutorial-content {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: calc(90vh - 80px);
+}
+
+.voice-tutorial-description {
+  margin: 0 0 24px 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #4b5563;
+}
+
+.voice-tutorial-form {
+  margin-bottom: 24px;
+}
+
+.voice-tutorial-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.voice-tutorial-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+  transition: all 0.2s;
+  background: white;
+}
+
+.voice-tutorial-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.voice-tutorial-input:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.voice-tutorial-hint {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.voice-tutorial-message {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.voice-tutorial-message--success {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+.voice-tutorial-message--error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.voice-tutorial-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.voice-tutorial-button {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.voice-tutorial-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.voice-tutorial-button--secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.voice-tutorial-button--secondary:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.voice-tutorial-button--primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.voice-tutorial-button--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.voice-tutorial-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.voice-tutorial-footer {
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.voice-tutorial-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6b7280;
+}
+
+.voice-tutorial-note strong {
+  color: #374151;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .voice-tutorial-overlay {
+    padding: 0;
+  }
+
+  .voice-tutorial-modal {
+    border-radius: 0;
+    max-height: 100vh;
+    height: 100vh;
+  }
+
+  .voice-tutorial-content {
+    max-height: calc(100vh - 80px);
+  }
+
+  .voice-tutorial-actions {
+    flex-direction: column;
+  }
+
+  .voice-tutorial-button {
+    width: 100%;
+  }
+}

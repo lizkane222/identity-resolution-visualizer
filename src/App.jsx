@@ -10,6 +10,7 @@ import ProfileLookup from './components/ProfileLookup/ProfileLookup.jsx';
 import GlowModesList from './components/GlowModesList/GlowModesList.jsx';
 import Visualizer from './components/Visualizer/Visualizer.jsx';
 import Visualizer2 from './components/Visualizer2/Visualizer2.jsx';
+import VoiceTutorial from './components/VoiceTutorial/VoiceTutorial.jsx';
 import { useEffect, useMemo } from 'react';
 import './App.css';
 
@@ -58,6 +59,7 @@ function App() {
   const [showUnifySpaceConfig, setShowUnifySpaceConfig] = useState(false);
   const [showSourceConfig, setShowSourceConfig] = useState(false);
   const [showProfileLookup, setShowProfileLookup] = useState(false);
+  const [showVoiceTutorial, setShowVoiceTutorial] = useState(false);
   const [currentPage, setCurrentPage] = useState('main'); // 'main', 'visualizer', or 'visualizer2'
   const [highlightedEventIndices, setHighlightedEventIndices] = useState([]);
   const [unifySpaceSlug, setUnifySpaceSlug] = useState('');
@@ -791,6 +793,17 @@ function App() {
                 <img src="/assets/compass.svg" alt="Compass" className="app__button-icon" />
                 Lookup
               </button>
+              <button 
+                onClick={() => {
+                  setCurrentPage('main');
+                  setShowVoiceTutorial(true);
+                }}
+                className="app__tutorial-button"
+                title="Get Voice Tutorial"
+              >
+                <img src="/assets/phone.svg" alt="Tutorial" className="app__button-icon" />
+                Voice Tutorial
+              </button>
               {/* <button 
                 onClick={() => setCurrentPage('visualizer')}
                 className="app__visualize-button"
@@ -981,6 +994,13 @@ function App() {
             setSourceConfigUpdateTrigger(prev => prev + 1);
           }}
           unifySpaceSlug={unifySpaceSlug}
+        />
+      )}
+
+      {showVoiceTutorial && (
+        <VoiceTutorial 
+          isOpen={showVoiceTutorial}
+          onClose={() => setShowVoiceTutorial(false)}
         />
       )}
     </div>

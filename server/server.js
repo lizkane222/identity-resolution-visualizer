@@ -599,6 +599,92 @@ app.get('/api/accounts/:groupId/links', async (req, res) => {
   }
 });
 
+// ========================================
+// Twilio Voice Tutorial Endpoint
+// ========================================
+
+// POST /api/twilio/start-tutorial
+// Starts a voice tutorial call via Twilio Studio Flow
+app.post('/api/twilio/start-tutorial', async (req, res) => {
+  try {
+    const { to, flowSid } = req.body;
+
+    // Validate required fields
+    if (!to || !flowSid) {
+      return res.status(400).json({
+        error: 'Missing required fields: to and flowSid are required'
+      });
+    }
+
+    // Check for Twilio credentials
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+
+    if (!accountSid || !authToken || !fromNumber) {
+      console.error('⚠️  Twilio credentials not configured');
+      return res.status(500).json({
+        error: 'Twilio is not configured. Please add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER to your .env file.'
+      });
+    }
+
+    // Initialize Twilio client (lazy loading to avoid errors if not installed)
+    let twilioClient;
+    try {
+      const twilio = require('twilio');
+      twilioClient = twilio(accountSid, authToken);
+    } catch (error) {
+      console.error('⚠️  Twilio SDK not installed');
+      return res.status(500).json({
+        error: 'Twilio SDK is not installed. Run: npm install twilio'
+      });
+    }
+
+    console.log(`📞 [TWILIO] Starting voice tutorial for ${to}`);
+    console.log(`📞 [TWILIO] Flow SID: ${flowSid}`);
+
+    // Use Studio Flow Executions API with parameters
+    // This properly triggers the REST API trigger in your Studio Flow
+    const execution = await twilioClient.studio.v2
+      .flows(flowSid)
+      .executions
+      .create({
+        to: to,
+        from: fromNumber,
+        parameters: {
+          // Pass any custom parameters your flow might need
+          tutorial_type: 'identity_resolution',
+          initiated_from: 'web_app'
+        }
+      });
+
+    console.log(`✅ [TWILIO] Studio Flow execution created successfully`);
+    console.log(`📞 [TWILIO] Execution SID: ${execution.sid}`);
+    console.log(`📞 [TWILIO] Context: ${JSON.stringify(execution.context)}`);
+
+    res.json({
+      success: true,
+      message: 'Voice tutorial call initiated successfully',
+      executionSid: execution.sid
+    });
+
+  } catch (error) {
+    console.error('❌ [TWILIO] Error starting voice tutorial:', error);
+    
+    // Handle Twilio-specific errors
+    if (error.code) {
+      return res.status(400).json({
+        error: `Twilio Error ${error.code}: ${error.message}`
+      });
+    }
+    
+    res.status(500).json({
+      error: 'Failed to start voice tutorial call',
+      details: error.message
+    });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
@@ -614,5 +700,12 @@ app.listen(PORT, () => {
     console.log('Please configure your Space ID and Access Token through the UI or add them to .env file.');
   } else {
     console.log('✅ Segment configuration loaded');
+  }
+
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_PHONE_NUMBER) {
+    console.log('\n⚠️  Twilio configuration not found in environment variables.');
+    console.log('Voice Tutorial feature requires: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER');
+  } else {
+    console.log('✅ Twilio configuration loaded - Voice Tutorial feature available');
   }
 });

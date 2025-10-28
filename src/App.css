@@ -108,6 +108,7 @@ body {
 
 .app__config-button,
 .app__lookup-button,
+.app__tutorial-button,
 .app__theme-button {
   background: #ffffff;
   border: 1px solid #e5e7eb;
@@ -131,8 +132,15 @@ body {
   border: none;
 }
 
+.app__tutorial-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
 .app__config-button:hover,
-.app__lookup-button:hover {
+.app__lookup-button:hover,
+.app__tutorial-button:hover {
   background: #f9fafb;
   border-color: rgb(48, 172, 130); /* segment-green */
   color: rgb(48, 172, 130); /* segment-green */
@@ -281,6 +289,10 @@ body {
 }
 
 .app__lookup-button .app__button-icon:not(.app__button-icon--color) {
+  filter: brightness(0) saturate(100%) invert(100%);
+}
+
+.app__tutorial-button .app__button-icon:not(.app__button-icon--color) {
   filter: brightness(0) saturate(100%) invert(100%);
 }
 

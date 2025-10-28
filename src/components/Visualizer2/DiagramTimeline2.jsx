@@ -169,11 +169,25 @@ function generateComprehensiveAnalysis(processedEvents, simulation) {
       return profileId === internalId || profileMap.get(profileId) === displayName;
     });
 
+    // Aggregate all identifiers from related events
+    const aggregatedIdentifiers = {};
+    relatedEvents.forEach(event => {
+      Object.entries(event.identifiers || {}).forEach(([type, identifier]) => {
+        const value = identifier.value || identifier;
+        if (!aggregatedIdentifiers[type]) {
+          aggregatedIdentifiers[type] = [];
+        }
+        if (!aggregatedIdentifiers[type].includes(value)) {
+          aggregatedIdentifiers[type].push(value);
+        }
+      });
+    });
+
     return {
       profileNumber: displayName,
       internalId,
       segmentId: null, // Will be populated if available
-      identifiers: {},
+      identifiers: aggregatedIdentifiers,
       eventCount: relatedEvents.length,
       events: relatedEvents.map(e => ({
         eventNumber: processedEvents.indexOf(e) + 1,

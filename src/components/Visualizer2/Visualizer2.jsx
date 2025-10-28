@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DiagramTimeline2 from './DiagramTimeline2.jsx';
 import { exportVisualizerAsImage } from '../../utils/imageExport.js';
+import html2canvas from 'html2canvas';
 import './Visualizer2.css';
 import '../Visualizer/AnalysisSidebar.css';
 import '../Visualizer/Visualizer.css';
@@ -91,11 +92,134 @@ const Visualizer2 = ({
     document.body.removeChild(link);
   };
 
-  // Open analysis in new tab
-  const openAnalysisInNewTab = (analysisData) => {
+  // Helper function to get sources from localStorage
+  const getSourcesConfig = () => {
+    try {
+      const saved = localStorage.getItem('sourceConfig');
+      if (saved) {
+        const config = JSON.parse(saved);
+        return config.sources || [];
+      }
+    } catch (error) {
+      console.error('Error loading source config:', error);
+    }
+    return [];
+  };
+
+  // Helper function to get unify space configuration
+  const getUnifySpaceConfig = () => {
+    const processedSlug = unifySpaceSlug ? unifySpaceSlug.trim() : '';
+    let generatedURL = '';
+    let workspaceSlug = '';
+    let spaceId = '';
+    
+    if (processedSlug) {
+      // Check if input contains a Segment URL pattern
+      const urlMatch = processedSlug.match(/segment\.com\/([^/]+)\/(?:unify|engage)\/spaces\/([^/]+)/);
+      if (urlMatch) {
+        workspaceSlug = urlMatch[1];
+        spaceId = urlMatch[2];
+        generatedURL = `https://app.segment.com/${workspaceSlug}/unify/spaces/${spaceId}`;
+      } else {
+        // Assume it's just the space ID
+        spaceId = processedSlug;
+        generatedURL = `https://app.segment.com/[workspace]/unify/spaces/${spaceId}`;
+      }
+    }
+    
+    return { processedSlug, generatedURL, workspaceSlug, spaceId };
+  };
+
+  // Helper function to format Profile API results for display
+  const formatProfileApiResults = () => {
+    if (!profileApiResults || Object.keys(profileApiResults).length === 0) {
+      return { raw: {}, formatted: [], csv: [] };
+    }
+
+    const formatted = [];
+    const csv = [];
+
+    Object.entries(profileApiResults).forEach(([key, result]) => {
+      if (result && result.profile) {
+        const profile = result.profile;
+        
+        // Formatted profile for display
+        formatted.push({
+          key,
+          segmentId: profile.segment_id || profile.id || 'N/A',
+          identifiers: profile.identifiers || {},
+          traits: profile.traits || {},
+          externalIds: profile.external_ids || []
+        });
+
+        // CSV row data
+        const identifierTypes = profile.identifiers ? Object.keys(profile.identifiers) : [];
+        const identifierValues = profile.identifiers ? Object.values(profile.identifiers).map(v => 
+          Array.isArray(v) ? v.join('; ') : v
+        ) : [];
+        
+        csv.push({
+          'Segment ID': profile.segment_id || profile.id || 'N/A',
+          'Identifier Types': identifierTypes.join(', '),
+          'Identifier Values': identifierValues.join(' | '),
+          'Trait Count': Object.keys(profile.traits || {}).length,
+          'External ID Count': (profile.external_ids || []).length
+        });
+      }
+    });
+
+    return {
+      raw: profileApiResults,
+      formatted,
+      csv
+    };
+  };
+
+  // Helper function to capture visualizer as data URL
+  const captureVisualizerImage = async () => {
+    try {
+      const element = document.getElementById('visualizer-timeline') || document.querySelector('.diagram-timeline2');
+      
+      if (!element) {
+        console.warn('Visualizer element not found for capture');
+        return null;
+      }
+
+      const options = {
+        allowTaint: true,
+        useCORS: true,
+        scale: 2,
+        width: element.scrollWidth,
+        height: element.scrollHeight,
+        scrollX: 0,
+        scrollY: 0,
+        backgroundColor: '#ffffff',
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.getElementById('visualizer-timeline') || clonedDoc.querySelector('.diagram-timeline2');
+          if (clonedElement) {
+            clonedElement.style.overflow = 'visible';
+            clonedElement.style.height = 'auto';
+            clonedElement.style.maxHeight = 'none';
+          }
+        }
+      };
+
+      const canvas = await html2canvas(element, options);
+      return canvas.toDataURL('image/png', 0.9);
+    } catch (error) {
+      console.error('Error capturing visualizer image:', error);
+      return null;
+    }
+  };
+
+  // Open analysis in new tab (with PNG capture)
+  const openAnalysisInNewTab = async (analysisData) => {
     if (!analysisData) return;
     
-    const analysisHtml = generateAnalysisHtml(analysisData);
+    // Capture visualizer image
+    const visualizerImageDataUrl = await captureVisualizerImage();
+    
+    const analysisHtml = generateAnalysisHtml(analysisData, visualizerImageDataUrl);
     const blob = new Blob([analysisHtml], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     
@@ -108,7 +232,10 @@ const Visualizer2 = ({
   };
 
   // Generate HTML for full-page analysis view
-  const generateAnalysisHtml = (analysisData) => {
+  const generateAnalysisHtml = (analysisData, visualizerImageDataUrl = null) => {
+    // Get sources configuration to embed in the HTML
+    const sourcesConfig = getSourcesConfig();
+    
     // Embed SVG icons as data URIs to avoid loading issues
     const iconSvgs = {
       download: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 72 72" aria-hidden="true" role="img"><rect x="15" y="33" width="42" height="28" rx="2" fill="none" stroke="white" stroke-width="2"/><path d="M35.52 48.58l14.46-14.46M22.65 34.12l12.87 14.46" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="25" r="14" fill="none" stroke="white" stroke-width="2"/><rect x="12.5" y="31.93" width="47" height="28" rx="1.5" fill="none" stroke="white" stroke-width="1.5"/></svg>`)}`,
@@ -117,11 +244,11 @@ const Visualizer2 = ({
         <path d="M9 9A3 3 0 0 1 15 9C15 11.5 12 11.5 12 13" stroke="white" stroke-width="2" stroke-linecap="round"/>
         <circle cx="12" cy="17" r="1" fill="white"/>
       </svg>`)}`,
-      barGraph: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 72 72" aria-hidden="true" role="img"><rect x="9" y="9" width="8" height="45" fill="none" stroke="white" stroke-width="2"/><rect x="22" y="18" width="8" height="36" fill="none" stroke="white" stroke-width="2"/><rect x="35" y="25" width="8" height="29" fill="none" stroke="white" stroke-width="2"/><rect x="48" y="31" width="8" height="23" fill="none" stroke="white" stroke-width="2"/><circle cx="54.55" cy="15.69" r="9.95" fill="none" stroke="white" stroke-width="2"/><path d="M51 14l2 2 4-4" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`)}`,
-      userPlus: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 72 72" aria-hidden="true" role="img"><circle cx="28" cy="22" r="11" fill="none" stroke="white" stroke-width="2"/><ellipse cx="28" cy="48.5" rx="17" ry="11.5" fill="none" stroke="white" stroke-width="2"/><circle cx="54" cy="26" r="8" fill="none" stroke="white" stroke-width="2"/><path d="M52 23v6M49 26h6" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>`)}`,
-      userCheck: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 73 72" aria-hidden="true" role="img"><circle cx="28.5" cy="22" r="11" fill="none" stroke="white" stroke-width="2"/><ellipse cx="28.5" cy="48.5" rx="17" ry="11.5" fill="none" stroke="white" stroke-width="2"/><circle cx="54.5" cy="26" r="8" fill="none" stroke="white" stroke-width="2"/><path d="M51 24l2 2 4-4" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`)}`,
-      unified: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 29.39 28.13"><circle cx="8.68" cy="6.23" r="5" fill="none" stroke="white" stroke-width="1.5"/><circle cx="18.31" cy="6.23" r="5" fill="none" stroke="white" stroke-width="1.5"/><rect x="6.45" y="14.06" width="14.06" height="11.19" rx="2.88" fill="none" stroke="white" stroke-width="1.5"/><path d="M10 18h8M10 20h6M10 22h8" stroke="white" stroke-width="1" stroke-linecap="round"/></svg>`)}`,
-      userProfile: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 72 72" aria-hidden="true" role="img"><rect x="16" y="15" width="25" height="42" rx="4" fill="none" stroke="white" stroke-width="2"/><circle cx="28.5" cy="28" r="8" fill="none" stroke="white" stroke-width="2"/><rect x="22" y="42" width="13" height="8" rx="2" fill="none" stroke="white" stroke-width="1.5"/><rect x="47" y="20" width="13" height="3" fill="none" stroke="white" stroke-width="1"/><rect x="47" y="28" width="13" height="3" fill="none" stroke="white" stroke-width="1"/><rect x="47" y="36" width="9" height="3" fill="none" stroke="white" stroke-width="1"/><rect x="47" y="44" width="13" height="3" fill="none" stroke="white" stroke-width="1"/><rect x="47" y="52" width="13" height="3" fill="none" stroke="white" stroke-width="1"/></svg>`)}`,
+      barGraph: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 72 72" aria-hidden="true" role="img"><rect x="9" y="9" width="8" height="45" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/><rect x="22" y="18" width="8" height="36" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/><rect x="35" y="25" width="8" height="29" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/><rect x="48" y="31" width="8" height="23" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/><circle cx="54.55" cy="15.69" r="9.95" fill="none" stroke="#059669" stroke-width="2"/><path d="M51 14l2 2 4-4" stroke="#059669" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`)}`,
+      userPlus: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 72 72" aria-hidden="true" role="img"><circle cx="28" cy="22" r="11" fill="none" stroke="#3b82f6" stroke-width="2"/><ellipse cx="28" cy="48.5" rx="17" ry="11.5" fill="none" stroke="#3b82f6" stroke-width="2"/><circle cx="54" cy="26" r="8" fill="none" stroke="#059669" stroke-width="2"/><path d="M52 23v6M49 26h6" stroke="#059669" stroke-width="2" stroke-linecap="round"/></svg>`)}`,
+      userCheck: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 73 72" aria-hidden="true" role="img"><circle cx="28.5" cy="22" r="11" fill="none" stroke="#3b82f6" stroke-width="2"/><ellipse cx="28.5" cy="48.5" rx="17" ry="11.5" fill="none" stroke="#3b82f6" stroke-width="2"/><circle cx="54.5" cy="26" r="8" fill="none" stroke="#059669" stroke-width="2"/><path d="M51 24l2 2 4-4" stroke="#059669" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`)}`,
+      unified: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 29.39 28.13"><circle cx="8.68" cy="6.23" r="5" fill="none" stroke="#3b82f6" stroke-width="1.5"/><circle cx="18.31" cy="6.23" r="5" fill="none" stroke="#3b82f6" stroke-width="1.5"/><rect x="6.45" y="14.06" width="14.06" height="11.19" rx="2.88" fill="none" stroke="#3b82f6" stroke-width="1.5"/><path d="M10 18h8M10 20h6M10 22h8" stroke="#3b82f6" stroke-width="1" stroke-linecap="round"/></svg>`)}`,
+      userProfile: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 72 72" aria-hidden="true" role="img"><rect x="16" y="15" width="25" height="42" rx="4" fill="none" stroke="#3b82f6" stroke-width="2"/><circle cx="28.5" cy="28" r="8" fill="none" stroke="#3b82f6" stroke-width="2"/><rect x="22" y="42" width="13" height="8" rx="2" fill="none" stroke="#3b82f6" stroke-width="1.5"/><rect x="47" y="20" width="13" height="3" fill="none" stroke="#64748b" stroke-width="1"/><rect x="47" y="28" width="13" height="3" fill="none" stroke="#64748b" stroke-width="1"/><rect x="47" y="36" width="9" height="3" fill="none" stroke="#64748b" stroke-width="1"/><rect x="47" y="44" width="13" height="3" fill="none" stroke="#64748b" stroke-width="1"/><rect x="47" y="52" width="13" height="3" fill="none" stroke="#64748b" stroke-width="1"/></svg>`)}`,
       browserLink: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 72 72" aria-hidden="true" role="img"><rect x="9" y="13" width="54" height="42" rx="4" fill="none" stroke="white" stroke-width="2"/><circle cx="13" cy="20" r="2" fill="white"/><circle cx="19" cy="20" r="2" fill="white"/><circle cx="25" cy="20" r="2" fill="white"/><rect x="9" y="25" width="54" height="30" fill="none" stroke="white" stroke-width="1"/><path d="M22.5 34.5l7 7 7-7" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M29.5 41.5v-7" stroke="white" stroke-width="2" fill="none"/><rect x="42" y="33" width="6" height="2" fill="none" stroke="white" stroke-width="1"/><rect x="42" y="37" width="8" height="2" fill="none" stroke="white" stroke-width="1"/><rect x="42" y="41" width="8" height="2" fill="none" stroke="white" stroke-width="1"/><rect x="42" y="45" width="6" height="2" fill="none" stroke="white" stroke-width="1"/></svg>`)}`,
       graphMagnifying: `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 72 72" aria-hidden="true" role="img"><circle cx="28" cy="27" r="20" fill="none" stroke="white" stroke-width="3"/><path d="m62 61-12-12" stroke="white" stroke-width="4" stroke-linecap="round"/><path d="M18 32h4l2-6 3 10 3-8 2 6h4" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`)}`,
       // Source type icons
@@ -183,6 +310,134 @@ const Visualizer2 = ({
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+      }
+      
+      function downloadHTMLReport() {
+        const htmlContent = document.documentElement.outerHTML;
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'identity-resolution-analysis-' + new Date().toISOString().split('T')[0] + '.html';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+      
+      async function downloadPDFReport() {
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = '⏳ Generating PDF...';
+        button.disabled = true;
+        
+        try {
+          // Expand all collapsible sections for PDF
+          const collapsibleSections = document.querySelectorAll('[id^="insight-details-"], [id^="raw-json-"], [id^="profile-details-"]');
+          const originalStates = [];
+          
+          collapsibleSections.forEach(section => {
+            originalStates.push({
+              element: section,
+              display: section.style.display
+            });
+            section.style.display = 'block';
+          });
+          
+          // Use browser's print functionality
+          window.print();
+          
+          // Restore original states
+          originalStates.forEach(state => {
+            state.element.style.display = state.display;
+          });
+          
+          button.textContent = originalText;
+          button.disabled = false;
+        } catch (error) {
+          console.error('PDF generation failed:', error);
+          alert('PDF generation failed. Please use "Download HTML Report" instead or try printing the page.');
+          button.textContent = originalText;
+          button.disabled = false;
+        }
+      }
+      
+      async function shareReportLink() {
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = '⏳ Generating Link...';
+        button.disabled = true;
+        
+        try {
+          const htmlContent = document.documentElement.outerHTML;
+          
+          // Option 1: Use Web Share API if available (mobile-friendly)
+          if (navigator.share) {
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const file = new File([blob], 'identity-resolution-analysis.html', { type: 'text/html' });
+            
+            try {
+              await navigator.share({
+                title: 'Identity Resolution Analysis Report',
+                text: 'View the full identity resolution analysis report',
+                files: [file]
+              });
+              
+              button.textContent = '✓ Shared!';
+              setTimeout(() => {
+                button.textContent = originalText;
+                button.disabled = false;
+              }, 2000);
+              return;
+            } catch (shareError) {
+              // Fall through to clipboard option if share fails
+              console.log('Web Share failed, falling back to clipboard');
+            }
+          }
+          
+          // Option 2: Copy to clipboard with instructions
+          const blob = new Blob([htmlContent], { type: 'text/html' });
+          const reader = new FileReader();
+          
+          reader.onload = function() {
+            const base64 = reader.result.split(',')[1];
+            const shareMessage = \`To share this report:
+
+1. Save as HTML file:
+   - Click "Download HTML Report" button above
+   - Upload to Google Drive, Dropbox, or any file hosting service
+   - Share the link from your cloud storage
+
+2. Or copy this report data:
+   (Report size: \${(htmlContent.length / 1024).toFixed(1)} KB)
+
+Note: For best viewing experience, share via cloud storage link rather than email attachment.\`;
+            
+            // Copy message to clipboard
+            navigator.clipboard.writeText(shareMessage).then(() => {
+              alert(shareMessage);
+              button.textContent = '💡 Instructions Copied';
+              setTimeout(() => {
+                button.textContent = originalText;
+                button.disabled = false;
+              }, 3000);
+            }).catch(err => {
+              alert(shareMessage);
+              button.textContent = originalText;
+              button.disabled = false;
+            });
+          };
+          
+          reader.readAsDataURL(blob);
+          
+        } catch (error) {
+          console.error('Share failed:', error);
+          alert('Sharing failed. Please use "Download HTML Report" and share the file manually via email or cloud storage.');
+          button.textContent = originalText;
+          button.disabled = false;
+        }
       }
       
       function toggleRawJson(eventNumber) {
@@ -309,6 +564,67 @@ const Visualizer2 = ({
 
         .download-button:hover {
             background: #047857;
+        }
+
+        .download-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .export-button {
+            padding: 8px 16px;
+            background: var(--color-accent);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .export-button:hover {
+            background: var(--color-accent-hover);
+        }
+
+        .export-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .export-button--secondary {
+            background: #64748b;
+        }
+
+        .export-button--secondary:hover {
+            background: #475569;
+        }
+
+        @media print {
+            .download-button,
+            .export-buttons,
+            .export-button {
+                display: none !important;
+            }
+            
+            body {
+                padding: 0;
+                max-width: 100%;
+            }
+            
+            .events-timeline {
+                max-height: none;
+            }
         }
 
         .analysis-grid {
@@ -501,22 +817,242 @@ const Visualizer2 = ({
             <button class="download-button" onclick="downloadAnalysis()">
                 <img src="${iconSvgs.download}" width="14" height="14" style="vertical-align: middle; margin-right: 6px; filter: brightness(0) invert(1);" alt="Download" /> Download JSON Report
             </button>
+            <div class="export-buttons">
+                <button class="export-button" onclick="downloadHTMLReport()">
+                    📄 Download HTML Report
+                </button>
+                <button class="export-button export-button--secondary" onclick="downloadPDFReport()">
+                    📑 Print/Save as PDF
+                </button>
+                <button class="export-button export-button--secondary" onclick="shareReportLink()">
+                    🔗 Share Report
+                </button>
+            </div>
         </div>
     </div>
 
     <div class="analysis-grid">
+        <!-- Export Instructions -->
+        <div class="analysis-section analysis-section--full" style="background: #f0f9ff; border-left: 4px solid #0ea5e9;">
+            <h2 class="section-title" style="color: #0369a1;">💡 How to Share This Report</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; font-size: 14px;">
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 6px; color: #0369a1;">📄 Download HTML Report</div>
+                    <p style="color: #475569; margin: 0; line-height: 1.5;">
+                        Best for email and mobile viewing. Preserves all interactivity (toggle buttons, copy functions). 
+                        Open on any device with a browser. Works offline.
+                    </p>
+                </div>
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 6px; color: #0369a1;">📑 Print/Save as PDF</div>
+                    <p style="color: #475569; margin: 0; line-height: 1.5;">
+                        Opens print dialog - save as PDF for static archiving. All sections auto-expand for complete view. 
+                        Great for printing or long-term storage.
+                    </p>
+                </div>
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 6px; color: #0369a1;">🔗 Share Report</div>
+                    <p style="color: #475569; margin: 0; line-height: 1.5;">
+                        Share via mobile or get instructions for cloud storage links. 
+                        Upload HTML to Google Drive/Dropbox for easy sharing via email or SMS.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Identity Resolution Configuration -->
+        <div class="analysis-section analysis-section--full">
+            <h2 class="section-title">⚙️ Identity Resolution Configuration</h2>
+            <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                Configured identifier rules and settings
+            </p>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; border: 1px solid #ddd;">
+                    <thead>
+                        <tr style="background: #f5f5f5;">
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; font-weight: 600;">Identifier</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; font-weight: 600;">Type</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; font-weight: 600;">Limit</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; font-weight: 600;">Frequency</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; font-weight: 600;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${idResConfig.map((identifier, index) => `
+                            <tr style="border-bottom: 1px solid #eee; ${index % 2 === 0 ? 'background: #fafafa;' : ''}">
+                                <td style="padding: 12px; font-weight: 500;">${identifier.name}</td>
+                                <td style="padding: 12px; font-family: monospace; font-size: 12px; color: #666;">${identifier.id}</td>
+                                <td style="padding: 12px; text-align: center;">${identifier.limit}</td>
+                                <td style="padding: 12px;">${identifier.frequency}</td>
+                                <td style="padding: 12px;">
+                                    <span style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; ${identifier.enabled ? 'background: #e6f7e6; color: #2d7a2d;' : 'background: #ffe6e6; color: #cc0000;'}">
+                                        ${identifier.enabled ? '✓ Enabled' : '✗ Disabled'}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        ${(() => {
+          const unifyConfig = getUnifySpaceConfig();
+          return unifyConfig.processedSlug ? `
+        <!-- Unify Space Configuration -->
+        <div class="analysis-section analysis-section--full">
+            <h2 class="section-title">🔗 Segment Profile API Configuration</h2>
+            <div style="background: var(--color-bg-secondary); border-radius: 8px; padding: 20px; border: 1px solid var(--color-border);">
+                <div style="margin-bottom: 16px;">
+                    <div style="font-weight: 600; margin-bottom: 8px; color: #666; font-size: 12px; text-transform: uppercase;">Unify Space Slug / URL (Input Value)</div>
+                    <code style="display: block; background: #f0f0f0; padding: 12px; border-radius: 4px; font-family: monospace; font-size: 13px; word-break: break-all;">${unifyConfig.processedSlug}</code>
+                    <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                        Found in your Segment workspace settings under "General"
+                    </div>
+                </div>
+                
+                ${unifyConfig.generatedURL ? `
+                <div style="margin-bottom: 16px;">
+                    <div style="font-weight: 600; margin-bottom: 8px; color: #666; font-size: 12px; text-transform: uppercase;">Generated URL</div>
+                    <a href="${unifyConfig.generatedURL}" target="_blank" rel="noopener noreferrer" style="display: block; color: #3373dc; text-decoration: none; padding: 12px; background: #f0f8ff; border-radius: 4px; font-family: monospace; font-size: 13px; word-break: break-all;">
+                        🔗 ${unifyConfig.generatedURL}
+                    </a>
+                </div>
+                ` : ''}
+                
+                ${unifyConfig.workspaceSlug ? `
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 8px; color: #666; font-size: 12px; text-transform: uppercase;">Workspace Slug</div>
+                    <code style="display: block; background: #f0f0f0; padding: 12px; border-radius: 4px; font-family: monospace; font-size: 13px;">${unifyConfig.workspaceSlug}</code>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+          ` : '';
+        })()}
+
         <!-- Key Insights -->
         <div class="analysis-section">
             <h2 class="section-title">🔍 Key Insights</h2>
             <div class="insights-list">
-                ${analysisData.keyInsights.map(insight => `
-                    <div class="insight-item">
-                        <div style="text-align: center; margin-bottom: 8px;">
-                            <img src="${insight.icon}" width="32" height="32" alt="${insight.label}" />
+                ${(() => {
+                  // Map insight labels to icon names and generate nested data
+                  const insightIcons = {
+                    'Total Events Processed': 'barGraph',
+                    'New Profiles Created': 'userPlus',
+                    'Additional Actions': 'userCheck',
+                    'Profile Merges': 'unified',
+                    'Final Profile Count': 'userProfile'
+                  };
+                  
+                  return analysisData.keyInsights.map((insight, index) => {
+                    const iconKey = insightIcons[insight.label] || 'barGraph';
+                    const icon = iconSvgs[iconKey];
+                    
+                    // Generate nested data for each insight
+                    let nestedData = '';
+                    
+                    if (insight.label === 'Total Events Processed') {
+                      // List event types and names with identifiers
+                      const eventDetails = analysisData.eventSequence.map(e => {
+                        const identifiersText = e.allIdentifiers && Object.keys(e.allIdentifiers).length > 0
+                          ? Object.entries(e.allIdentifiers).map(([key, value]) => `${key}: ${value}`).join(', ')
+                          : 'No identifiers';
+                        
+                        return `<div style="padding: 6px 0; border-bottom: 1px solid #eee;">
+                          <div><strong>Event #${e.eventNumber}:</strong> ${e.eventType}${e.eventName ? ` - ${e.eventName}` : ''}</div>
+                          <div style="font-size: 11px; color: #666; margin-top: 4px; padding-left: 12px; font-family: monospace;">
+                            ${identifiersText}
+                          </div>
+                        </div>`;
+                      }).join('');
+                      nestedData = `
+                        <div style="margin-top: 12px; font-size: 12px; color: #666;">
+                          ${eventDetails}
                         </div>
-                        <div>${insight.label}: ${insight.value}</div>
-                    </div>
-                `).join('')}
+                      `;
+                    } else if (insight.label === 'New Profiles Created') {
+                      // List each profile and their final identifiers
+                      const profiles = analysisData.finalState.profiles || [];
+                      nestedData = `
+                        <div style="margin-top: 12px; font-size: 12px;">
+                          ${profiles.map((profile, pIndex) => `
+                            <div style="padding: 8px; margin-bottom: 8px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;">
+                              <div style="font-weight: 600; color: #3373dc; margin-bottom: 6px;">Profile ${pIndex + 1}</div>
+                              ${profile.identifiers && Object.keys(profile.identifiers).length > 0 ? `
+                                <div style="padding-left: 12px;">
+                                  ${Object.entries(profile.identifiers).map(([type, values]) => `
+                                    <div style="margin-bottom: 4px;">
+                                      <span style="color: #666;">${type}:</span> 
+                                      <span style="font-family: monospace; font-size: 11px;">${Array.isArray(values) ? values.join(', ') : values}</span>
+                                    </div>
+                                  `).join('')}
+                                </div>
+                              ` : '<div style="color: #999; font-style: italic;">No identifiers</div>'}
+                            </div>
+                          `).join('')}
+                        </div>
+                      `;
+                    } else if (insight.label === 'Additional Actions') {
+                      // List distinct flat matching logic actions
+                      const actions = analysisData.eventSequence
+                        .filter(e => e.expectedAction && !e.expectedAction.includes('Create') && !e.expectedAction.includes('Merge'))
+                        .map(e => `
+                          <div style="padding: 6px 0; border-bottom: 1px solid #eee;">
+                            <strong>Event #${e.eventNumber}:</strong> ${e.expectedAction}
+                            ${e.reason ? `<div style="font-size: 11px; color: #666; margin-top: 4px;">${e.reason}</div>` : ''}
+                          </div>
+                        `).join('');
+                      nestedData = actions ? `
+                        <div style="margin-top: 12px; font-size: 12px;">
+                          ${actions}
+                        </div>
+                      ` : '<div style="margin-top: 12px; font-size: 12px; color: #999; font-style: italic;">No additional actions</div>';
+                    } else if (insight.label === 'Profile Merges' && insight.value > 0) {
+                      // List merge events with processing logs and profile targets
+                      const merges = analysisData.eventSequence.filter(e => e.expectedAction && e.expectedAction.includes('Merge'));
+                      nestedData = `
+                        <div style="margin-top: 12px; font-size: 12px;">
+                          ${merges.map(merge => `
+                            <div style="padding: 10px; margin-bottom: 10px; background: #f0f8ff; border-radius: 4px; border: 1px solid #d0e8ff;">
+                              <div style="font-weight: 600; color: #3373dc; margin-bottom: 8px;">Event #${merge.eventNumber}</div>
+                              ${merge.mergeDirection ? `
+                                <div style="margin-bottom: 6px;">
+                                  <strong>Profile Target:</strong> ${merge.mergeDirection}
+                                </div>
+                              ` : ''}
+                              ${merge.processingLog ? `
+                                <div style="margin-top: 8px;">
+                                  <strong>Processing Logs:</strong>
+                                  <div style="margin-top: 4px; padding: 8px; background: white; border-radius: 3px; font-family: monospace; font-size: 10px; max-height: 150px; overflow-y: auto; white-space: pre-wrap;">
+                                    ${merge.processingLog}
+                                  </div>
+                                </div>
+                              ` : ''}
+                            </div>
+                          `).join('')}
+                        </div>
+                      `;
+                    }
+                    
+                    return `
+                      <div class="insight-item" style="position: relative;">
+                        <div style="text-align: center; margin-bottom: 8px;">
+                          <img src="${icon}" width="32" height="32" alt="${insight.label}" style="opacity: 0.8;" />
+                        </div>
+                        <div style="font-weight: 500;">${insight.label}: ${insight.value}</div>
+                        ${nestedData ? `
+                          <button onclick="toggleInsightDetails(${index})" style="margin-top: 8px; width: 100%; padding: 6px 10px; background: #3373dc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500;">
+                            View Details
+                          </button>
+                          <div id="insight-details-${index}" style="display: none;">
+                            ${nestedData}
+                          </div>
+                        ` : ''}
+                      </div>
+                    `;
+                  }).join('');
+                })()}
             </div>
         </div>
 
@@ -533,7 +1069,172 @@ const Visualizer2 = ({
                     <div class="stat-label">Final Profiles</div>
                 </div>
             </div>
+            
+            ${(() => {
+              // Group events by source writeKey - sources data embedded at generation time
+              const sources = sourcesConfig;
+              const eventsBySource = {};
+              
+              analysisData.eventSequence.forEach((event, index) => {
+                // Try to get writeKey from rawPayload first, then fall back to original events array
+                let writeKey = event.rawPayload?.context?.writeKey || event.rawPayload?.writeKey;
+                
+                // If not found in rawPayload, try the original events array
+                if (!writeKey && events[index]) {
+                  writeKey = events[index].context?.writeKey || events[index].writeKey;
+                }
+                
+                // Default to 'Unknown' if still not found
+                writeKey = writeKey || 'Unknown';
+                
+                if (!eventsBySource[writeKey]) {
+                  eventsBySource[writeKey] = [];
+                }
+                eventsBySource[writeKey].push(event.eventNumber);
+              });
+              
+              // Match writeKeys to source names
+              const sourceBreakdown = Object.entries(eventsBySource).map(([writeKey, eventNumbers]) => {
+                const source = sources.find(s => s.settings?.writeKey === writeKey);
+                const isConfigured = !!source;
+                return {
+                  writeKey,
+                  name: isConfigured ? source.name : `Source: ${writeKey}`,
+                  id: source?.id || writeKey,
+                  category: source?.category || null,
+                  eventNumbers,
+                  eventCount: eventNumbers.length,
+                  isConfigured
+                };
+              }).sort((a, b) => b.eventCount - a.eventCount);
+              
+              return sourceBreakdown.length > 0 ? `
+                <div style="margin-top: 20px; padding: 16px; background: var(--color-bg-secondary); border-radius: 8px; border: 1px solid var(--color-border);">
+                  <h3 style="margin: 0 0 12px 0; font-size: 16px; color: var(--color-text-primary);">
+                    📡 Events by Source (${sourceBreakdown.length} ${sourceBreakdown.length === 1 ? 'source' : 'sources'})
+                  </h3>
+                  <div style="display: flex; flex-direction: column; gap: 12px;">
+                    ${sourceBreakdown.map(source => `
+                      <div style="padding: 12px; background: #fff; border-radius: 6px; border: 1px solid #e0e0e0; border-left: 4px solid ${source.isConfigured ? '#3b82f6' : '#94a3b8'};">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                          <div>
+                            <div style="font-weight: 600; margin-bottom: 4px; color: #1e293b;">
+                              ${source.name}
+                              ${!source.isConfigured ? '<span style="margin-left: 8px; font-size: 10px; padding: 2px 6px; background: #f1f5f9; color: #64748b; border-radius: 3px; font-weight: 500;">Not in Config</span>' : ''}
+                              ${source.category ? `<span style="margin-left: 8px; font-size: 10px; padding: 2px 6px; background: #e0e7ff; color: #3730a3; border-radius: 3px; font-weight: 500;">${source.category}</span>` : ''}
+                            </div>
+                            <div style="font-family: monospace; font-size: 11px; color: #64748b;">
+                              ${source.isConfigured && source.id !== source.writeKey ? `${source.id} • ` : ''}${source.writeKey}
+                            </div>
+                          </div>
+                          <div style="text-align: right;">
+                            <div style="font-size: 20px; font-weight: 700; color: #3b82f6;">${source.eventCount}</div>
+                            <div style="font-size: 11px; color: #64748b;">${source.eventCount === 1 ? 'event' : 'events'}</div>
+                          </div>
+                        </div>
+                        <div style="margin-top: 8px;">
+                          <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Event Numbers:</div>
+                          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                            ${source.eventNumbers.map(num => `
+                              <span style="background: #e0e7ff; color: #3730a3; padding: 2px 6px; border-radius: 3px; font-size: 11px; font-weight: 500;">
+                                #${num}
+                              </span>
+                            `).join('')}
+                          </div>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : '';
+            })()}
+            
+            ${(() => {
+              // Calculate merges and drops
+              const merges = analysisData.eventSequence.filter(e => e.expectedAction && e.expectedAction.includes('Merge'));
+              const drops = analysisData.eventSequence.filter(e => e.expectedAction && (e.expectedAction.includes('Drop') || e.expectedAction.includes('dropped')));
+              
+              if (merges.length > 0 || drops.length > 0) {
+                return `
+                  <div style="margin-top: 20px; padding: 16px; background: var(--color-bg-secondary); border-radius: 8px; border: 1px solid var(--color-border);">
+                    ${merges.length > 0 ? `
+                      <div style="margin-bottom: ${drops.length > 0 ? '20px' : '0'};">
+                        <h3 style="margin: 0 0 12px 0; font-size: 16px; color: var(--color-text-primary);">
+                          🔀 Profile Merges (${merges.length})
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                          ${merges.map(merge => `
+                            <div style="padding: 12px; background: #fff; border-radius: 6px; border: 1px solid #e0e0e0;">
+                              <div style="font-weight: 600; margin-bottom: 8px; color: #3373dc;">
+                                Event #${merge.eventNumber}: ${merge.eventType}
+                              </div>
+                              <div style="margin-bottom: 6px; font-size: 13px;">
+                                <strong>Identifiers:</strong> ${Object.entries(merge.allIdentifiers || {}).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                              </div>
+                              ${merge.mergeDirection ? `
+                                <div style="margin-bottom: 6px; font-size: 13px;">
+                                  <strong>Merge Direction:</strong> ${merge.mergeDirection}
+                                </div>
+                              ` : ''}
+                              ${merge.reason ? `
+                                <div style="font-size: 12px; color: #666;">
+                                  <strong>Reason:</strong> ${merge.reason}
+                                </div>
+                              ` : ''}
+                            </div>
+                          `).join('')}
+                        </div>
+                      </div>
+                    ` : ''}
+                    
+                    ${drops.length > 0 ? `
+                      <div>
+                        <h3 style="margin: 0 0 12px 0; font-size: 16px; color: var(--color-text-primary);">
+                          ⚠️ Dropped Identifiers (${drops.length})
+                        </h3>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                          ${drops.map(drop => `
+                            <div style="padding: 12px; background: #fff; border-radius: 6px; border: 1px solid #ffebcc; background: #fffbf5;">
+                              <div style="font-weight: 600; margin-bottom: 8px; color: #cc6600;">
+                                Event #${drop.eventNumber}: ${drop.eventType}
+                              </div>
+                              <div style="margin-bottom: 6px; font-size: 13px;">
+                                <strong>Identifiers:</strong> ${Object.entries(drop.allIdentifiers || {}).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                              </div>
+                              ${drop.reason ? `
+                                <div style="font-size: 12px; color: #666;">
+                                  <strong>Reason:</strong> ${drop.reason}
+                                </div>
+                              ` : ''}
+                            </div>
+                          `).join('')}
+                        </div>
+                      </div>
+                    ` : ''}
+                  </div>
+                `;
+              }
+              return '';
+            })()}
         </div>
+
+        <!-- Identity Resolution Visualizer PNG -->
+        ${visualizerImageDataUrl ? `
+        <div class="analysis-section analysis-section--full">
+            <h2 class="section-title">🎨 Identity Resolution Visualizer</h2>
+            <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                Visual representation of the identity resolution process
+            </p>
+            <div style="background: #ffffff; border-radius: 8px; padding: 20px; border: 1px solid #ddd; text-align: center; overflow-x: auto;">
+                <img src="${visualizerImageDataUrl}" alt="Identity Resolution Visualizer" style="max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+            </div>
+            <div style="margin-top: 12px; text-align: center;">
+                <button onclick="downloadVisualizerImage()" style="padding: 8px 16px; background: #3373dc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500;">
+                    💾 Download PNG
+                </button>
+            </div>
+        </div>
+        ` : ''}
 
         <!-- Event Sequence Analysis -->
         <div class="analysis-section analysis-section--full">
@@ -701,10 +1402,208 @@ const Visualizer2 = ({
                 </div>
             </div>
         </div>
+
+        ${(() => {
+          // Get all additional data
+          const sources = sourcesConfig;
+          const unifyConfig = getUnifySpaceConfig();
+          const profileData = formatProfileApiResults();
+          const rawEvents = JSON.stringify(events, null, 2);
+          
+          return `
+        <!-- Event Simulator Queue (Raw JSON) -->
+        <div class="analysis-section analysis-section--full">
+            <h2 class="section-title">📋 Event Simulator Queue</h2>
+            <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                Raw JSON event payloads from the event simulator queue
+            </p>
+            <div style="position: relative;">
+                <button onclick="copyToClipboard('event-queue-json')" style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; background: #3373dc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; z-index: 10;">
+                    📋 Copy JSON
+                </button>
+                <pre id="event-queue-json" style="background: #f5f5f5; padding: 16px; border-radius: 8px; overflow-x: auto; max-height: 500px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; line-height: 1.5; border: 1px solid #ddd;">${rawEvents.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+            </div>
+        </div>
+
+        <!-- Profile API Raw Responses -->
+        ${Object.keys(profileData.raw).length > 0 ? `
+        <div class="analysis-section analysis-section--full">
+            <h2 class="section-title">🔍 Profile API Raw Responses</h2>
+            <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                Raw data returned by the Profile API for each lookup
+            </p>
+            <div style="position: relative;">
+                <button onclick="copyToClipboard('profile-api-raw')" style="position: absolute; top: 8px; right: 8px; padding: 6px 12px; background: #3373dc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; z-index: 10;">
+                    📋 Copy JSON
+                </button>
+                <pre id="profile-api-raw" style="background: #f5f5f5; padding: 16px; border-radius: 8px; overflow-x: auto; max-height: 500px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; line-height: 1.5; border: 1px solid #ddd;">${JSON.stringify(profileData.raw, null, 2).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+            </div>
+        </div>
+        ` : ''}
+
+        <!-- Profile API Formatted Profiles -->
+        ${profileData.formatted.length > 0 ? `
+        <div class="analysis-section analysis-section--full">
+            <h2 class="section-title">👤 Profile API Results (Formatted)</h2>
+            <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                Beautified profile data as shown in the UI
+            </p>
+            ${profileData.formatted.map((profile, index) => `
+                <div class="profile-card" style="background: var(--color-bg-secondary); border-radius: 8px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--color-border);">
+                    <h3 style="margin-top: 0; margin-bottom: 12px; color: var(--color-text-primary);">Profile ${index + 1}</h3>
+                    <div style="margin-bottom: 12px;">
+                        <strong>Segment ID:</strong> <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">${profile.segmentId}</code>
+                    </div>
+                    
+                    ${Object.keys(profile.identifiers).length > 0 ? `
+                    <div style="margin-bottom: 12px;">
+                        <strong>Identifiers:</strong>
+                        <div style="margin-top: 8px; padding-left: 16px;">
+                            ${Object.entries(profile.identifiers).map(([type, values]) => `
+                                <div style="margin-bottom: 4px;">
+                                    <span style="color: #666;">${type}:</span> 
+                                    <span style="font-family: monospace;">${Array.isArray(values) ? values.join(', ') : values}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${Object.keys(profile.traits).length > 0 ? `
+                    <div style="margin-bottom: 12px;">
+                        <strong>Traits:</strong>
+                        <div style="margin-top: 8px; padding-left: 16px;">
+                            ${Object.entries(profile.traits).slice(0, 5).map(([key, value]) => `
+                                <div style="margin-bottom: 4px;">
+                                    <span style="color: #666;">${key}:</span> 
+                                    <span style="font-family: monospace;">${JSON.stringify(value)}</span>
+                                </div>
+                            `).join('')}
+                            ${Object.keys(profile.traits).length > 5 ? `
+                                <div style="color: #666; font-style: italic; margin-top: 4px;">
+                                    ... and ${Object.keys(profile.traits).length - 5} more traits
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${profile.externalIds.length > 0 ? `
+                    <div>
+                        <strong>External IDs:</strong> ${profile.externalIds.length} external identifiers
+                    </div>
+                    ` : ''}
+                </div>
+            `).join('')}
+        </div>
+        ` : ''}
+
+        <!-- Profile API CSV Export Data -->
+        ${profileData.csv.length > 0 ? `
+        <div class="analysis-section analysis-section--full">
+            <h2 class="section-title">📊 Profile API Data (CSV Format)</h2>
+            <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                Tabular view of Profile API results
+            </p>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; border: 1px solid #ddd;">
+                    <thead>
+                        <tr style="background: #f5f5f5;">
+                            ${Object.keys(profileData.csv[0]).map(header => `
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd; font-weight: 600;">${header}</th>
+                            `).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${profileData.csv.map((row, index) => `
+                            <tr style="border-bottom: 1px solid #eee; ${index % 2 === 0 ? 'background: #fafafa;' : ''}">
+                                ${Object.values(row).map(value => `
+                                    <td style="padding: 12px; font-family: monospace; font-size: 12px;">${value}</td>
+                                `).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        ` : ''}
+
+        <!-- Source Configuration -->
+        ${sources.length > 0 ? `
+        <div class="analysis-section analysis-section--full">
+            <h2 class="section-title">📡 Source Configuration</h2>
+            <p style="color: var(--color-text-secondary); margin-bottom: 16px;">
+                Enabled sources for event tracking
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px;">
+                ${sources.filter(s => s.enabled).map(source => `
+                    <div style="background: var(--color-bg-secondary); border-radius: 8px; padding: 16px; border: 1px solid var(--color-border);">
+                        <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px;">${source.name}</div>
+                        <div style="font-family: monospace; font-size: 11px; color: #666; margin-bottom: 8px;">${source.id}</div>
+                        ${source.category ? `
+                            <div style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 10px; background: #e6f2ff; color: #0052cc;">
+                                ${source.category}
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        ` : ''}
+          `;
+        })()}
     </div>
 
     <script>
         ${downloadAnalysisJS}
+        
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const button = element.previousElementSibling;
+                const originalText = button.textContent;
+                button.textContent = '✓ Copied!';
+                button.style.background = '#2d7a2d';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '#3373dc';
+                }, 2000);
+            }).catch(err => {
+                alert('Failed to copy to clipboard');
+                console.error('Copy failed:', err);
+            });
+        }
+        
+        function downloadVisualizerImage() {
+            const imgElement = document.querySelector('.analysis-section--full img[alt="Identity Resolution Visualizer"]');
+            if (!imgElement) {
+                alert('Image not found');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.href = imgElement.src;
+            link.download = 'identity-resolution-visualizer-' + new Date().toISOString().split('T')[0] + '.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function toggleInsightDetails(insightIndex) {
+            const element = document.getElementById('insight-details-' + insightIndex);
+            const button = element.previousElementSibling;
+            
+            if (element.style.display === 'none') {
+                element.style.display = 'block';
+                button.textContent = 'Hide Details';
+            } else {
+                element.style.display = 'none';
+                button.textContent = 'View Details';
+            }
+        }
     </script>
 </body>
 </html>
