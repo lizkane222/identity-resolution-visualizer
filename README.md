@@ -46,7 +46,7 @@ A comprehensive React application for building, simulating, and analyzing event 
 1. **Clone the repository**
    ```bash
    git clone https://github.com/lizkane222/identity-resolution-visualizer.git
-   cd identity_resolution_visualizer
+   cd identity-resolution-visualizer
    ```
 
 2. **Install dependencies with automatic setup**
