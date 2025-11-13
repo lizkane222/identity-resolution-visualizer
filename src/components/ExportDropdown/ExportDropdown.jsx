@@ -6,6 +6,8 @@ const ExportDropdown = ({
   events, 
   currentUser, 
   profileApiResults,
+  analysisData,
+  onExportAnalysisPDF,
   isOpen, 
   onClose 
 }) => {
@@ -52,6 +54,40 @@ const ExportDropdown = ({
     setExportStatus({ type: '', message: '' });
 
     try {
+      // Handle PDF export separately
+      if (exportType === 'analysis-pdf') {
+        if (!analysisData) {
+          throw new Error('No analysis data available. Please run analysis first.');
+        }
+        
+        if (!onExportAnalysisPDF) {
+          throw new Error('PDF export function not available');
+        }
+
+        setExportStatus({
+          type: 'info',
+          message: 'Generating PDF report... This may take a moment.'
+        });
+
+        const result = await onExportAnalysisPDF(phoneNumber);
+        
+        if (result.success) {
+          setExportStatus({
+            type: 'success',
+            message: `Analysis report sent as PDF to ${phoneNumber}!`
+          });
+          
+          setTimeout(() => {
+            onClose();
+            setExportStatus({ type: '', message: '' });
+          }, 3000);
+        } else {
+          throw new Error('Failed to generate or send PDF');
+        }
+        
+        return;
+      }
+
       let exportData = null;
       let fileName = '';
 
@@ -196,6 +232,7 @@ const ExportDropdown = ({
     { id: 'current-user', label: 'Current User', icon: '👤', hasData: !!currentUser?.anonymousId },
     { id: 'unique-users', label: 'Unique Users', icon: '👥', count: uniqueUsers?.length || 0 },
     { id: 'profile-results', label: 'Profile Results', icon: '🔍', hasData: !!profileApiResults },
+    { id: 'analysis-pdf', label: 'Analysis Report (PDF)', icon: '📑', hasData: !!analysisData, description: 'Full visualizer report' },
     { id: 'full-export', label: 'Full Export', icon: '📦', description: 'All data combined' }
   ];
 

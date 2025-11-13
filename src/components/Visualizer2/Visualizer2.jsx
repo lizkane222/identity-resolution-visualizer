@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DiagramTimeline2 from './DiagramTimeline2.jsx';
 import { exportVisualizerAsImage } from '../../utils/imageExport.js';
 import html2canvas from 'html2canvas';
+import html2pdf from 'html2pdf.js';
 import './Visualizer2.css';
 import '../Visualizer/AnalysisSidebar.css';
 import '../Visualizer/Visualizer.css';
@@ -90,6 +91,142 @@ const Visualizer2 = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Export analysis report as PDF
+  const exportAnalysisPDF = async (phoneNumber = null) => {
+    if (!analysisData) {
+      console.error('No analysis data available for PDF export');
+      return null;
+    }
+
+    try {
+      console.log('📄 Generating PDF from analysis report...');
+      
+      // Capture visualizer image if available
+      let visualizerImageDataUrl = null;
+      try {
+        visualizerImageDataUrl = await captureVisualizerImage();
+      } catch (err) {
+        console.warn('Could not capture visualizer image:', err);
+      }
+
+      // Generate the HTML content for the report
+      const htmlContent = generateAnalysisHtml(analysisData, visualizerImageDataUrl);
+      
+      // Create a temporary container for the HTML
+      const tempContainer = document.createElement('div');
+      tempContainer.innerHTML = htmlContent;
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = '210mm'; // A4 width
+      document.body.appendChild(tempContainer);
+
+      // PDF options for high quality output
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `identity-resolution-analysis-${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2,
+          useCORS: true,
+          letterRendering: true,
+          logging: false
+        },
+        jsPDF: { 
+          unit: 'mm', 
+          format: 'a4', 
+          orientation: 'portrait',
+          compress: true
+        },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+
+      // Generate PDF
+      const pdfBlob = await html2pdf().set(opt).from(tempContainer).outputPdf('blob');
+      
+      // Clean up
+      document.body.removeChild(tempContainer);
+
+      console.log('✅ PDF generated successfully');
+      
+      // If phone number provided, send via SMS
+      if (phoneNumber) {
+        console.log('📱 Sending PDF via SMS to:', phoneNumber);
+        const result = await sendPDFviaSMS(pdfBlob, phoneNumber);
+        return result; // Return the full result with downloadUrl
+      } else {
+        // Otherwise, trigger download
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(pdfBlob);
+        link.download = opt.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        
+        console.log('✅ PDF download triggered');
+        return { success: true, method: 'download' };
+      }
+      
+    } catch (error) {
+      console.error('❌ Error generating PDF:', error);
+      throw error;
+    }
+  };
+
+  // Send PDF via SMS using Twilio
+  const sendPDFviaSMS = async (pdfBlob, phoneNumber) => {
+    try {
+      // Convert blob to base64
+      const reader = new FileReader();
+      const pdfBase64 = await new Promise((resolve, reject) => {
+        reader.onloadend = () => {
+          const base64String = reader.result.split(',')[1];
+          resolve(base64String);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(pdfBlob);
+      });
+
+      // Format phone number
+      let formattedPhone = phoneNumber.replace(/\D/g, '');
+      if (formattedPhone.length === 10) {
+        formattedPhone = '+1' + formattedPhone;
+      } else if (formattedPhone.length === 11 && formattedPhone.startsWith('1')) {
+        formattedPhone = '+' + formattedPhone;
+      }
+
+      console.log('📞 Formatted phone:', phoneNumber, '→', formattedPhone);
+      
+      // Send to backend
+      const response = await fetch('/api/twilio/send-pdf-export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: formattedPhone,
+          pdfBase64,
+          fileName: `identity-resolution-analysis-${new Date().toISOString().split('T')[0]}.pdf`,
+          reportType: 'Identity Resolution Analysis'
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.details || 'Failed to send PDF via SMS');
+      }
+
+      const result = await response.json();
+      console.log('✅ PDF sent via SMS:', result);
+      return result;
+      
+    } catch (error) {
+      console.error('❌ Error sending PDF via SMS:', error);
+      throw error;
+    }
   };
 
   // Helper function to get sources from localStorage
@@ -956,8 +1093,8 @@ Note: For best viewing experience, share via cloud storage link rather than emai
                       // List event types and names with identifiers
                       const eventDetails = analysisData.eventSequence.map(e => {
                         const identifiersText = e.allIdentifiers && Object.keys(e.allIdentifiers).length > 0
-                          ? Object.entries(e.allIdentifiers).map(([key, value]) => `${key}: ${value}`).join(', ')
-                          : 'No identifiers';
+                          ? Object.entries(e.allIdentifiers).map(([key, value]) => `<div style="margin-bottom: 2px;">${key}: ${value}</div>`).join('')
+                          : '<div style="color: #999; font-style: italic;">No identifiers</div>';
                         
                         return `<div style="padding: 6px 0; border-bottom: 1px solid #eee;">
                           <div><strong>Event #${e.eventNumber}:</strong> ${e.eventType}${e.eventName ? ` - ${e.eventName}` : ''}</div>
@@ -1873,7 +2010,7 @@ Note: For best viewing experience, share via cloud storage link rather than emai
 
               {analysisData && (
                 <>
-                  <div style={{ marginBottom: '12px', textAlign: 'right', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div style={{ marginBottom: '12px', textAlign: 'right', display: 'flex', gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                     <button
                       className="visualizer__download-button"
                       onClick={() => openAnalysisInNewTab(analysisData)}
@@ -1885,10 +2022,37 @@ Note: For best viewing experience, share via cloud storage link rather than emai
                     <button
                       className="visualizer__download-button"
                       onClick={downloadAnalysis}
-                      title="Download Analysis"
+                      title="Download Analysis JSON"
                       style={{ padding: '4px 8px', fontSize: '11px' }}
                     >
-                      <img src="/assets/Download_symbol.svg" width="12" height="12" style={{verticalAlign: 'middle', marginRight: '4px', filter: 'brightness(0) invert(1)'}} alt="Download" /> Download
+                      <img src="/assets/Download_symbol.svg" width="12" height="12" style={{verticalAlign: 'middle', marginRight: '4px', filter: 'brightness(0) invert(1)'}} alt="Download" /> JSON
+                    </button>
+                    <button
+                      className="visualizer__download-button"
+                      onClick={async () => {
+                        try {
+                          // Get phone number from localStorage (saved from voice tutorial)
+                          const savedPhone = localStorage.getItem('voiceTutorialPhoneNumber');
+                          const phoneNumber = savedPhone || prompt('Enter phone number to receive PDF download link:');
+                          
+                          if (phoneNumber) {
+                            // Generate and send PDF with download link
+                            console.log('📄 Generating PDF and sending download link...');
+                            const result = await exportAnalysisPDF(phoneNumber);
+                            
+                            if (result && result.success) {
+                              alert(`✅ Success!\n\n📱 SMS sent to ${phoneNumber}\n\n🔗 Download link: ${result.downloadUrl}\n\n⏰ Link expires in 24 hours`);
+                            }
+                          }
+                        } catch (error) {
+                          console.error('PDF export error:', error);
+                          alert(`❌ Error: ${error.message}`);
+                        }
+                      }}
+                      title="Download PDF & Send Link via SMS"
+                      style={{ padding: '4px 8px', fontSize: '11px', backgroundColor: '#10b981' }}
+                    >
+                      📑 PDF via SMS
                     </button>
                   </div>
                   

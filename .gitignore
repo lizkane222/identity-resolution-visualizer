@@ -7,6 +7,9 @@
 .env.test.local
 .env.production.local
 
+# Temporary PDF files
+temp_pdfs/
+
 # Ignore trash files
 trashFiles/
 ./src/components/EventList/EventListFixed.jsx

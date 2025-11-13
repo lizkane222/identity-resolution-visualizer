@@ -3,14 +3,39 @@ const cors = require('cors');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const app = express();
 const PORT = 8888;
 
+// Create temp directory for PDFs if it doesn't exist
+const TEMP_PDF_DIR = path.join(__dirname, '../temp_pdfs');
+if (!fs.existsSync(TEMP_PDF_DIR)) {
+  fs.mkdirSync(TEMP_PDF_DIR, { recursive: true });
+}
+
+// Clean up old PDFs on startup (older than 24 hours)
+const cleanupOldPDFs = () => {
+  const files = fs.readdirSync(TEMP_PDF_DIR);
+  const now = Date.now();
+  const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+
+  files.forEach(file => {
+    const filePath = path.join(TEMP_PDF_DIR, file);
+    const stats = fs.statSync(filePath);
+    if (now - stats.mtimeMs > maxAge) {
+      fs.unlinkSync(filePath);
+      console.log('🗑️  Cleaned up old PDF:', file);
+    }
+  });
+};
+
+cleanupOldPDFs();
+
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increase limit for PDF base64
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -844,6 +869,149 @@ app.post('/api/twilio/send-export', async (req, res) => {
       details: error.message
     });
   }
+});
+
+// Export PDF via MMS
+app.post('/api/twilio/send-pdf-export', async (req, res) => {
+  let { to, pdfBase64, fileName, reportType } = req.body;
+
+  // Validate required fields
+  if (!to) {
+    return res.status(400).json({
+      error: 'Missing required field',
+      details: 'Phone number (to) is required'
+    });
+  }
+
+  if (!pdfBase64) {
+    return res.status(400).json({
+      error: 'Missing required field',
+      details: 'PDF data is required'
+    });
+  }
+
+  // Normalize phone number to E.164 format
+  let normalizedPhone = to.replace(/\D/g, '');
+  if (normalizedPhone.length === 10) {
+    normalizedPhone = '+1' + normalizedPhone;
+  } else if (normalizedPhone.length === 11 && normalizedPhone.startsWith('1')) {
+    normalizedPhone = '+' + normalizedPhone;
+  } else if (!normalizedPhone.startsWith('+')) {
+    normalizedPhone = '+' + normalizedPhone;
+  } else {
+    normalizedPhone = to;
+  }
+  
+  console.log('📞 Phone number normalized:', to, '→', normalizedPhone);
+  to = normalizedPhone;
+
+  const twilioClient = initializeTwilioClient();
+  
+  if (!twilioClient) {
+    return res.status(500).json({
+      error: 'Twilio SDK not initialized',
+      details: 'Twilio credentials not configured'
+    });
+  }
+
+  try {
+    const from = process.env.TWILIO_PHONE_NUMBER;
+    
+    if (!from) {
+      throw new Error('TWILIO_PHONE_NUMBER not configured');
+    }
+
+    console.log('\n📤 [TWILIO PDF EXPORT] Preparing PDF for download');
+    console.log('To:', to);
+    console.log('Report Type:', reportType || 'Analysis Report');
+    console.log('File Name:', fileName || 'report.pdf');
+
+    // Convert base64 to buffer
+    const pdfBuffer = Buffer.from(pdfBase64, 'base64');
+    const pdfSizeKB = (pdfBuffer.length / 1024).toFixed(2);
+    
+    console.log('PDF Size:', pdfSizeKB, 'KB');
+
+    // Generate unique ID for this PDF
+    const uniqueId = crypto.randomBytes(16).toString('hex');
+    const safeFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const pdfFileName = `${uniqueId}_${safeFileName}`;
+    const pdfFilePath = path.join(TEMP_PDF_DIR, pdfFileName);
+
+    // Save PDF to temp directory
+    fs.writeFileSync(pdfFilePath, pdfBuffer);
+    console.log('💾 PDF saved to:', pdfFilePath);
+
+    // Create download URL (accessible from any device)
+    const downloadUrl = `http://localhost:${PORT}/download-pdf/${pdfFileName}`;
+    console.log('🔗 Download URL:', downloadUrl);
+
+    // Create message body with download link
+    const messageBody = `${reportType || 'Identity Resolution Analysis'}\n\n✅ Your report is ready!\n\n📄 ${fileName}\n📊 Size: ${pdfSizeKB} KB\n🕐 Generated: ${new Date().toLocaleString()}\n\n🔗 Download here:\n${downloadUrl}\n\n⏰ Link expires in 24 hours`;
+    
+    console.log('📱 Sending SMS with download link...');
+    
+    const messageResponse = await twilioClient.messages.create({
+      body: messageBody,
+      from: from,
+      to: to
+    });
+
+    console.log('✅ SMS sent successfully with download link');
+    console.log('Message SID:', messageResponse.sid);
+    console.log('Status:', messageResponse.status);
+
+    res.json({
+      success: true,
+      messageSid: messageResponse.sid,
+      status: messageResponse.status,
+      downloadUrl: downloadUrl,
+      timestamp: new Date().toISOString(),
+      method: 'direct-sms-with-link',
+      note: 'SMS sent with download link. PDF hosted temporarily for 24 hours.',
+      pdfSize: `${pdfSizeKB} KB`,
+      expiresIn: '24 hours'
+    });
+
+  } catch (error) {
+    console.error('\n❌ [TWILIO PDF EXPORT] Error sending PDF:', error);
+    
+    res.status(500).json({
+      error: 'Failed to send PDF export',
+      details: error.message
+    });
+  }
+});
+
+// Serve PDF download endpoint
+app.get('/download-pdf/:filename', (req, res) => {
+  const { filename } = req.params;
+  const filePath = path.join(TEMP_PDF_DIR, filename);
+
+  // Security: Only allow files in temp directory, prevent path traversal
+  if (!filePath.startsWith(TEMP_PDF_DIR)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  // Check if file exists
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'File not found or expired' });
+  }
+
+  console.log('📥 Serving PDF download:', filename);
+
+  // Set headers for PDF download
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename.split('_').slice(1).join('_')}"`);
+  
+  // Stream the file
+  const fileStream = fs.createReadStream(filePath);
+  fileStream.pipe(res);
+
+  fileStream.on('error', (error) => {
+    console.error('Error streaming PDF:', error);
+    res.status(500).json({ error: 'Failed to download PDF' });
+  });
 });
 
 // Health check
