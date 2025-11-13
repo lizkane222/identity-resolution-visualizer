@@ -240,33 +240,20 @@ function App() {
     const loadUnifySpaceSlug = async () => {
       try {
         const response = await fetch('http://localhost:8888/api/config');
-        if (!response.ok) {
-          // Don't log error for expected failures (server might not be ready)
-          return;
-        }
         const config = await response.json();
         if (config.unifySpaceSlug) {
           setUnifySpaceSlug(config.unifySpaceSlug);
         }
       } catch (error) {
-        // Silently ignore fetch errors - server might not be ready yet
-        // Only log if it's not a network error
-        if (error.message && !error.message.includes('fetch')) {
-          console.error('Failed to load unifySpaceSlug:', error);
-        }
+        console.error('Failed to load unifySpaceSlug:', error);
       }
     };
+    loadUnifySpaceSlug();
     
-    // Initial load with a small delay
-    const initialTimeout = setTimeout(loadUnifySpaceSlug, 500);
+    // Set up an interval to periodically check for updates
+    const interval = setInterval(loadUnifySpaceSlug, 2000);
     
-    // Set up an interval to periodically check for updates (less frequently)
-    const interval = setInterval(loadUnifySpaceSlug, 10000); // Every 10 seconds instead of 2
-    
-    return () => {
-      clearTimeout(initialTimeout);
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   // Persist profile API results to localStorage

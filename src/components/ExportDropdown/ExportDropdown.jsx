@@ -6,8 +6,6 @@ const ExportDropdown = ({
   events, 
   currentUser, 
   profileApiResults,
-  analysisData,
-  onExportAnalysisPDF,
   isOpen, 
   onClose 
 }) => {
@@ -54,40 +52,6 @@ const ExportDropdown = ({
     setExportStatus({ type: '', message: '' });
 
     try {
-      // Handle PDF export separately
-      if (exportType === 'analysis-pdf') {
-        if (!analysisData) {
-          throw new Error('No analysis data available. Please run analysis first.');
-        }
-        
-        if (!onExportAnalysisPDF) {
-          throw new Error('PDF export function not available');
-        }
-
-        setExportStatus({
-          type: 'info',
-          message: 'Generating PDF report... This may take a moment.'
-        });
-
-        const result = await onExportAnalysisPDF(phoneNumber);
-        
-        if (result.success) {
-          setExportStatus({
-            type: 'success',
-            message: `Analysis report sent as PDF to ${phoneNumber}!`
-          });
-          
-          setTimeout(() => {
-            onClose();
-            setExportStatus({ type: '', message: '' });
-          }, 3000);
-        } else {
-          throw new Error('Failed to generate or send PDF');
-        }
-        
-        return;
-      }
-
       let exportData = null;
       let fileName = '';
 
@@ -127,23 +91,8 @@ const ExportDropdown = ({
           throw new Error('Unknown export type');
       }
 
-      // Format phone number to E.164 (ensure +1 country code)
-      let formattedPhone = phoneNumber.replace(/\D/g, ''); // Remove all non-digits
-      
-      // If it's a 10-digit number, add +1
-      if (formattedPhone.length === 10) {
-        formattedPhone = '+1' + formattedPhone;
-      }
-      // If it's 11 digits starting with 1, add +
-      else if (formattedPhone.length === 11 && formattedPhone.startsWith('1')) {
-        formattedPhone = '+' + formattedPhone;
-      }
-      // If it already starts with +1, keep it as is
-      else if (formattedPhone.startsWith('1') && formattedPhone.length === 11) {
-        formattedPhone = '+' + formattedPhone;
-      }
-      
-      console.log('📞 Formatted phone number:', phoneNumber, '→', formattedPhone);
+      // Format phone number to E.164
+      const formattedPhone = phoneNumber.replace(/\D/g, '').replace(/^(\d{3})(\d{3})(\d{4})$/, '+1$1$2$3');
       
       const exportPayload = {
         to: formattedPhone,
@@ -179,21 +128,10 @@ const ExportDropdown = ({
 
       console.log('📥 Response status:', response.status);
 
-      // Try to parse JSON response, but handle text responses too
-      let result;
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        result = await response.json().catch(err => {
-          console.error('❌ JSON parse error:', err);
-          throw new Error('Invalid JSON response from server');
-        });
-      } else {
-        // If not JSON, get text
-        const text = await response.text();
-        console.error('❌ Non-JSON response:', text);
-        throw new Error(`Server error: ${text.substring(0, 100)}`);
-      }
-      
+      const result = await response.json().catch(err => {
+        console.error('❌ JSON parse error:', err);
+        throw new Error('Invalid response from server');
+      });
       console.log('📥 Response data:', result);
 
       if (response.ok) {
@@ -232,7 +170,6 @@ const ExportDropdown = ({
     { id: 'current-user', label: 'Current User', icon: '👤', hasData: !!currentUser?.anonymousId },
     { id: 'unique-users', label: 'Unique Users', icon: '👥', count: uniqueUsers?.length || 0 },
     { id: 'profile-results', label: 'Profile Results', icon: '🔍', hasData: !!profileApiResults },
-    { id: 'analysis-pdf', label: 'Analysis Report (PDF)', icon: '📑', hasData: !!analysisData, description: 'Full visualizer report' },
     { id: 'full-export', label: 'Full Export', icon: '📦', description: 'All data combined' }
   ];
 
